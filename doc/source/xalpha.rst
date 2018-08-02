@@ -1,0 +1,78 @@
+xalpha package
+==============
+
+Submodules
+----------
+
+xalpha.cons module
+------------------
+
+.. automodule:: xalpha.cons
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+xalpha.indicator module
+-----------------------
+
+.. automodule:: xalpha.indicator
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+xalpha.info module
+------------------
+
+.. automodule:: xalpha.info
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+xalpha.multiple module
+----------------------
+
+.. automodule:: xalpha.multiple
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+xalpha.policy module
+--------------------
+
+.. automodule:: xalpha.policy
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+xalpha.record module
+--------------------
+
+.. automodule:: xalpha.record
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+xalpha.remain module
+--------------------
+
+.. automodule:: xalpha.remain
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+xalpha.trade module
+-------------------
+
+.. automodule:: xalpha.trade
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: xalpha
+    :members:
+    :undoc-members:
+    :show-inheritance:

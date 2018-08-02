@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 module for mul and mulfix class: fund combination management
 '''

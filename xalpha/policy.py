@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 modules for policy making: generate status table for backtesting
 '''

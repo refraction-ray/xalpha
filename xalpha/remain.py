@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 provide class functions to adjust rem form data based on old rem form data
 such datastructure is useful when first-in-first-out mechanism considered in selling funds

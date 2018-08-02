@@ -2,3 +2,5 @@
 __pycache__
 xaenv
 .pytest_cache
+*.pyc
+doc/build

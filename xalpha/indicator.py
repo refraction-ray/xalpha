@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 module for implementation of indicator class
 '''

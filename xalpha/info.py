@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 modules of info class, including cashinfo, indexinfo and fundinfo class
 '''
