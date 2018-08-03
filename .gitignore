@@ -6,3 +6,6 @@ xaenv
 doc/build
 demo.ipynb
 .ipynb_checkpoints/
+build/
+dist/
+xalpha.egg-info/
