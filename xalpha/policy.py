@@ -9,10 +9,10 @@ class policy():
     '''
     base class for policy making, self.status to get the generating status table
 
-    params infoobj: info object as evidence for policy making
-    params start: string or object of date, the starting date for policy running
-    params end: string or object of date, the ending date for policy running
-    params totmoney: float or int, characteristic money value, 
+    :param infoobj: info object as evidence for policy making
+    :param start: string or object of date, the starting date for policy running
+    :param end: string or object of date, the ending date for policy running
+    :param totmoney: float or int, characteristic money value, 
         not necessary to be the total amount of money
     '''
     def __init__(self, infoobj, start, end=yesterdaydash, totmoney=100000):
@@ -39,8 +39,8 @@ class policy():
         '''
         give policy decision based on given date
 
-        params date: date object
-        returns: float, positive for buying money, negative for selling shares
+        :param date: date object
+        :returns: float, positive for buying money, negative for selling shares
         '''
         raise NotImplementedError
 
@@ -65,9 +65,9 @@ class scheduled(policy):
     '''
     fixed schduled purchase for given date list
 
-    params infoobj: info obj
-    params totmoney: float, money value for purchase every time
-    params times: datelist for purchase date, eg ['2017-01-01','2017-07-07',...]
+    :param infoobj: info obj
+    :param totmoney: float, money value for purchase every time
+    :param times: datelist for purchase date, eg ['2017-01-01','2017-07-07',...]
     '''
     def __init__(self, infoobj, totmoney, times):
         start = times[0]

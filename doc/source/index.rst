@@ -8,9 +8,9 @@ Welcome to xalpha's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    quickstart.rst
+   advance.rst
    modules.rst
 
 

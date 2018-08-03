@@ -35,11 +35,11 @@ def _shengoucal(sg, sgf, value, label):
 	Infer the share of buying fund by money input, the rate of fee in the unit of %, 
 		and netvalue of fund
 
-	params sg: positive float, 申购金额
-	params sgf: positive float, 申购费，以％为单位，如 0.15 表示 0.15%
-	params value: positive float, 对应产品的单位净值
-	params label: integer, 1 代表份额正常进行四舍五入， 2 代表份额直接舍去小数点两位之后。金额部分都是四舍五入
-	returns: tuple of two positive float, 净申购金额和申购份额
+	:param sg: positive float, 申购金额
+	:param sgf: positive float, 申购费，以％为单位，如 0.15 表示 0.15%
+	:param value: positive float, 对应产品的单位净值
+	:param label: integer, 1 代表份额正常进行四舍五入， 2 代表份额直接舍去小数点两位之后。金额部分都是四舍五入
+	:returns: tuple of two positive float, 净申购金额和申购份额
 	'''
 	jsg = myround(sg/(1+sgf*1e-2))
 	share = myround(jsg/value, label)
@@ -73,7 +73,7 @@ class basicinfo(indicator):
 	which cannot be directly instantiate, the basic implementation consider 
 	redemption fee as zero when shuhui() function is implemented
 
-	params code: string of code for specific product
+	:param code: string of code for specific product
 	'''
 	def __init__(self, code):
 		self.code = code
@@ -97,7 +97,7 @@ class basicinfo(indicator):
 		'''
 		give the realdate deltacash deltashare tuple based on purchase date and purchase amount
 		
-		returns: three elements tuple, the first is the actual dateobj of commit
+		:returns: three elements tuple, the first is the actual dateobj of commit
 			the second is a negative float for cashin, 
 			the third is a positive float for share increase
 		'''
@@ -109,7 +109,7 @@ class basicinfo(indicator):
 		'''
 		give the cashout considering redemption rates as zero
 		
-		returns: three elements tuple, the first is dateobj
+		:returns: three elements tuple, the first is dateobj
 		the second is a positive float for cashout, 
 		the third is a negative float for share decrease
 		'''
@@ -124,6 +124,9 @@ class basicinfo(indicator):
 		return (row.date, value, -sh)
 	
 	def info(self):
+		'''
+		print basic info on the class
+		'''
 		print("fund name: %s" %self.name)
 		print("fund code: %s" %self.code)
 		print("fund purchase fee: %s%%" %self.rate)
@@ -138,8 +141,8 @@ class fundinfo(basicinfo):
 	'''
 	class for specific fund with basic info and every day values 
 
-	params code: str, 基金六位代码字符
-	params label: integer 1 or 2, 取2表示基金申购时份额直接舍掉小数点两位之后。当基金处于 cons.droplist 名单中时，
+	:param code: str, 基金六位代码字符
+	:param label: integer 1 or 2, 取2表示基金申购时份额直接舍掉小数点两位之后。当基金处于 cons.droplist 名单中时，
 		label 总会被自动设置为2。非名单内基金可以显式令 label=2.
 	'''
 	def __init__(self, code, label = 1):
@@ -225,8 +228,8 @@ class fundinfo(basicinfo):
 		'''
 		give the redemption rate in percent unit based on the days difference between purchase and redemption
 		
-		params day: integer， 赎回与申购时间之差的自然日数
-		returns: float，赎回费率，以％为单位
+		:param day: integer， 赎回与申购时间之差的自然日数
+		:returns: float，赎回费率，以％为单位
 		'''
 		i=-1
 		for seg in self.segment:
@@ -239,7 +242,7 @@ class fundinfo(basicinfo):
 		'''
 		give the cashout based on rem term considering redemption rates
 		
-		returns: three elements tuple, the first is dateobj
+		:returns: three elements tuple, the first is dateobj
 		the second is a positive float for cashout, 
 		the third is a negative float for share decrease
 		'''
@@ -265,7 +268,7 @@ class indexinfo(basicinfo):
 	while netvalue comlumn is normalized to 1 for the start date.
 	In principle, this class can also be used to save stock prices but the price is without adjusted.
 
-	params code: string with seven digitals! note the code here has an extra digit at the beginning,
+	:param code: string with seven digitals! note the code here has an extra digit at the beginning,
 		0 for sh and 1 for sz. 
 	'''
 	def __init__(self, code):
@@ -293,8 +296,8 @@ class cashinfo(basicinfo):
 	'''
 	A virtual class for remaining cash manage: behave like monetary fund
 	
-	params interest: float, daily rate in the unit of 100%, note this is not a year return rate!
-	params start: str of date or dateobj, the virtual starting date of the cash fund
+	:param interest: float, daily rate in the unit of 100%, note this is not a year return rate!
+	:param start: str of date or dateobj, the virtual starting date of the cash fund
 	'''
 	def __init__(self, interest=0.0001, start='2012-01-01'):
 		self.interest = interest

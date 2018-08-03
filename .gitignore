@@ -4,3 +4,5 @@ xaenv
 .pytest_cache
 *.pyc
 doc/build
+demo.ipynb
+.ipynb_checkpoints/

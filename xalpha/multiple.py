@@ -19,9 +19,9 @@ class mul():
 	'''
 	multiple fund positions manage class
 
-	params *fundtradeobj: list of trade obj which you want to analyse together
-	params status: the status table of trade, all code in this table would be considered
-		one must provide one of the two params, if both are offered, status will be overlooked
+	:param *fundtradeobj: list of trade obj which you want to analyse together
+	:param status: the status table of trade, all code in this table would be considered
+		one must provide one of the two paramters, if both are offered, status will be overlooked
 	'''
 	def __init__(self, *fundtradeobj, status=None):
 		if not fundtradeobj: 
@@ -39,7 +39,7 @@ class mul():
 		sum of all the values from one prop of fund daily report, 
 		of coures many of the props make no sense to sum
 		
-		params prop: string defined in the daily report dict, 
+		:param prop: string defined in the daily report dict, 
 			typical one is 'currentvalue' or 'originalvalue'
 		'''
 		res = 0
@@ -110,11 +110,11 @@ class mulfix(mul,indicator):
 	introduce cash to make a closed investment system, where netvalue analysis can be applied
 	namely the totcftable only has one row at the very beginning
 
-	params fundtradeobj: trade obj to be include
-	params status: status table,  if no trade obj is provided, it will include all fund 
+	:param fundtradeobj: trade obj to be include
+	:param status: status table,  if no trade obj is provided, it will include all fund 
 		based on code in status table
-	params totmoney: positive float, the total money as the input at the beginning
-	params cashobj: cashinfo object, which is designed to balance the cash in and out
+	:param totmoney: positive float, the total money as the input at the beginning
+	:param cashobj: cashinfo object, which is designed to balance the cash in and out
 	'''
 	def __init__(self, *fundtradeobj, status = None, totmoney = 100000, cashobj = None):
 		super().__init__(*fundtradeobj, status=status)

@@ -13,19 +13,19 @@ class indicator():
 	MixIn class provide quant indicator tool box which is desinged as interface for mulfix class as well
 	as info class, who are both treated as a single fund with price table of net value.
 	Most of the quant indexes, their name conventions, definitions and calculations are from 
-	https://www.joinquant.com/help/api/help?name=api#%E9%A3%8E%E9%99%A9%E6%8C%87%E6%A0%87.
+	`joinquant <https://www.joinquant.com/help/api/help?name=api#%E9%A3%8E%E9%99%A9%E6%8C%87%E6%A0%87>`_.
 	Make sure first run obj.bcmkset() before you want to use functions in this class.
 	'''
 	def bcmkset(self, infoobj, start=None, riskfree = 0.0371724):
 		'''
 		Once you want to utilize the indicator tool box for analysis, first run bcmkset function to set
 		the benchmark, otherwise most of the functions would raise error.
-		params infoobj: info obj, whose netvalue are used as benchmark
-		params start: datetime obj, indicating the starting date of all analysis.
+		:param infoobj: info obj, whose netvalue are used as benchmark
+		:param start: datetime obj, indicating the starting date of all analysis.
 			Note if use default start, there may be problems for some fundinfo obj, as lots of 
 			funds lack netvalues of several days from our API, resulting unequal length between
 			benchmarks and fund net values.
-		params riskfree: float, annual rate in the unit of 100%, strongly suggest make this value 
+		:param riskfree: float, annual rate in the unit of 100%, strongly suggest make this value 
 			consistent with the interest parameter when instanciate cashinfo() class
 		'''
 		self._pricegenerate()
@@ -53,7 +53,7 @@ class indicator():
 		
 	def comparison(self, date=yesterdayobj):
 		'''
-		returns: tuple of two pd.Dataframe, the first is for aim and the second if for the benchmark index
+		:returns: tuple of two pd.Dataframe, the first is for aim and the second if for the benchmark index
 		all netvalues are normalized and set equal 1.00 on the self.start date
 		'''
 		partp = self.price[self.price['date']<=date]
@@ -70,9 +70,9 @@ class indicator():
 	
 	def annualized_returns(price, start, date=yesterdayobj):
 		'''
-		params price: price table of info().price
-		params start: datetime obj for starting date of calculation
-		params date: datetime obj for ending date of calculation
+		:param price: price table of info().price
+		:param start: datetime obj for starting date of calculation
+		:param date: datetime obj for ending date of calculation
 		'''
 		datediff = (price[price['date']<=date].iloc[-1].date-start).days
 		totreturn = (price[price['date']<=date].iloc[-1].netvalue-price.iloc[0].netvalue)/price.iloc[0].netvalue
@@ -102,7 +102,7 @@ class indicator():
 		correlation coefficient between aim and benchmark values,
 			可以很好地衡量指数基金的追踪效果
 
-		returns: float between -1 and 1
+		:returns: float between -1 and 1
 		'''
 		bcmk = indicator.ratedaily(self.bmprice, date)
 		bt = indicator.ratedaily(self.price, date)
@@ -152,7 +152,7 @@ class indicator():
 		'''
 		visulaization on  netvalue curve
 		
-		params vkwds: parameters for the pyecharts options in line.add(), eg. yaxis_min=0.7
+		:param vkwds: parameters for the pyecharts options in line.add(), eg. yaxis_min=0.7
 		'''
 		a, b = self.comparison(end)
 		xdata = [1 for _ in range(len(a))]

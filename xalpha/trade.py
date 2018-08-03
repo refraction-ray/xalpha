@@ -12,14 +12,14 @@ def xirrcal(cftable, trades, date, guess):
 	'''
 	calculate the xirr rate
 
-	params cftable: cftable (pd.Dateframe) with date and cash column
-	params trades: list [trade1, ...], every item is an trade object, 
+	:param cftable: cftable (pd.Dateframe) with date and cash column
+	:param trades: list [trade1, ...], every item is an trade object, 
 		whose shares would be sold out virtually
-	params date: string of date or datetime object, 
+	:param date: string of date or datetime object, 
 		the date when virtually all holding positions being sold
-	params guess: floating number, a guess at the xirr rate solution to be used 
+	:param guess: floating number, a guess at the xirr rate solution to be used 
 		as a starting point for the numerical solution
-	returns: the IRR as a single floating number
+	:returns: the IRR as a single floating number
 	'''
 	date = convert_date(date)
 	partcftb = cftable[cftable['date']<=date]
@@ -35,13 +35,15 @@ def xirrcal(cftable, trades, date, guess):
 class trade():
 	'''
 	Trade class with fundinfo obj as input and its main attrs are cftable and remtable:
-	cftable: pd.Dataframe, 现金流量表，每行为不同变更日期，三列分别为 date，cash， share，标记对于某个投资标的
+		
+		1. cftable: pd.Dataframe, 现金流量表，每行为不同变更日期，三列分别为 date，cash， share，标记对于某个投资标的
 		现金的进出和份额的变化情况，所有的份额数据为交易当时的不复权数据。基金份额折算通过流量表中一次性的份额增减体现。
-	remtable：pd.Dataframe, 持仓情况表，每行为不同变更日期，两列分别为 date 和 rem， rem 数据结构是一个嵌套的列表，
+		
+		2. remtable：pd.Dataframe, 持仓情况表，每行为不同变更日期，两列分别为 date 和 rem， rem 数据结构是一个嵌套的列表，
 		包含了不同时间买入仓位的剩余情况，详情参见 remain 模块。这一表格如非必需，避免任何直接调用。
 
-	params infoobj: info object as the trading aim
-	params status: status table, obtained from record class
+	:param infoobj: info object as the trading aim
+	:param status: status table, obtained from record class
 	'''
 	def __init__(self, infoobj, status):
 		self.aim = infoobj
@@ -157,7 +159,7 @@ class trade():
 		'''
 		give the xirr rate for all the trade of the aim before date (virtually sold out on date)
 
-		params date: string or obj of datetime, the virtually sell-all date 
+		:param date: string or obj of datetime, the virtually sell-all date 
 		'''
 		return xirrcal(self.cftable,[self], date, guess)
 		
@@ -165,8 +167,8 @@ class trade():
 		'''
 		breif report dict of certain date status on the fund investment
 
-		params date: string or obj of date, show info of the date given
-		returns: empty dict if no share is remaining that date
+		:param date: string or obj of date, show info of the date given
+		:returns: empty dict if no share is remaining that date
 			dict of various data on the trade positions
 		'''
 		date = convert_date(date)
@@ -185,8 +187,8 @@ class trade():
 		'''
 		visualization giving the average cost line together with netvalue line
 
-		params vkwds: keywords options for line.add()
-		returns: pyecharts.line
+		:param vkwds: keywords options for line.add()
+		:returns: pyecharts.line
 		'''
 		funddata = []
 		costdata = []

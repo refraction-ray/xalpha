@@ -31,12 +31,12 @@ def xnpv(rate,cashflows):
 	'''
 	give the current cash value based on future cashflows
 
-	params rate: float, the preset year rate  
-	params cashflows: a list, in which each element is a tuple of the form (date, amount), 
+	:param rate: float, the preset year rate  
+	:param cashflows: a list, in which each element is a tuple of the form (date, amount), 
 		where date is a datetime object and amount is an integer or floating number. 
 		Cash outflows (investments) are represented with negative amounts, 
 		and cash inflows (returns) are positive amounts.
-	returns: a single float value which is the NPV of the given cash flows
+	:returns: a single float value which is the NPV of the given cash flows
 	'''
 	chron_order = sorted(cashflows, key = lambda x: x[0])
 	t0 = chron_order[0][0] 
@@ -46,13 +46,13 @@ def xirr(cashflows,guess=0.1):
 	'''
 	calculate the Internal Rate of Return of a series of cashflows at irregular intervals.
 
-	params cashflows: a list, in which each element is a tuple of the form (date, amount), 
+	:param cashflows: a list, in which each element is a tuple of the form (date, amount), 
 		where date is a datetime object and amount is an integer or floating number. 
 		Cash outflows (investments) are represented with negative amounts, 
 		and cash inflows (returns) are positive amounts.
-	params guess: floating number, a guess at the xirr rate solution to be used 
+	:param guess: floating number, a guess at the xirr rate solution to be used 
 		as a starting point for the numerical solution
-	returns: the IRR as a single floating number
+	:returns: the IRR as a single floating number
 	'''
 	return optimize.newton(lambda r: xnpv(r,cashflows),guess)
 
@@ -60,9 +60,9 @@ def myround(num, label=1):
 	'''
 	correct implementation of round with round half up, round to 2 decimals 
 
-	params num: the floating number, to be rounded
-	params label: integer 1 or 2, 1 for round half up while 2 for always round down
-	returns: the float number after rounding, with two decimals
+	:param num: the floating number, to be rounded
+	:param label: integer 1 or 2, 1 for round half up while 2 for always round down
+	:returns: the float number after rounding, with two decimals
 	'''
 	if label == 1:
 		res = float(Decimal(str(num)).quantize(Decimal('0.01'), rounding='ROUND_HALF_UP'))
@@ -75,8 +75,8 @@ def convert_date(date):
 	'''
 	convert date into datetime object
 
-	params date: string of form '2017-01-01' or datetime object
-	returns: corresponding datetime object
+	:param date: string of form '2017-01-01' or datetime object
+	:returns: corresponding datetime object
 	'''
 	if isinstance(date, str):
 		return pd.Timestamp(date)

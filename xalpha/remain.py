@@ -21,12 +21,12 @@ def copy(remc):
 
 def buy(remc, share, date):
 	'''
-	params remc: array of two-elements arrays, eg [[pd.Timestamp(), 50],[pd.Timestamp(), 30]
+	:param remc: array of two-elements arrays, eg [[pd.Timestamp(), 50],[pd.Timestamp(), 30]
 		the first element in tuple is pandas.Timestamp object for date while the second
 		element is positive float for remaining shares, tuples in rem MUST be time ordered.
-	params share: positive float, only 2 decimal is meaningful.
-	params date: string in the date form or datetime object
-	returns: new rem after the buying
+	:param share: positive float, only 2 decimal is meaningful.
+	:param date: string in the date form or datetime object
+	:returns: new rem after the buying
 	'''
 	rem = copy(remc)
 	share = myround(share)
@@ -44,7 +44,7 @@ def buy(remc, share, date):
 
 def sell(remc, share, date):
 	'''
-	returns: tuple, (sold rem, new rem) 
+	:returns: tuple, (sold rem, new rem) 
 		sold rem is the positions being sold while new rem is the positions being held
 	'''
 	rem = copy(remc)
@@ -76,9 +76,9 @@ def trans(remc, coef, date):
 	'''
 	在基金份额折算时，将之前持有的仓位按现值折算，相当于前复权
 
-	params coef: the factor shown in comment column of fundinfo().price, but with positive value
-	params date: string in date form or datetime obj
-	returns: new rem after converting
+	:param coef: the factor shown in comment column of fundinfo().price, but with positive value
+	:param date: string in date form or datetime obj
+	:returns: new rem after converting
 	'''
 	rem = copy(remc)
 	date = convert_date(date)

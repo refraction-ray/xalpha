@@ -1,5 +1,5 @@
-xalpha
-======
+xalpha  API
+=========
 
 .. toctree::
    :maxdepth: 4
