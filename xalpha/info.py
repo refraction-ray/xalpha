@@ -13,7 +13,6 @@ import csv
 import requests as rq
 from bs4 import BeautifulSoup
 
-
 from xalpha.cons import myround, convert_date, opendate, droplist, yesterday, yesterdaydash
 import xalpha.remain as rm
 from xalpha.indicator import indicator
