@@ -28,5 +28,6 @@ def test_trans():
 	assert str(excinfo.value) ==  _errmsg
 	assert remain.trans(rem, 1.2, '2020-01-01')[2][1] == 12.72
 	assert rem[1][1] == 30
+	assert len(remain.trans([],0,'2018-01-01'))==0
 
 

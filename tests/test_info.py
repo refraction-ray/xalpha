@@ -24,14 +24,15 @@ def test_index():
 	assert zzhb.name == '中证环保'
 	assert zzhb.shengou(100, '2018-01-02')[2]==55.24
 	assert zzhb.shuhui(100,'2016-01-01', [[pd.Timestamp('2017-01-03'),200]])[2] == 0
+	zzhb.info()
 
 def test_fund():
-	zzhl = xa.fundinfo('100032')
-	assert zzhl.fenhongdate[1]  == pd.Timestamp('2011-01-19')
-	zzhl.rate = 0.15
-	zzhl.segment = [[0, 7], [7]]
+	hs300 = xa.fundinfo('000311')
+	assert hs300.fenhongdate[1]  == pd.Timestamp('2017-08-15')
+	hs300.rate = 0.12
+	hs300.segment = [[0, 7], [7, 365], [365, 730], [730]]
 	with pytest.raises(Exception) as excinfo:   
-		zzhl.shuhui(100, '2012-01-04',[[pd.Timestamp('2011-01-03'),200],[pd.Timestamp('2017-01-03'),200]])   
+		hs300.shuhui(100, '2014-01-04',[[pd.Timestamp('2014-01-03'),200],[pd.Timestamp('2017-01-03'),200]])   
 	assert str(excinfo.value) == 'One cannot move share before the lastest operation' 
-	assert zzhl.shuhui(320, '2018-01-01',[[pd.Timestamp('2011-01-03'),200],[pd.Timestamp('2017-12-29'),200]])[1] == 427.9
-
+	assert hs300.shuhui(320, '2018-01-01',[[pd.Timestamp('2011-01-03'),200],[pd.Timestamp('2017-12-29'),200]])[1] == 685.72
+	assert hs300.shengou(200,'2018-07-20')[2] == 105.24

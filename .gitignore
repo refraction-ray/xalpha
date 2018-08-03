@@ -1,3 +1,4 @@
+htmlcov/
 .DS_Store
 __pycache__
 xaenv
@@ -9,3 +10,4 @@ demo.ipynb
 build/
 dist/
 xalpha.egg-info/
+.coverage
