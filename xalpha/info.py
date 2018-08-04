@@ -139,6 +139,8 @@ class basicinfo(indicator):
 class fundinfo(basicinfo):
 	'''
 	class for specific fund with basic info and every day values 
+	所获得的基金净值数据一般截止到昨日。但注意QDII基金的净值数据会截止的更早，因此部分时间默认昨日的函数可能出现问题，
+	处理QDII基金时，需要额外注意。
 
 	:param code: str, 基金六位代码字符
 	:param label: integer 1 or 2, 取2表示基金申购时份额直接舍掉小数点两位之后。当基金处于 cons.droplist 名单中时，

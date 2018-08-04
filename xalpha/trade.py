@@ -203,7 +203,7 @@ class trade():
 		line=Line()
 		line.add('fundvalue',[1 for _ in range(len(funddata))],funddata)
 		line.add('average_cost',[1 for _ in range(len(costdata))],costdata,
-				 is_datazoom_show = True,xaxis_type="time")
+				 is_datazoom_show = True,xaxis_type="time",**vkwds)
 
 		return line
 	
@@ -220,7 +220,7 @@ class trade():
 		
 		line=Line()
 		line.add('totvalue',[1 for _ in range(len(valuedata))],valuedata,
-				 is_datazoom_show = True,xaxis_type="time")
+				 is_datazoom_show = True,xaxis_type="time",**vkwds)
 
 		return line
 

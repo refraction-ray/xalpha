@@ -33,7 +33,7 @@ def test_mul():
 def test_mulfix():
 	tot = xa.mulfix(status=statb,totmoney= 5000)
 	assert tot.v_positions().options['legend'][0]['data'][1]=='富国中证红利指数增强'
-	assert tot.v_positions_history().options['legend'][0]['data'][1]=='广发中债7-10年国开债指数A'
+	assert tot.v_positions_history('2017-01-01').options['legend'][0]['data'][-1]=='货币基金'
 
 def test_policy():
 	allin = xa.policy.buyandhold(cm, '2015-06-01')

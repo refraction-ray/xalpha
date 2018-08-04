@@ -8,3 +8,11 @@ xalpha
 ## Documentation
 
 文档地址： https://xalpha.readthedocs.io/. 
+
+## Installation
+
+```bash
+pip install xalpha
+```
+
+目前仅支持 python 3 。

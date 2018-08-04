@@ -19,9 +19,10 @@ class record():
 		其中0.005对应全部赎回，线性类推。eg. 0.001对应赎回20%。
 
 	:param path: string for the csv file path
+	:param **readkwds: keywords options for pandas.read_csv() function. eg. skiprows=1, skipfooter=2
 	'''
-	def __init__(self, path='input.csv'):
-		df = pd.read_csv(path)
+	def __init__(self, path='input.csv', **readkwds):
+		df = pd.read_csv(path, **readkwds)
 		df.date=[pd.Timestamp.strptime(str(int(df.iloc[i].date)),"%Y%m%d") for i in range(len(df))]
 		df.fillna(0, inplace=True)
 		self.status = df
