@@ -4,7 +4,7 @@ module for trade class
 '''
 import datetime as dt
 import pandas as pd
-from pyecharts import Line
+from pyecharts import Line, Bar
 import xalpha.remain as rm
 from xalpha.cons import convert_date, xirr, myround, yesterdayobj
 
@@ -183,10 +183,35 @@ class trade():
 					'returnrate': round((currentcash/totinput-1)*100,4), 'currentshare': currentshare, 
 					'unitcost': round(totinput/currentshare,4)}
 	
+	def vtradevolume(cftable, **vkwds):
+		'''
+		aid function on visualization of trade summary
+		
+		:param cftable: cftable (pandas.DataFrame) with at least date and cash columns
+		:param **vkwds: keyword argument for pyecharts Bar.add()
+		:returns: the Bar object
+		'''
+		selldata=[[row['date'],row['cash']] for _,row in cftable.iterrows() if row['cash']>0]
+		buydata=[[row['date'],row['cash']] for _,row in cftable.iterrows() if row['cash']<0]
+		bar = Bar()
+		bar.add('买入',[0 for _ in range(len(buydata))],buydata,xaxis_type='time',bar_category_gap='35%')
+		bar.add('卖出',[0 for _ in range(len(selldata))],selldata,xaxis_type='time', is_datazoom_show=True,bar_category_gap='35%', **vkwds)
+		bar
+		return bar
+
+	def v_tradevolume(self, **vkwds):
+		'''
+		visualization on trade summary
+
+		:param **vkwds: keyword argument for pyecharts Bar.add()
+		:returns: pyecharts.bar
+		'''
+		return trade.vtradevolume(self.cftable, **vkwds)
+
 	def v_tradecost(self,end=yesterdayobj,**vkwds):
 		'''
 		visualization giving the average cost line together with netvalue line
-
+		
 		:param vkwds: keywords options for line.add()
 		:returns: pyecharts.line
 		'''

@@ -18,7 +18,7 @@ import xalpha.remain as rm
 from xalpha.indicator import indicator
 
 
-def _download(url, tries=3):
+def _download(url, tries=5):
 	for count in range(tries):
 		try:
 			page = rq.get(url)

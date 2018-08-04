@@ -12,6 +12,8 @@ def test_trade():
 	assert cm_t.cftable.loc[2,'share'] == -129.14
 	assert round(cm_t.xirrrate('2018-03-03'),3)== -0.24
 	assert cm_t.dailyreport('2018-07-29')['unitcost'] == 1.346
+	cm_t.v_tradecost('2018-08-01')
+	cm_t.v_totvalue('2018-07-31')
 
 def test_mul():
 	with pytest.raises(Exception) as excinfo:   
@@ -29,11 +31,13 @@ def test_mul():
 	assert round(cm_m.total_return('2018-07-01'),3) == -0.209
 	assert round(cm_m.benchmark_volatility('2018-07-22'),3) == 0.192
 	assert round(cm_m.max_drawdown('2018-08-01')[2],2) == -0.24
+	cm_m.v_tradevolume()
 
 def test_mulfix():
 	tot = xa.mulfix(status=statb,totmoney= 5000)
 	assert tot.v_positions().options['legend'][0]['data'][1]=='富国中证红利指数增强'
 	assert tot.v_positions_history('2017-01-01').options['legend'][0]['data'][-1]=='货币基金'
+	assert tot.combsummary('2018-08-04').iloc[-1]['基金收益率'] == 2.1862
 
 def test_policy():
 	allin = xa.policy.buyandhold(cm, '2015-06-01')

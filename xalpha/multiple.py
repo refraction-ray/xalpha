@@ -47,7 +47,38 @@ class mul():
 			res += fund.dailyreport(date).get(prop, 0)
 		return res
 	
-	
+	def combsummary(self, date=yesterdayobj):
+		'''
+		brief report table of every funds and the combination investment
+
+		:param date: string or obj of date, show info of the date given
+		:returns: empty dict if nothing is remaining that date
+			dict of various data on the trade positions
+		'''
+		date = convert_date(date)
+		name = []
+		code = []
+		cuva = []
+		orva = []
+		rera = []
+		for fund in self.fundtradeobj:
+			name.append(fund.aim.name)
+			code.append(fund.aim.code)
+			res = fund.dailyreport(date)
+			cuva.append(res.get('currentvalue',0))
+			orva.append(res.get('originalvalue',0))
+			rera.append(res.get('returnrate',0))
+		totcuva = sum(cuva)
+		totorva = sum(orva)
+		cuva.append(totcuva)
+		orva.append(totorva)
+		name.append('总计')
+		code.append('xxxxxx')
+		totrera = round((cuva[-1]/orva[-1]-1)*100,4)
+		rera.append(totrera)
+		df = pd.DataFrame(data={'基金名称':name,'基金代码':code,'基金现值':cuva,'基金成本':orva,'基金收益率':rera})
+		return df
+
 	def _mergecftb(self):
 		'''
 		merge the different cftable for different funds into one table
@@ -73,7 +104,8 @@ class mul():
 		xirr rate evauation of the whole invest combination
 		'''
 		return xirrcal(self.totcftable, self.fundtradeobj, date, guess)
-	
+
+
 	def v_positions(self, date=yesterdayobj, **vkwds):
 		'''
 		pie chart visulization of positions ratio in combination
@@ -103,6 +135,15 @@ class mul():
 		tr.add([foj.aim.name for foj in self.fundtradeobj], tdata, is_datazoom_show=True,
 			   is_label_show=False,legend_top="0%",legend_orient='horizontal', **vkwds)
 		return tr
+
+	def v_tradevolume(self, **vkwds):
+		'''
+		visualization on trade summary of the funds combination
+
+		:param **vkwds: keyword argument for pyecharts Bar.add()
+		:returns: pyecharts.bar
+		'''
+		return trade.vtradevolume(self.totcftable, **vkwds)
 
 
 class mulfix(mul,indicator):
