@@ -87,9 +87,9 @@ class basicinfo(indicator):
 		set self. name rate and price (dataframe) as well as other necessary attr of info()
 		'''
 		# below lines are just showcase, this function must be rewrite by child classes
-		self.name = 'unknown'
-		self.rate = 0
-		self.price = pd.DataFrame(data={'date':[],'netvalue':[],'comment':[]})
+		# self.name = 'unknown'
+		# self.rate = 0
+		# self.price = pd.DataFrame(data={'date':[],'netvalue':[],'comment':[]})
 		raise NotImplementedError
 		
 	def shengou(self, value, date):

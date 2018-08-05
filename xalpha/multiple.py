@@ -96,7 +96,8 @@ class mul():
 		for date in nndtlist:
 			reslist.append(sum([item[1] for item in dtlist if item[0]==date]))
 		df = pd.DataFrame(data={'date':nndtlist,'cash': reslist})
-
+		df = df[df['cash']!=0]
+		df = df.reset_index(drop=True)
 		return df
 	
 	def xirrrate(self, date=yesterdayobj, guess=0.1):
@@ -168,7 +169,7 @@ class mulfix(mul,indicator):
 		self.fundtradeobj = list(self.fundtradeobj)
 		self.fundtradeobj.append(cashtrade)
 		self.fundtradeobj = tuple(self.fundtradeobj)
-		inputl = [-sum(self.totcftable.loc[:i,'cash']) for i in range(len(self.totcftable))]
+		inputl = [-sum(self.totcftable.iloc[:i].cash) for i in range(1,len(self.totcftable)+1)]
 		if max(inputl)>totmoney:
 			raise Exception('the initial total cash is too low')
 		self.totcftable = pd.DataFrame(data={'date': [nst.iloc[0].date], 'cash':[-totmoney]})
@@ -189,6 +190,7 @@ class mulfix(mul,indicator):
 				cashl.append(delta)
 		datadict = {'date':totcftable.loc[:,'date'],'mf':cashl}
 		return pd.DataFrame(data=datadict)
+
 	
 	def dailyreport(self, date=yesterdayobj):
 		'''

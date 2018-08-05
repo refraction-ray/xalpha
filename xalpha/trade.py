@@ -183,7 +183,7 @@ class trade():
 					'returnrate': round((currentcash/totinput-1)*100,4), 'currentshare': currentshare, 
 					'unitcost': round(totinput/currentshare,4)}
 	
-	def vtradevolume(cftable, **vkwds):
+	def vtradevolume(cftable, bar_category_gap='35%', **vkwds):
 		'''
 		aid function on visualization of trade summary
 		
@@ -194,8 +194,8 @@ class trade():
 		selldata=[[row['date'],row['cash']] for _,row in cftable.iterrows() if row['cash']>0]
 		buydata=[[row['date'],row['cash']] for _,row in cftable.iterrows() if row['cash']<0]
 		bar = Bar()
-		bar.add('买入',[0 for _ in range(len(buydata))],buydata,xaxis_type='time',bar_category_gap='35%')
-		bar.add('卖出',[0 for _ in range(len(selldata))],selldata,xaxis_type='time', is_datazoom_show=True,bar_category_gap='35%', **vkwds)
+		bar.add('买入',[0 for _ in range(len(buydata))],buydata, xaxis_type='time', bar_category_gap=bar_category_gap)
+		bar.add('卖出',[0 for _ in range(len(selldata))],selldata, xaxis_type='time', is_datazoom_show=True,bar_category_gap=bar_category_gap, **vkwds)
 		bar
 		return bar
 
@@ -211,7 +211,7 @@ class trade():
 	def v_tradecost(self,end=yesterdayobj,**vkwds):
 		'''
 		visualization giving the average cost line together with netvalue line
-		
+
 		:param vkwds: keywords options for line.add()
 		:returns: pyecharts.line
 		'''
@@ -234,7 +234,7 @@ class trade():
 	
 	def v_totvalue(self,end=yesterdayobj,**vkwds):
 		'''
-		visualization on the total values change of the aim 
+		visualization on the total values daily change of the aim 
 		'''
 		valuedata = []
 		partp = self.aim.price[self.aim.price['date']>=self.cftable.iloc[0].date]

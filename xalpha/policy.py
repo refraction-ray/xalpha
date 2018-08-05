@@ -23,8 +23,8 @@ class policy():
         self.end = self.price.iloc[-1].date
         datel = []
         actionl = []
-        for i, row in self.price.iterrows():
-            date = row['date']
+        times = pd.date_range(self.start,self.end)
+        for date in times:
             action = self.status_gen(date)
             if action>0:
                 datel.append(date)
@@ -80,4 +80,26 @@ class scheduled(policy):
             return self.totmoney
         else:
             return 0
-                
+
+class scheduled_tune(scheduled):
+    '''
+    定期不定额的方式进行投资，基于点数分段进行投资
+    '''
+    def __init__(self, infoobj, totmoney, times, piece):
+        '''
+        :param piece: list of tuples, eg.[(1000,2),(2000,1.5)]. It means when the fund netvalue 
+            is small than some value, we choose to buy multiple times the totmoney. In this example,
+            if the netvalue is larger than 2000, then no purchase happen at all.
+        '''
+        self.piece = piece
+        super().__init__(infoobj, totmoney, times)
+
+    def status_gen(self, date):
+        if date in self.times:
+            value = self.price[self.price['date']>=date].iloc[0].netvalue
+            for term in self.piece:
+                if value<=term[0]:
+                    return term[1]*self.totmoney
+            return 0
+        else:
+            return 0
