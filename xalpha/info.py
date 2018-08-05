@@ -189,7 +189,9 @@ class fundinfo(basicinfo):
 		self.name = name.value.strip('"') # the name of the fund
 		assert len(infodict['date'])!=0 # to be deleted
 		df = pd.DataFrame(data=infodict)
+		assert len(df)!=0
 		df = df[df['date'].isin(opendate)]
+		assert len(df)!=0
 		df = df.reset_index(drop=True)
 		self.price = df
 		
