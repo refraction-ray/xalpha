@@ -187,8 +187,10 @@ class fundinfo(basicinfo):
 		
 		self.rate = float(rate.value.strip('"')) # shengou rate in tiantianjijin, daeshengou rate discount is not considered
 		self.name = name.value.strip('"') # the name of the fund
+		assert len(infodict['date'])!=0 # to be deleted
 		df = pd.DataFrame(data=infodict)
 		df = df[df['date'].isin(opendate)]
+		df = df.reset_index(drop=True)
 		self.price = df
 		
 	def _feepreprocess(self):
@@ -288,6 +290,7 @@ class indexinfo(basicinfo):
 			 'comment': [0 for _ in range(len(my_list)-1)]} 
 		index = pd.DataFrame(data=dd)
 		index = index.iloc[::-1]
+		index = index.reset_index(drop=True)
 		self.price = index[index['date'].isin(opendate)]
 		self.name = my_list[-1][2]
 		self.rate = 0
