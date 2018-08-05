@@ -1,4 +1,5 @@
 htmlcov/
+doc.ipynb
 .DS_Store
 __pycache__
 xaenv
