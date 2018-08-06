@@ -190,10 +190,7 @@ class fundinfo(basicinfo):
 		self.rate = float(rate.value.strip('"')) # shengou rate in tiantianjijin, daeshengou rate discount is not considered
 		self.name = name.value.strip('"') # the name of the fund
 		df = pd.DataFrame(data=infodict)
-		# raise Exception('%s'%df) # to be deleted
-
 		df = df[df['date'].isin(opendate)] 
-		assert len(df)!=0 # to be deleted
 		df = df.reset_index(drop=True)
 		self.price = df
 		
