@@ -191,10 +191,7 @@ class fundinfo(basicinfo):
 		
 		assert len(df)!=0 # to be deleted
 		assert len(opendate)>6000  # to be deleted
-		dft = df[df['date'].isin(['2018-08-03'])]  # to be deleted
-		assert len(dft) == 1 # to be deleted
-		dft = df[df['date'].isin(opendate[-300:-100])] # to be deleted
-		assert len(dft)!=0 # to be deleted
+		raise Exception('%s'%df) # to be deleted
 
 		df = df[df['date'].isin(opendate)]
 		assert len(df)!=0 # to be deleted

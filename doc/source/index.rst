@@ -12,7 +12,6 @@ Welcome to xalpha's documentation!
    quickstart.rst
    advance.rst
    modules.rst
-   doc.ipynb
 
 
 
