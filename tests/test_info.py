@@ -30,7 +30,6 @@ def test_fund():
 	hs300 = xa.fundinfo('000311')
 	assert hs300.label == 2
 	assert hs300.name == '景顺长城沪深300增强' 
-	assert len(hs300.price)>1 # to be deleted
 	assert hs300.fenhongdate[1]  == pd.Timestamp('2017-08-15')
 	hs300.rate = 0.12
 	hs300.segment = [[0, 7], [7, 365], [365, 730], [730]]
