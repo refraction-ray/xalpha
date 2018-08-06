@@ -2,9 +2,12 @@
 # Changelog
 
 ## unreleased
+
+## v0.0.3 - 2018.08.06
 ### added
 * 增加基于现金流量表的成交量柱形图可视化
 * 增加 mul 类的 combsummary 展示总结函数
+* policy 增加了可以定期不定额投资的 scheduled_tune 类
 
 ### fixed
 * 可视化函数绘图关键词传入的修正
