@@ -172,8 +172,10 @@ class fundinfo(basicinfo):
 			if isinstance(node, ast.VarStatement) and node.children()[0].children()[0].value=='Data_netWorthTrend'][0]
 		nodetot = [node.children()[0].children()[1] for node in nodevisitor.visit(tree)
 			if isinstance(node, ast.VarStatement) and node.children()[0].children()[0].value=='Data_ACWorthTrend'][0]
-		
-		infodict = {"date":[dt.datetime.fromtimestamp(int(nodenet.children()[i].children()[0].right.value)/1e3) 
+		## timestamp transform tzinfo must be taken into consideration
+		tz_bj = dt.timezone(dt.timedelta(hours=8))
+
+		infodict = {"date":[dt.datetime.fromtimestamp(int(nodenet.children()[i].children()[0].right.value)/1e3, tz=tz_bj).replace(tzinfo=None) 
 					 for i in range(len(nodenet.children()))],
 			  "netvalue":[float(nodenet.children()[i].children()[1].right.value) for i in range(len(nodenet.children()))],
 			  "comment": [_nfloat(nodenet.children()[i].children()[3].right.value) for i in range(len(nodenet.children()))],
@@ -188,12 +190,9 @@ class fundinfo(basicinfo):
 		self.rate = float(rate.value.strip('"')) # shengou rate in tiantianjijin, daeshengou rate discount is not considered
 		self.name = name.value.strip('"') # the name of the fund
 		df = pd.DataFrame(data=infodict)
-		
-		assert len(df)!=0 # to be deleted
-		assert len(opendate)>6000  # to be deleted
-		raise Exception('%s'%df) # to be deleted
+		# raise Exception('%s'%df) # to be deleted
 
-		df = df[df['date'].isin(opendate)]
+		df = df[df['date'].isin(opendate)] 
 		assert len(df)!=0 # to be deleted
 		df = df.reset_index(drop=True)
 		self.price = df

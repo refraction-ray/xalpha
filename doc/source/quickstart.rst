@@ -23,7 +23,6 @@ xalpha 可以用来对场外基金和指数进行方便的追踪和研究，
 	fund code: 000968
 	fund purchase fee: 0.12%
 	fund redemption fee info: ['小于7天', '1.50%', '大于等于7天，小于1年', '0.50%', '大于等于1年，小于2年', '0.30%', '大于等于2年', '0.00%']
-	>>> zzyl.price # return pandas.DataFrame object with columns date, netvalue, totalvalue and comment
 	>>> zzyl.price[zzyl.price['date']<='2015-02-27']
 	comment	date	netvalue	totvalue
 	0	0	2015-02-13	1.0000	1.0000
