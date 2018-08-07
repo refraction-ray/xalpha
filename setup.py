@@ -21,7 +21,7 @@ setuptools.setup(
         'tushare>=1.0.5',
         'scipy',
         'requests',
-        'pyecharts==0.5.5',
+        'pyecharts>=0.5.5',
         'beautifulsoup4'],
     tests_require=['pytest'],
     classifiers=(

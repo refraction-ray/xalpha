@@ -10,6 +10,7 @@ Welcome to xalpha's documentation!
    :maxdepth: 2
 
    quickstart.rst
+   demo.rst
    advance.rst
    modules.rst
 
