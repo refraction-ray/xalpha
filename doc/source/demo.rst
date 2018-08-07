@@ -13,3 +13,8 @@
 *	单只基金交易的分析： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/trade.ipynb>`_
 
 *	多只基金交易组合的管理分析： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/mul.ipynb>`_
+
+*	简单的基金策略生成与回测： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/policy.ipynb>`_
+
+研究案例
+-----------

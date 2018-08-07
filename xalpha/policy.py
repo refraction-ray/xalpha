@@ -4,8 +4,9 @@ modules for policy making: generate status table for backtesting
 '''
 import pandas as pd
 from xalpha.cons import yesterdaydash
+from xalpha.record import record
 
-class policy():
+class policy(record):
     '''
     base class for policy making, self.status to get the generating status table
 
@@ -32,7 +33,7 @@ class policy():
             elif action<0:
                 datel.append(date)
                 actionl.append(action*0.005)
-        df = pd.DataFrame(data={'date':datel,self.aim.code:actionl})
+        df = pd.DataFrame(data={'date':datel, self.aim.code:actionl})
         self.status = df
         
     def status_gen(self, date):

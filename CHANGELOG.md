@@ -2,6 +2,8 @@
 # Changelog
 
 ## unreleased
+### added
+* 更直接的一键虚拟清仓功能添加到 record 类，并将具有 status 的类都视为带有 record 的 MixIn
 
 ## v0.0.3 - 2018.08.06
 ### added

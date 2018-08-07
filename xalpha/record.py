@@ -3,6 +3,7 @@
 module for status table IO
 '''
 import pandas as pd
+from xalpha.cons import convert_date, yesterdayobj
 
 class record():
 	'''
@@ -26,3 +27,25 @@ class record():
 		df.date=[pd.Timestamp.strptime(str(int(df.iloc[i].date)),"%Y%m%d") for i in range(len(df))]
 		df.fillna(0, inplace=True)
 		self.status = df
+
+	def sellout(self, date=yesterdayobj, ratio=1):
+		'''
+		Sell all the funds in the same ratio on certain day, it is a virtual process, 
+		so it can happen before the last action exsiting in the cftable, by sell out earlier,
+		it means all actions behind vanish. The status table in self.status would be directly changed.
+
+		:param date: string or datetime obj of the selling date
+		:param ratio: float between 0 to 1, the ratio of selling for each funds
+		'''
+		date = convert_date(date)
+		s = self.status[self.status['date']<=date]
+		row = []
+		ratio = ratio*0.005
+		for term in s.columns:
+		    if term!='date':
+		        row.append(-ratio)
+		    else:
+		        row.append(date)
+		s = s.append(pd.DataFrame([row], columns=s.columns),ignore_index=True)
+		self.status = s
+

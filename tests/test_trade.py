@@ -2,6 +2,7 @@ import sys
 sys.path.insert(0, "../")
 import xalpha as xa
 import pytest
+import pandas as pd
 
 path = 'demo.csv'
 cm = xa.fundinfo('164818')
@@ -39,10 +40,21 @@ def test_mulfix():
 	assert tot.v_positions_history('2017-01-01').options['legend'][0]['data'][-1]=='货币基金'
 	assert tot.combsummary('2018-08-04').iloc[-1]['基金收益率'] == 2.1862
 
-def test_policy():
+def test_policy_buyandhold():
 	allin = xa.policy.buyandhold(cm, '2015-06-01')
 	cm_t2 = xa.trade(cm,allin.status)
 	cm_m2 = xa.mulfix(cm_t2)
 	cm_m2.bcmkset(xa.indexinfo('1399971'))
 	assert round(cm_m2.correlation_coefficient('2018-07-01'),3) == 0.980
 	assert round(cm_m2.information_ratio('2016-07-01'),3) == -0.385
+	allin.sellout('2018-06-01')
+	cm_t2 = xa.trade(cm,allin.status)
+	assert round(cm_t2.xirrrate(guess=-0.9),2) == -0.33
+
+def test_policy_scheduled():
+	auto = xa.policy.scheduled(cm, 1000, pd.date_range('2015-07-01','2018-07-01',freq='W-THU'))
+	cm_t3 = xa.trade(cm, auto.status)
+	assert round(cm_t3.dailyreport('2018-08-03')['returnrate'],2 )== -42.07
+	auto2 = xa.policy.scheduled_tune(cm, 1000, pd.date_range('2015-07-01','2018-07-01',freq='M'),
+                                [(0.9,2),(1.2,1)]) 
+
