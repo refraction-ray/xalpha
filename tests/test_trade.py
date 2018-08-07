@@ -27,7 +27,7 @@ def test_mul():
 	cm_m.bcmkset(xa.indexinfo('1399971'),start='2016-09-28')
 	assert round(cm_m.xirrrate('2018-07-29'),3) == -0.129
 	assert round(cm_m.sharpe('2018-07-30'),3) == -1.734
-	assert round(cm_m.v_netvalue().options['series'][0]['data'][1][1],4) == 1.0015
+	cm_m.v_netvalue(benchmark=False)
 	assert round(cm_m.total_return('2018-07-01'),3) == -0.209
 	assert round(cm_m.benchmark_volatility('2018-07-22'),3) == 0.192
 	assert round(cm_m.max_drawdown('2018-08-01')[2],2) == -0.24
