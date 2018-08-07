@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-module for implementation of indicator class
+module for implementation of indicator class, which is designed as MinIn for systems with netvalues
 '''
 
 import pandas as pd

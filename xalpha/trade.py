@@ -183,16 +183,34 @@ class trade():
 					'returnrate': round((currentcash/totinput-1)*100,4), 'currentshare': currentshare, 
 					'unitcost': round(totinput/currentshare,4)}
 	
-	def vtradevolume(cftable, bar_category_gap='35%', **vkwds):
+	def vtradevolume(cftable, freq='D', bar_category_gap='35%', **vkwds):
 		'''
 		aid function on visualization of trade summary
 		
 		:param cftable: cftable (pandas.DataFrame) with at least date and cash columns
+		:param freq: one character string, frequency label, now supporting D for date, 
+			W for week and M for month, namely the trade volume is shown based on the time unit
 		:param **vkwds: keyword argument for pyecharts Bar.add()
 		:returns: the Bar object
 		'''
-		selldata=[[row['date'],row['cash']] for _,row in cftable.iterrows() if row['cash']>0]
-		buydata=[[row['date'],row['cash']] for _,row in cftable.iterrows() if row['cash']<0]
+		if freq == 'D':
+			selldata=[[row['date'],row['cash']] for _,row in cftable.iterrows() if row['cash']>0]
+			buydata=[[row['date'],row['cash']] for _,row in cftable.iterrows() if row['cash']<0]
+		elif freq == 'W':
+			cfmerge = cftable.groupby([cftable['date'].dt.year,cftable['date'].dt.week])['cash'].sum()
+			selldata = [[dt.datetime.strptime(str(a)+'1','(%Y, %W)%w'), b] \
+			for a,b in cfmerge.iteritems() if b>0]
+			buydata = [[dt.datetime.strptime(str(a)+'1','(%Y, %W)%w'), b] \
+			for a,b in cfmerge.iteritems() if b<0]
+		elif freq == 'M':
+			cfmerge = cftable.groupby([cftable['date'].dt.year,cftable['date'].dt.month])['cash'].sum()
+			selldata = [[dt.datetime.strptime(str(a),'(%Y, %m)'), b] \
+			for a,b in cfmerge.iteritems() if b>0]
+			buydata = [[dt.datetime.strptime(str(a),'(%Y, %m)'), b] \
+			for a,b in cfmerge.iteritems() if b<0]
+		else:
+			raise Exception('no such freq tag supporting')
+
 		bar = Bar()
 		bar.add('买入',[0 for _ in range(len(buydata))],buydata, xaxis_type='time', bar_category_gap=bar_category_gap)
 		bar.add('卖出',[0 for _ in range(len(selldata))],selldata, xaxis_type='time', is_datazoom_show=True,bar_category_gap=bar_category_gap, **vkwds)
@@ -203,7 +221,8 @@ class trade():
 		'''
 		visualization on trade summary
 
-		:param **vkwds: keyword argument for pyecharts Bar.add()
+		:param **vkwds: keyword argument for pyecharts Bar.add(), and freq= label, 
+			please ref to the API of trade.vtradevolume function
 		:returns: pyecharts.bar
 		'''
 		return trade.vtradevolume(self.cftable, **vkwds)

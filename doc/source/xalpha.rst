@@ -69,10 +69,3 @@ xalpha.trade module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: xalpha
-    :members:
-    :undoc-members:
-    :show-inheritance:

@@ -15,6 +15,7 @@ def test_trade():
 	assert cm_t.dailyreport('2018-07-29')['unitcost'] == 1.346
 	cm_t.v_tradecost('2018-08-01')
 	cm_t.v_totvalue('2018-07-31')
+	cm_t.v_tradevolume(freq='M')
 
 def test_mul():
 	with pytest.raises(Exception) as excinfo:   
@@ -54,6 +55,7 @@ def test_policy_buyandhold():
 def test_policy_scheduled():
 	auto = xa.policy.scheduled(cm, 1000, pd.date_range('2015-07-01','2018-07-01',freq='W-THU'))
 	cm_t3 = xa.trade(cm, auto.status)
+	cm_t3.v_tradevolume(freq='W')
 	assert round(cm_t3.dailyreport('2018-08-03')['returnrate'],2 )== -42.07
 	auto2 = xa.policy.scheduled_tune(cm, 1000, pd.date_range('2015-07-01','2018-07-01',freq='M'),
                                 [(0.9,2),(1.2,1)]) 
