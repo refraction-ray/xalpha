@@ -8,4 +8,6 @@
 基本用法
 -----------
 
-基金和指数信息的获取与分析： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/doc.ipynb>`_
+*	基金和指数信息的获取与分析： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/info.ipynb>`_
+
+*	单只基金交易的分析： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/trade.ipynb>`_
