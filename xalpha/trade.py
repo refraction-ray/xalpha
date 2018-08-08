@@ -94,7 +94,7 @@ class trade():
 															  or ((lastdate in recorddate) 
 																  and (self.status[self.status['date']==lastdate].loc[:,code].any() == 0) ))):
 				lastdate += pd.Timedelta(1, unit='d')
-				if (lastdate - yesterdayobj).days>1:
+				if (lastdate - yesterdayobj).days>=1:
 					raise Exception("no other info to be add into cashflow table")
 			date = lastdate
 			label = 0

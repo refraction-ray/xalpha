@@ -19,7 +19,7 @@
 研究案例
 -----------
 
-*	基金A类C类份额对比
+*	基金A类C类份额对比： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/ACshare.ipynb>`_
 
 *	基金指数增强效果研究
 
