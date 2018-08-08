@@ -5,12 +5,10 @@ module for mul and mulfix class: fund combination management
 
 import pandas as pd
 from pyecharts import  Pie, ThemeRiver
-from xalpha.trade import xirrcal, trade
+from xalpha.trade import xirrcal, vtradevolume, bottleneck, turnoverrate, trade
 from xalpha.indicator import indicator
 from xalpha.info import cashinfo, fundinfo
 from xalpha.cons import yesterdayobj, yesterdaydash, myround, convert_date
-
-
 
 
 
@@ -64,6 +62,8 @@ class mul():
 		erva = []
 		etre = []
 		rera = []
+		btnk = []
+		tort = []
 		for fund in self.fundtradeobj:
 			name.append(fund.aim.name)
 			code.append(fund.aim.code)
@@ -74,6 +74,8 @@ class mul():
 			erva.append(res.get('earnedvalue',0))
 			etre.append(res.get('estimatedreturn',0))
 			rera.append(res.get('returnrate',0))
+			btnk.append(res.get('maxinput',0))
+			tort.append(res.get('turnoverrate',0))
 		totcuva = sum(cuva)
 		totorpu = sum(orpu)
 		totorco = sum(orco)
@@ -86,10 +88,14 @@ class mul():
 		erva.append(toterva)
 		name.append('总计')
 		code.append('xxxxxx')
-		totrera = round(((cuva[-1]+erva[-1])/orpu[-1]-1)*100,4)
+		totbtnk = bottleneck(self.totcftable[self.totcftable['date']<=date])
+		btnk.append(totbtnk)
+		totrera = round(((cuva[-1]+erva[-1]-orpu[-1])/totbtnk)*100,4)
 		rera.append(totrera)
-		data = {'基金名称':name,'基金代码':code,'基金现值':cuva,'基金总申购':orpu,
-			'基金持有成本':orco,'基金了结收入':erva,'基金收益总额':etre,'投资收益率':rera}
+		tottort = turnoverrate(self.totcftable[self.totcftable['date']<=date],date)
+		tort.append(tottort) # 计算的是总系统作为整体和外界的换手率，而非系统各成分之间的换手率
+		data = {'基金名称':name,'基金代码':code,'基金现值':cuva,'基金总申购':orpu,'历史最大占用':btnk,
+			'基金持有成本':orco,'基金分红与赎回':erva,'换手率': tort,'基金收益总额':etre,'投资收益率':rera}
 		df = pd.DataFrame(data,columns=data.keys())
 		return df
 
@@ -125,7 +131,7 @@ class mul():
 		'''
 		pie chart visulization of positions ratio in combination
 		'''
-		sdata=sorted([(fob.aim.name,fob.dailyreport(date).get('currentvalue',0)) for fob in self.fundtradeobj],
+		sdata=sorted([(fob.aim.name,fob.briefdailyreport(date).get('currentvalue',0)) for fob in self.fundtradeobj],
 					 key= lambda x:x[1], reverse=True)
 		sdata1 = [item[0] for item in sdata ]
 		sdata2 = [item[1] for item in sdata ]
@@ -143,7 +149,7 @@ class mul():
 		times = pd.date_range(start, end)
 		tdata = []
 		for date in times:
-			sdata=sorted([(date,fob.dailyreport(date).get('currentvalue',0),fob.aim.name) 
+			sdata=sorted([(date,fob.briefdailyreport(date).get('currentvalue',0),fob.aim.name) 
 						  for fob in self.fundtradeobj], key= lambda x:x[1], reverse=True)
 			tdata.extend(sdata)
 		tr = ThemeRiver()
@@ -158,7 +164,7 @@ class mul():
 		:param **vkwds: keyword argument for pyecharts Bar.add()
 		:returns: pyecharts.bar
 		'''
-		return trade.vtradevolume(self.totcftable, **vkwds)
+		return vtradevolume(self.totcftable, **vkwds)
 
 
 class mulfix(mul,indicator):
@@ -183,8 +189,9 @@ class mulfix(mul,indicator):
 		self.fundtradeobj = list(self.fundtradeobj)
 		self.fundtradeobj.append(cashtrade)
 		self.fundtradeobj = tuple(self.fundtradeobj)
-		inputl = [-sum(self.totcftable.iloc[:i].cash) for i in range(1,len(self.totcftable)+1)]
-		if max(inputl)>totmoney:
+		# inputl = [-sum(self.totcftable.iloc[:i].cash) for i in range(1,len(self.totcftable)+1)]
+		btnk = bottleneck(self.totcftable)
+		if btnk>totmoney:
 			raise Exception('the initial total cash is too low')
 		self.totcftable = pd.DataFrame(data={'date': [nst.iloc[0].date], 'cash':[-totmoney]})
 		
@@ -208,11 +215,11 @@ class mulfix(mul,indicator):
 	
 	def dailyreport(self, date=yesterdayobj):
 		'''
-		daily info brief review based on the investment combination
+		daily info brief review based on the investment combination, behave as a fund
 		'''
 		date = convert_date(date)
 		currentcash = self.tot('currentvalue',date)
 		value = currentcash/self.totmoney
 		return {'date':date, 'unitvalue': value,'currentvalue': currentcash, 'originalpurchase':self.totmoney,
-			   'returnrate': round((currentcash/self.totmoney-1)*100,4), 'estimatedreturn':currentcash-self.totmoney,
-			   'originalcost':self.totmoney, 'earnedvalue':0 ,'currentshare':self.totmoney, 'unitcost': 1.00}
+				'returnrate': round((currentcash/self.totmoney-1)*100,4), 'estimatedreturn':currentcash-self.totmoney,
+				'currentshare':self.totmoney, 'unitcost': 1.00}

@@ -28,9 +28,73 @@ def xirrcal(cftable, trades, date, guess):
 	cashflow = [(row['date'],row['cash']) for i, row in partcftb.iterrows()]
 	rede = 0
 	for fund in trades:
-		rede += fund.aim.shuhui(fund.dailyreport(date).get('currentshare',0), date, fund.remtable[fund.remtable['date']<=date].iloc[-1].rem)[1]
+		rede += fund.aim.shuhui(fund.briefdailyreport(date).get('currentshare',0), date, fund.remtable[fund.remtable['date']<=date].iloc[-1].rem)[1]
 	cashflow.append((date,rede))
 	return xirr(cashflow, guess)
+
+def bottleneck(cftable):
+	'''
+	find the max total input in the history given cftable with cash column
+
+	:param cftable: pd.DataFrame of cftable
+	'''
+	if len(cftable) == 0:
+		return 0
+	# cftable = cftable.reset_index(drop=True) # unnecessary as iloc use natural rows instead of default index
+	inputl = [-sum(cftable.iloc[:i].cash) for i in range(1,len(cftable)+1)]
+	return max(inputl)
+
+def turnoverrate(cftable, end=yesterdayobj):
+	'''
+	calculate the annualized turnoverrate 
+
+	:param cftable: pd.DataFrame of cftable
+	:param end: str or obj of datetime for the end date of the estimation
+	'''
+	if len(cftable) == 0:
+		return 0
+	end = convert_date(end)
+	start = cftable.iloc[0].date
+	tradeamount = sum(abs(cftable.loc[:,'cash']))
+	turnover = tradeamount/bottleneck(cftable)
+	if (end-start).days <=0:
+		return 0
+	return turnover*365/(end-start).days
+
+def vtradevolume(cftable, freq='D', bar_category_gap='35%', **vkwds):
+	'''
+	aid function on visualization of trade summary
+	
+	:param cftable: cftable (pandas.DataFrame) with at least date and cash columns
+	:param freq: one character string, frequency label, now supporting D for date, 
+		W for week and M for month, namely the trade volume is shown based on the time unit
+	:param **vkwds: keyword argument for pyecharts Bar.add()
+	:returns: the Bar object
+	'''
+	if freq == 'D':
+		selldata=[[row['date'],row['cash']] for _,row in cftable.iterrows() if row['cash']>0]
+		buydata=[[row['date'],row['cash']] for _,row in cftable.iterrows() if row['cash']<0]
+	elif freq == 'W':
+		cfmerge = cftable.groupby([cftable['date'].dt.year,cftable['date'].dt.week])['cash'].sum()
+		selldata = [[dt.datetime.strptime(str(a)+'4','(%Y, %W)%w'), b] \
+		for a,b in cfmerge.iteritems() if b>0]
+		buydata = [[dt.datetime.strptime(str(a)+'4','(%Y, %W)%w'), b] \
+		for a,b in cfmerge.iteritems() if b<0]
+	elif freq == 'M':
+		cfmerge = cftable.groupby([cftable['date'].dt.year,cftable['date'].dt.month])['cash'].sum()
+		selldata = [[dt.datetime.strptime(str(a)+'15','(%Y, %m)%d'), b] \
+		for a,b in cfmerge.iteritems() if b>0]
+		buydata = [[dt.datetime.strptime(str(a)+'15','(%Y, %m)%d'), b] \
+		for a,b in cfmerge.iteritems() if b<0]
+	else:
+		raise Exception('no such freq tag supporting')
+
+	bar = Bar()
+	bar.add('买入',[0 for _ in range(len(buydata))],buydata, xaxis_type='time', bar_category_gap=bar_category_gap)
+	bar.add('卖出',[0 for _ in range(len(selldata))],selldata, xaxis_type='time', is_datazoom_show=True,bar_category_gap=bar_category_gap, **vkwds)
+	bar
+	return bar
+
 
 class trade():
 	'''
@@ -168,8 +232,7 @@ class trade():
 		breif report dict of certain date status on the fund investment
 
 		:param date: string or obj of date, show info of the date given
-		:returns: empty dict if no share is remaining that date
-			dict of various data on the trade positions
+		:returns: dict of various data on the trade positions
 		'''
 		date = convert_date(date)
 		partcftb = self.cftable[self.cftable['date']<=date]
@@ -179,51 +242,41 @@ class trade():
 		value = self.aim.price[self.aim.price['date']<=date].iloc[-1].netvalue
 		currentshare = myround(sum(partcftb.loc[:,'share']))
 		currentcash = myround(currentshare*value)
+		btnk = bottleneck(partcftb)
+		turnover = turnoverrate(partcftb, date)
+		ereturn = myround(currentcash+totoutput-totinput)
 		if currentshare == 0:
 			unitcost = 0
 		else:
 			unitcost = round((totinput-totoutput)/currentshare,4)
-		if totinput == 0:
+		if btnk == 0:
 			returnrate = 0
 		else:
-			returnrate = round(((currentcash+totoutput)/totinput-1)*100,4)
-		return {'date':date, 'unitvalue':value, 'currentvalue': currentcash, 'originalcost': totinput-totoutput, 
-					'estimatedreturn': myround(currentcash+totoutput-totinput),'returnrate':returnrate , 'currentshare': currentshare, 
-					'unitcost': unitcost, 'originalpurchase': totinput, 'earnedvalue':totoutput}
+			returnrate = round((ereturn/btnk)*100,4)
+		return {'date':date, 'unitvalue':value, 'unitcost': unitcost,  'currentshare': currentshare,
+			'currentvalue': currentcash, 'originalpurchase': totinput, 'originalcost': totinput-totoutput, 
+			'estimatedreturn': ereturn,'returnrate':returnrate , 
+					  'earnedvalue':totoutput, 'maxinput':btnk, 'turnoverrate': turnover}
 	
-	def vtradevolume(cftable, freq='D', bar_category_gap='35%', **vkwds):
+	def briefdailyreport(self, date=yesterdayobj):
 		'''
-		aid function on visualization of trade summary
-		
-		:param cftable: cftable (pandas.DataFrame) with at least date and cash columns
-		:param freq: one character string, frequency label, now supporting D for date, 
-			W for week and M for month, namely the trade volume is shown based on the time unit
-		:param **vkwds: keyword argument for pyecharts Bar.add()
-		:returns: the Bar object
-		'''
-		if freq == 'D':
-			selldata=[[row['date'],row['cash']] for _,row in cftable.iterrows() if row['cash']>0]
-			buydata=[[row['date'],row['cash']] for _,row in cftable.iterrows() if row['cash']<0]
-		elif freq == 'W':
-			cfmerge = cftable.groupby([cftable['date'].dt.year,cftable['date'].dt.week])['cash'].sum()
-			selldata = [[dt.datetime.strptime(str(a)+'4','(%Y, %W)%w'), b] \
-			for a,b in cfmerge.iteritems() if b>0]
-			buydata = [[dt.datetime.strptime(str(a)+'4','(%Y, %W)%w'), b] \
-			for a,b in cfmerge.iteritems() if b<0]
-		elif freq == 'M':
-			cfmerge = cftable.groupby([cftable['date'].dt.year,cftable['date'].dt.month])['cash'].sum()
-			selldata = [[dt.datetime.strptime(str(a)+'15','(%Y, %m)%d'), b] \
-			for a,b in cfmerge.iteritems() if b>0]
-			buydata = [[dt.datetime.strptime(str(a)+'15','(%Y, %m)%d'), b] \
-			for a,b in cfmerge.iteritems() if b<0]
-		else:
-			raise Exception('no such freq tag supporting')
+		quick summary of highly used attrs for trade 
 
-		bar = Bar()
-		bar.add('买入',[0 for _ in range(len(buydata))],buydata, xaxis_type='time', bar_category_gap=bar_category_gap)
-		bar.add('卖出',[0 for _ in range(len(selldata))],selldata, xaxis_type='time', is_datazoom_show=True,bar_category_gap=bar_category_gap, **vkwds)
-		bar
-		return bar
+		:param date: string or object of datetime
+		:returns: dict with several attrs: date, unitvalue, currentshare, currentvalue, unitcost
+		'''
+		date = convert_date(date)
+		partcftb = self.cftable[self.cftable['date']<=date]
+		totnetinput = myround(-sum(partcftb.loc[:,'cash']))
+		unitvalue = self.aim.price[self.aim.price['date']<=date].iloc[-1].netvalue
+		currentshare = myround(sum(partcftb.loc[:,'share']))
+		currentvalue = myround(currentshare*unitvalue)
+		if currentshare>0:
+			unitcost = totnetinput/currentshare
+		else:
+			unitcost = 0
+		return {'date':date, 'unitvalue': unitvalue, 'currentshare':currentshare,
+			'currentvalue':currentvalue,'unitcost':unitcost}
 
 	def v_tradevolume(self, **vkwds):
 		'''
@@ -233,7 +286,7 @@ class trade():
 			please ref to the API of trade.vtradevolume function
 		:returns: pyecharts.bar
 		'''
-		return trade.vtradevolume(self.cftable, **vkwds)
+		return vtradevolume(self.cftable, **vkwds)
 
 	def v_tradecost(self,end=yesterdayobj,**vkwds):
 		'''
@@ -248,7 +301,7 @@ class trade():
 		for i, row in pprice.iterrows():
 			date = row['date']
 			funddata.append( [date, row['netvalue']] )
-			cost = self.dailyreport(date).get('unitcost',None)
+			cost = self.briefdailyreport(date).get('unitcost',None)
 			if cost is not None:
 				costdata.append([date, cost])
 
@@ -268,7 +321,7 @@ class trade():
 		partp = partp[partp['date']<=end]
 		for i, row in partp.iterrows():
 			date = row['date']
-			valuedata.append( [date, self.dailyreport(date).get('currentvalue',0)] )
+			valuedata.append( [date, self.briefdailyreport(date).get('currentvalue',0)] )
 		
 		line=Line()
 		line.add('totvalue',[1 for _ in range(len(valuedata))],valuedata,
