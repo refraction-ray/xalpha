@@ -14,7 +14,7 @@ xalpha
 
 ## Documentation
 
-文档地址： https://xalpha.readthedocs.io/。
+文档地址： https://xalpha.readthedocs.io/ 
 
 或者通过以下命令，在本地`doc/build/html`内阅读文档。
 

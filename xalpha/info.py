@@ -23,7 +23,7 @@ def _download(url, tries=5):
 		try:
 			page = rq.get(url)
 			break
-		except ConnectionError:
+		except ConnectionError or ConnectionResetError:
 			if count == tries-1:
 				raise Exception('bad network condition')
 	return page

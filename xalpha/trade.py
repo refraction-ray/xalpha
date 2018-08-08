@@ -198,15 +198,15 @@ class trade():
 			buydata=[[row['date'],row['cash']] for _,row in cftable.iterrows() if row['cash']<0]
 		elif freq == 'W':
 			cfmerge = cftable.groupby([cftable['date'].dt.year,cftable['date'].dt.week])['cash'].sum()
-			selldata = [[dt.datetime.strptime(str(a)+'1','(%Y, %W)%w'), b] \
+			selldata = [[dt.datetime.strptime(str(a)+'4','(%Y, %W)%w'), b] \
 			for a,b in cfmerge.iteritems() if b>0]
-			buydata = [[dt.datetime.strptime(str(a)+'1','(%Y, %W)%w'), b] \
+			buydata = [[dt.datetime.strptime(str(a)+'4','(%Y, %W)%w'), b] \
 			for a,b in cfmerge.iteritems() if b<0]
 		elif freq == 'M':
 			cfmerge = cftable.groupby([cftable['date'].dt.year,cftable['date'].dt.month])['cash'].sum()
-			selldata = [[dt.datetime.strptime(str(a),'(%Y, %m)'), b] \
+			selldata = [[dt.datetime.strptime(str(a)+'15','(%Y, %m)%d'), b] \
 			for a,b in cfmerge.iteritems() if b>0]
-			buydata = [[dt.datetime.strptime(str(a),'(%Y, %m)'), b] \
+			buydata = [[dt.datetime.strptime(str(a)+'15','(%Y, %m)%d'), b] \
 			for a,b in cfmerge.iteritems() if b<0]
 		else:
 			raise Exception('no such freq tag supporting')
