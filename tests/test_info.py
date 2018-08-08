@@ -31,6 +31,7 @@ def test_fund():
 	assert hs300.label == 2
 	assert hs300.name == '景顺长城沪深300增强' 
 	assert hs300.fenhongdate[1]  == pd.Timestamp('2017-08-15')
+	assert float(hs300.special[hs300.special['date']=='2017-08-04']['comment']) == 0.19
 	hs300.rate = 0.12
 	hs300.segment = [[0, 7], [7, 365], [365, 730], [730]]
 	with pytest.raises(Exception) as excinfo:   

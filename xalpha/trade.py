@@ -182,7 +182,7 @@ class trade():
 		if currentshare == 0:
 			unitcost = 0
 		else:
-			unitcost = round(totinput/currentshare,4)
+			unitcost = round((totinput-totoutput)/currentshare,4)
 		if totinput == 0:
 			returnrate = 0
 		else:

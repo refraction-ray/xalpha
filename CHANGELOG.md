@@ -2,8 +2,8 @@
 
 ## unreleased
 ### added
-* 更直接的一键虚拟清仓功能添加到 record 类，并将具有 status 的类都视为带有 record 的 Mix
-
+* policy 模块增加网格交易类，以进行波段网格交易的回测分析和指导
+* 更直接的一键虚拟清仓功能添加到 record 类，并将具有 status 的类都视为有 record 的 Mix
 * v_tradevolume() 这一基于现金表的可视化函数，增加了 freq＝ 的关键字参数，可选 D，W，M，从而直接展示不同时间为单位的交易总量柱形图
 
 ### changed

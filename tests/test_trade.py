@@ -60,3 +60,8 @@ def test_policy_scheduled():
 	auto2 = xa.policy.scheduled_tune(cm, 1000, pd.date_range('2015-07-01','2018-07-01',freq='M'),
                                 [(0.9,2),(1.2,1)]) 
 
+def test_policy_grid():
+	gr = xa.policy.grid(cm,[0,2,2],[3,3,3],'2018-06-23', '2018-08-03')
+	tr = xa.trade(cm,gr.status)
+	assert round(tr.xirrrate('2018-07-13'),2) == 11.78
+
