@@ -23,7 +23,7 @@ def _download(url, tries=5):
 		try:
 			page = rq.get(url)
 			break
-		except ConnectionError or ConnectionResetError:
+		except (ConnectionError, ConnectionResetError):
 			if count == tries-1:
 				raise Exception('bad network condition')
 	return page
@@ -156,7 +156,8 @@ class fundinfo(basicinfo):
 			self.label = 2 # the scheme of round down on share purchase
 		else :
 			self.label = 1
-		self.specialdate = list(self.price[self.price['comment']!=0]['date']) 
+		self.special = self.price[self.price['comment']!=0]
+		self.specialdate = list(self.special['date']) 
 		# date with nonvanishing comment, usually fenhong or zhesuan
 		try:
 			self.fenhongdate = list(self.price[self.price['comment']>0]['date'])

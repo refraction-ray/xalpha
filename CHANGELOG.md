@@ -3,7 +3,11 @@
 ## unreleased
 ### added
 * 更直接的一键虚拟清仓功能添加到 record 类，并将具有 status 的类都视为带有 record 的 Mix
+
 * v_tradevolume() 这一基于现金表的可视化函数，增加了 freq＝ 的关键字参数，可选 D，W，M，从而直接展示不同时间为单位的交易总量柱形图
+
+### changed
+* 修改了基金收益率的计算逻辑
 
 ## v0.0.3 - 2018.08.06
 ### added

@@ -173,15 +173,23 @@ class trade():
 		'''
 		date = convert_date(date)
 		partcftb = self.cftable[self.cftable['date']<=date]
-		totinput = myround(-sum(partcftb.loc[:,'cash']))
+		# totinput = myround(-sum(partcftb.loc[:,'cash']))
+		totinput = myround(-sum([row['cash'] for _,row in partcftb.iterrows() if row['cash']<0]) )
+		totoutput = myround(sum([row['cash'] for _,row in partcftb.iterrows() if row['cash']>0]) )
 		value = self.aim.price[self.aim.price['date']<=date].iloc[-1].netvalue
 		currentshare = myround(sum(partcftb.loc[:,'share']))
 		currentcash = myround(currentshare*value)
 		if currentshare == 0:
-			return {}
-		return {'date':date, 'unitvalue':value, 'currentvalue': currentcash, 'originalvalue': totinput, 
-					'returnrate': round((currentcash/totinput-1)*100,4), 'currentshare': currentshare, 
-					'unitcost': round(totinput/currentshare,4)}
+			unitcost = 0
+		else:
+			unitcost = round(totinput/currentshare,4)
+		if totinput == 0:
+			returnrate = 0
+		else:
+			returnrate = round(((currentcash+totoutput)/totinput-1)*100,4)
+		return {'date':date, 'unitvalue':value, 'currentvalue': currentcash, 'originalcost': totinput-totoutput, 
+					'estimatedreturn': myround(currentcash+totoutput-totinput),'returnrate':returnrate , 'currentshare': currentshare, 
+					'unitcost': unitcost, 'originalpurchase': totinput, 'earnedvalue':totoutput}
 	
 	def vtradevolume(cftable, freq='D', bar_category_gap='35%', **vkwds):
 		'''

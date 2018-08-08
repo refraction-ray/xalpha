@@ -40,7 +40,7 @@ class mul():
 		of coures many of the props make no sense to sum
 		
 		:param prop: string defined in the daily report dict, 
-			typical one is 'currentvalue' or 'originalvalue'
+			typical one is 'currentvalue' or 'originalpurchase'
 		'''
 		res = 0
 		for fund in self.fundtradeobj:
@@ -59,24 +59,38 @@ class mul():
 		name = []
 		code = []
 		cuva = []
-		orva = []
+		orpu = []
+		orco = []
+		erva = []
+		etre = []
 		rera = []
 		for fund in self.fundtradeobj:
 			name.append(fund.aim.name)
 			code.append(fund.aim.code)
 			res = fund.dailyreport(date)
 			cuva.append(res.get('currentvalue',0))
-			orva.append(res.get('originalvalue',0))
+			orpu.append(res.get('originalpurchase',0))
+			orco.append(res.get('originalcost',0))
+			erva.append(res.get('earnedvalue',0))
+			etre.append(res.get('estimatedreturn',0))
 			rera.append(res.get('returnrate',0))
 		totcuva = sum(cuva)
-		totorva = sum(orva)
+		totorpu = sum(orpu)
+		totorco = sum(orco)
+		totetre = sum(etre)
+		toterva = sum(erva)
 		cuva.append(totcuva)
-		orva.append(totorva)
+		orpu.append(totorpu)
+		orco.append(totorco)
+		etre.append(totetre)
+		erva.append(toterva)
 		name.append('总计')
 		code.append('xxxxxx')
-		totrera = round((cuva[-1]/orva[-1]-1)*100,4)
+		totrera = round(((cuva[-1]+erva[-1])/orpu[-1]-1)*100,4)
 		rera.append(totrera)
-		df = pd.DataFrame(data={'基金名称':name,'基金代码':code,'基金现值':cuva,'基金成本':orva,'基金收益率':rera})
+		data = {'基金名称':name,'基金代码':code,'基金现值':cuva,'基金总申购':orpu,
+			'基金持有成本':orco,'基金了结收入':erva,'基金收益总额':etre,'投资收益率':rera}
+		df = pd.DataFrame(data,columns=data.keys())
 		return df
 
 	def _mergecftb(self):
@@ -199,6 +213,6 @@ class mulfix(mul,indicator):
 		date = convert_date(date)
 		currentcash = self.tot('currentvalue',date)
 		value = currentcash/self.totmoney
-		return {'date':date, 'unitvalue': value,'currentvalue': currentcash, 'originalvalue':self.totmoney,
-			   'returnrate': round((currentcash/self.totmoney-1)*100,4), 
-					'currentshare':self.totmoney, 'unitcost': 1.00}
+		return {'date':date, 'unitvalue': value,'currentvalue': currentcash, 'originalpurchase':self.totmoney,
+			   'returnrate': round((currentcash/self.totmoney-1)*100,4), 'estimatedreturn':currentcash-self.totmoney,
+			   'originalcost':self.totmoney, 'earnedvalue':0 ,'currentshare':self.totmoney, 'unitcost': 1.00}
