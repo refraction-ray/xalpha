@@ -28,7 +28,7 @@ def xirrcal(cftable, trades, date, guess):
 	cashflow = [(row['date'],row['cash']) for i, row in partcftb.iterrows()]
 	rede = 0
 	for fund in trades:
-		rede += fund.aim.shuhui(fund.briefdailyreport(date).get('currentshare',0), date, fund.remtable[fund.remtable['date']<=date].iloc[-1].rem)[1]
+		rede += fund.aim.shuhui(fund._briefdailyreport(date).get('currentshare',0), date, fund.remtable[fund.remtable['date']<=date].iloc[-1].rem)[1]
 	cashflow.append((date,rede))
 	return xirr(cashflow, guess)
 
@@ -42,7 +42,7 @@ def bottleneck(cftable):
 		return 0
 	# cftable = cftable.reset_index(drop=True) # unnecessary as iloc use natural rows instead of default index
 	inputl = [-sum(cftable.iloc[:i].cash) for i in range(1,len(cftable)+1)]
-	return max(inputl)
+	return myround(max(inputl))
 
 def turnoverrate(cftable, end=yesterdayobj):
 	'''
@@ -258,25 +258,38 @@ class trade():
 			'estimatedreturn': ereturn,'returnrate':returnrate , 
 					  'earnedvalue':totoutput, 'maxinput':btnk, 'turnoverrate': turnover}
 	
-	def briefdailyreport(self, date=yesterdayobj):
+	def _briefdailyreport(self, date=yesterdayobj):
 		'''
 		quick summary of highly used attrs for trade 
 
 		:param date: string or object of datetime
-		:returns: dict with several attrs: date, unitvalue, currentshare, currentvalue, unitcost
+		:returns: dict with several attrs: date, unitvalue, currentshare, currentvalue
 		'''
 		date = convert_date(date)
 		partcftb = self.cftable[self.cftable['date']<=date]
-		totnetinput = myround(-sum(partcftb.loc[:,'cash']))
 		unitvalue = self.aim.price[self.aim.price['date']<=date].iloc[-1].netvalue
 		currentshare = myround(sum(partcftb.loc[:,'share']))
 		currentvalue = myround(currentshare*unitvalue)
+
+		return {'date':date, 'unitvalue': unitvalue, 'currentshare':currentshare,
+			'currentvalue':currentvalue}
+
+	def _unitcost(self, date=yesterdayobj):
+		'''
+		give the unitcost of fund positions
+
+		:param date: string or object of datetime
+		:returns: float number of unitcost
+		'''
+		partcftb = self.cftable[self.cftable['date']<=date]
+		totnetinput = myround(-sum(partcftb.loc[:,'cash']))
+		currentshare = self._briefdailyreport(date).get('currentshare',0)
+		totnetinput
 		if currentshare>0:
 			unitcost = totnetinput/currentshare
 		else:
 			unitcost = 0
-		return {'date':date, 'unitvalue': unitvalue, 'currentshare':currentshare,
-			'currentvalue':currentvalue,'unitcost':unitcost}
+		return unitcost
 
 	def v_tradevolume(self, **vkwds):
 		'''
@@ -301,9 +314,8 @@ class trade():
 		for i, row in pprice.iterrows():
 			date = row['date']
 			funddata.append( [date, row['netvalue']] )
-			cost = self.briefdailyreport(date).get('unitcost',None)
-			if cost is not None:
-				costdata.append([date, cost])
+			cost = self._unitcost(date)
+			costdata.append([date, cost])
 
 		line=Line()
 		line.add('fundvalue',[1 for _ in range(len(funddata))],funddata)
@@ -321,7 +333,7 @@ class trade():
 		partp = partp[partp['date']<=end]
 		for i, row in partp.iterrows():
 			date = row['date']
-			valuedata.append( [date, self.briefdailyreport(date).get('currentvalue',0)] )
+			valuedata.append( [date, self._briefdailyreport(date).get('currentvalue',0)] )
 		
 		line=Line()
 		line.add('totvalue',[1 for _ in range(len(valuedata))],valuedata,

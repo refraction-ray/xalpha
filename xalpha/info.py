@@ -102,7 +102,7 @@ class basicinfo(indicator):
 		'''
 		row = self.price[self.price['date']>=date].iloc[0]
 		share = _shengoucal(value, self.rate, row.netvalue , label = self.label)[1]
-		return (row.date, -value, share)
+		return (row.date, -myround(value), share)
 			
 	def shuhui(self, share, date, rem):
 		'''
@@ -120,7 +120,7 @@ class basicinfo(indicator):
 			sh = share
 		row = self.price[self.price['date']>=date].iloc[0]
 		value = myround(sh*row.netvalue)
-		return (row.date, value, -sh)
+		return (row.date, value, -myround(sh))
 	
 	def info(self):
 		'''

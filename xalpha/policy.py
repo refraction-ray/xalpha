@@ -154,7 +154,7 @@ class grid(policy):
         for i,buypt in enumerate(self.buypts):
             if (value-buypt)<=0 and (valueb-buypt)>0 and self.pos<=i:
                 self.pos += 1
-                action += self.totmoney/self.division
+                action += myround(self.totmoney/self.division)
         for j,sellpt in enumerate(self.sellpts):
             if (value-sellpt)>=0 and (valueb-sellpt)<0 and self.pos>j:
                 action += -1/self.pos

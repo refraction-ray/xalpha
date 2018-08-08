@@ -131,7 +131,7 @@ class mul():
 		'''
 		pie chart visulization of positions ratio in combination
 		'''
-		sdata=sorted([(fob.aim.name,fob.briefdailyreport(date).get('currentvalue',0)) for fob in self.fundtradeobj],
+		sdata=sorted([(fob.aim.name,fob._briefdailyreport(date).get('currentvalue',0)) for fob in self.fundtradeobj],
 					 key= lambda x:x[1], reverse=True)
 		sdata1 = [item[0] for item in sdata ]
 		sdata2 = [item[1] for item in sdata ]
@@ -149,7 +149,7 @@ class mul():
 		times = pd.date_range(start, end)
 		tdata = []
 		for date in times:
-			sdata=sorted([(date,fob.briefdailyreport(date).get('currentvalue',0),fob.aim.name) 
+			sdata=sorted([(date,fob._briefdailyreport(date).get('currentvalue',0),fob.aim.name) 
 						  for fob in self.fundtradeobj], key= lambda x:x[1], reverse=True)
 			tdata.extend(sdata)
 		tr = ThemeRiver()
