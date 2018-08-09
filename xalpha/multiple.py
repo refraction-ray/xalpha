@@ -32,7 +32,7 @@ class mul():
 		self.fundtradeobj = tuple(fundtradeobj)
 		self.totcftable = self._mergecftb()
 	
-	def tot(self, prop='currentvalue', date=yesterdayobj):
+	def tot(self, prop='基金现值', date=yesterdayobj):
 		'''
 		sum of all the values from one prop of fund daily report, 
 		of coures many of the props make no sense to sum
@@ -42,7 +42,7 @@ class mul():
 		'''
 		res = 0
 		for fund in self.fundtradeobj:
-			res += fund.dailyreport(date).get(prop, 0)
+			res += fund.dailyreport().iloc[0][prop]
 		return res
 	
 	def combsummary(self, date=yesterdayobj):
@@ -54,50 +54,30 @@ class mul():
 			dict of various data on the trade positions
 		'''
 		date = convert_date(date)
-		name = []
-		code = []
-		cuva = []
-		orpu = []
-		orco = []
-		erva = []
-		etre = []
-		rera = []
-		btnk = []
-		tort = []
+		columns = ['基金名称', '基金代码', '当日净值', '单位成本', '持有份额', '基金现值', '基金总申购', '历史最大占用',
+			'基金持有成本', '基金分红与赎回', '换手率', '基金收益总额', '投资收益率']
+		summarydf = pd.DataFrame([],columns=columns)
 		for fund in self.fundtradeobj:
-			name.append(fund.aim.name)
-			code.append(fund.aim.code)
-			res = fund.dailyreport(date)
-			cuva.append(res.get('currentvalue',0))
-			orpu.append(res.get('originalpurchase',0))
-			orco.append(res.get('originalcost',0))
-			erva.append(res.get('earnedvalue',0))
-			etre.append(res.get('estimatedreturn',0))
-			rera.append(res.get('returnrate',0))
-			btnk.append(res.get('maxinput',0))
-			tort.append(res.get('turnoverrate',0))
-		totcuva = sum(cuva)
-		totorpu = sum(orpu)
-		totorco = sum(orco)
-		totetre = sum(etre)
-		toterva = sum(erva)
-		cuva.append(totcuva)
-		orpu.append(totorpu)
-		orco.append(totorco)
-		etre.append(totetre)
-		erva.append(toterva)
-		name.append('总计')
-		code.append('xxxxxx')
-		totbtnk = bottleneck(self.totcftable[self.totcftable['date']<=date])
-		btnk.append(totbtnk)
-		totrera = round(((cuva[-1]+erva[-1]-orpu[-1])/totbtnk)*100,4)
-		rera.append(totrera)
-		tottort = turnoverrate(self.totcftable[self.totcftable['date']<=date],date)
-		tort.append(tottort) # 计算的是总系统作为整体和外界的换手率，而非系统各成分之间的换手率
-		data = {'基金名称':name,'基金代码':code,'基金现值':cuva,'基金总申购':orpu,'历史最大占用':btnk,
-			'基金持有成本':orco,'基金分红与赎回':erva,'换手率': tort,'基金收益总额':etre,'投资收益率':rera}
-		df = pd.DataFrame(data,columns=data.keys())
-		return df
+			summarydf = summarydf.append(fund.dailyreport(date),ignore_index=True)
+		tname = '总计'
+		tcode = 'total'
+		tunitvalue = float('NaN')
+		tunitcost = float('NaN')
+		tholdshare = float('NaN')
+		tcurrentvalue = summarydf['基金现值'].sum()
+		tpurchase = summarydf['基金总申购'].sum()
+		tbtnk = bottleneck(self.totcftable[self.totcftable['date']<=date])
+		tcost = summarydf['基金持有成本'].sum()
+		toutput = summarydf['基金分红与赎回'].sum()
+		tturnover = turnoverrate(self.totcftable[self.totcftable['date']<=date],date)
+		# 计算的是总系统作为整体和外界的换手率，而非系统各成分之间的换手率
+		tearn = summarydf['基金收益总额'].sum()
+		trate = tearn/tbtnk
+		trow = pd.DataFrame([[tname,tcode,tunitvalue,tunitcost,tholdshare,
+			tcurrentvalue,tpurchase,tbtnk,tcost,toutput,tturnover,tearn,trate]],columns=columns)
+		summarydf = summarydf.append(trow,ignore_index=True)
+		
+		return summarydf
 
 	def _mergecftb(self):
 		'''
@@ -131,7 +111,7 @@ class mul():
 		'''
 		pie chart visulization of positions ratio in combination
 		'''
-		sdata=sorted([(fob.aim.name,fob._briefdailyreport(date).get('currentvalue',0)) for fob in self.fundtradeobj],
+		sdata=sorted([(fob.aim.name,fob.briefdailyreport(date).get('currentvalue',0)) for fob in self.fundtradeobj],
 					 key= lambda x:x[1], reverse=True)
 		sdata1 = [item[0] for item in sdata ]
 		sdata2 = [item[1] for item in sdata ]
@@ -149,7 +129,7 @@ class mul():
 		times = pd.date_range(start, end)
 		tdata = []
 		for date in times:
-			sdata=sorted([(date,fob._briefdailyreport(date).get('currentvalue',0),fob.aim.name) 
+			sdata=sorted([(date,fob.briefdailyreport(date).get('currentvalue',0),fob.aim.name) 
 						  for fob in self.fundtradeobj], key= lambda x:x[1], reverse=True)
 			tdata.extend(sdata)
 		tr = ThemeRiver()
@@ -213,13 +193,12 @@ class mulfix(mul,indicator):
 		return pd.DataFrame(data=datadict)
 
 	
-	def dailyreport(self, date=yesterdayobj):
+	def unitvalue(self, date=yesterdayobj):
 		'''
-		daily info brief review based on the investment combination, behave as a fund
+		:returns: float at unitvalue of the whole investment combination
 		'''
 		date = convert_date(date)
-		currentcash = self.tot('currentvalue',date)
-		value = currentcash/self.totmoney
-		return {'date':date, 'unitvalue': value,'currentvalue': currentcash, 'originalpurchase':self.totmoney,
-				'returnrate': round((currentcash/self.totmoney-1)*100,4), 'estimatedreturn':currentcash-self.totmoney,
-				'currentshare':self.totmoney, 'unitcost': 1.00}
+		res = 0
+		for fund in self.fundtradeobj:
+			res += fund.briefdailyreport(date).get('currentvalue', 0)		
+		return res/self.totmoney

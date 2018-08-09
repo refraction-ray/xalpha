@@ -12,7 +12,7 @@ cm_t = xa.trade(cm, statb)
 def test_trade():
 	assert cm_t.cftable.loc[2,'share'] == -129.14
 	assert round(cm_t.xirrrate('2018-03-03'),3)== -0.24
-	assert cm_t.dailyreport('2018-07-29')['unitcost'] == 1.346
+	assert cm_t.dailyreport('2018-07-29').iloc[0]['单位成本'] == 1.346
 	cm_t.v_tradecost('2018-08-01')
 	cm_t.v_totvalue('2018-07-31')
 	cm_t.v_tradevolume(freq='M')
@@ -39,7 +39,7 @@ def test_mulfix():
 	tot = xa.mulfix(status=statb,totmoney= 5000)
 	assert tot.v_positions().options['legend'][0]['data'][1]=='富国中证红利指数增强'
 	assert tot.v_positions_history('2017-01-01').options['legend'][0]['data'][-1]=='货币基金'
-	assert tot.combsummary('2018-08-04').iloc[-1]['投资收益率'] == 0.999
+	assert round(tot.combsummary('2018-08-04').iloc[-1]['投资收益率'],2) == 0.01
 
 def test_policy_buyandhold():
 	allin = xa.policy.buyandhold(cm, '2015-06-01')
@@ -56,7 +56,7 @@ def test_policy_scheduled():
 	auto = xa.policy.scheduled(cm, 1000, pd.date_range('2015-07-01','2018-07-01',freq='W-THU'))
 	cm_t3 = xa.trade(cm, auto.status)
 	cm_t3.v_tradevolume(freq='W')
-	assert round(cm_t3.dailyreport('2018-08-03')['returnrate'],2 )== -42.07
+	assert round(cm_t3.dailyreport('2018-08-03').iloc[0]['投资收益率'],2 )== -42.07
 	auto2 = xa.policy.scheduled_tune(cm, 1000, pd.date_range('2015-07-01','2018-07-01',freq='M'),
                                 [(0.9,2),(1.2,1)]) 
 

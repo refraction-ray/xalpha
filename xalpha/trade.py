@@ -28,7 +28,7 @@ def xirrcal(cftable, trades, date, guess):
 	cashflow = [(row['date'],row['cash']) for i, row in partcftb.iterrows()]
 	rede = 0
 	for fund in trades:
-		rede += fund.aim.shuhui(fund._briefdailyreport(date).get('currentshare',0), date, fund.remtable[fund.remtable['date']<=date].iloc[-1].rem)[1]
+		rede += fund.aim.shuhui(fund.briefdailyreport(date).get('currentshare',0), date, fund.remtable[fund.remtable['date']<=date].iloc[-1].rem)[1]
 	cashflow.append((date,rede))
 	return xirr(cashflow, guess)
 
@@ -56,7 +56,7 @@ def turnoverrate(cftable, end=yesterdayobj):
 	end = convert_date(end)
 	start = cftable.iloc[0].date
 	tradeamount = sum(abs(cftable.loc[:,'cash']))
-	turnover = tradeamount/bottleneck(cftable)
+	turnover = tradeamount/bottleneck(cftable)/2.
 	if (end-start).days <=0:
 		return 0
 	return turnover*365/(end-start).days
@@ -253,12 +253,14 @@ class trade():
 			returnrate = 0
 		else:
 			returnrate = round((ereturn/btnk)*100,4)
-		return {'date':date, 'unitvalue':value, 'unitcost': unitcost,  'currentshare': currentshare,
-			'currentvalue': currentcash, 'originalpurchase': totinput, 'originalcost': totinput-totoutput, 
-			'estimatedreturn': ereturn,'returnrate':returnrate , 
-					  'earnedvalue':totoutput, 'maxinput':btnk, 'turnoverrate': turnover}
+
+		reportdict = {'基金名称':[self.aim.name],'基金代码':[self.aim.code],'当日净值':[value],'单位成本':[unitcost],
+			'持有份额':[currentshare],'基金现值':[currentcash],'基金总申购':[totinput],'历史最大占用':[btnk],'基金持有成本':[totinput-totoutput],
+			'基金分红与赎回':[totoutput],'换手率': [turnover],'基金收益总额':[ereturn],'投资收益率':[returnrate]}
+		df = pd.DataFrame(reportdict,columns=reportdict.keys())
+		return df
 	
-	def _briefdailyreport(self, date=yesterdayobj):
+	def briefdailyreport(self, date=yesterdayobj):
 		'''
 		quick summary of highly used attrs for trade 
 
@@ -274,7 +276,7 @@ class trade():
 		return {'date':date, 'unitvalue': unitvalue, 'currentshare':currentshare,
 			'currentvalue':currentvalue}
 
-	def _unitcost(self, date=yesterdayobj):
+	def unitcost(self, date=yesterdayobj):
 		'''
 		give the unitcost of fund positions
 
@@ -283,7 +285,7 @@ class trade():
 		'''
 		partcftb = self.cftable[self.cftable['date']<=date]
 		totnetinput = myround(-sum(partcftb.loc[:,'cash']))
-		currentshare = self._briefdailyreport(date).get('currentshare',0)
+		currentshare = self.briefdailyreport(date).get('currentshare',0)
 		totnetinput
 		if currentshare>0:
 			unitcost = totnetinput/currentshare
@@ -314,7 +316,7 @@ class trade():
 		for i, row in pprice.iterrows():
 			date = row['date']
 			funddata.append( [date, row['netvalue']] )
-			cost = self._unitcost(date)
+			cost = self.unitcost(date)
 			costdata.append([date, cost])
 
 		line=Line()
@@ -333,7 +335,7 @@ class trade():
 		partp = partp[partp['date']<=end]
 		for i, row in partp.iterrows():
 			date = row['date']
-			valuedata.append( [date, self._briefdailyreport(date).get('currentvalue',0)] )
+			valuedata.append( [date, self.briefdailyreport(date).get('currentvalue',0)] )
 		
 		line=Line()
 		line.add('totvalue',[1 for _ in range(len(valuedata))],valuedata,

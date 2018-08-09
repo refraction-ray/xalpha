@@ -18,14 +18,14 @@ import xalpha.remain as rm
 from xalpha.indicator import indicator
 
 
-def _download(url, tries=5):
+def _download(url, tries=3):
 	for count in range(tries):
 		try:
 			page = rq.get(url)
 			break
-		except (ConnectionError, ConnectionResetError):
+		except (ConnectionResetError,rq.exceptions.RequestException) as e:
 			if count == tries-1:
-				raise Exception('bad network condition')
+				raise e
 	return page
 
 
