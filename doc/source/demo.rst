@@ -21,6 +21,6 @@
 
 *	基金A类C类份额对比： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/ACshare.ipynb>`_
 
-*	基金指数增强效果研究
+*	基金指数增强效果研究： 
 
-*	定投策略的研究
+*	定投策略的研究： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/schedulestudy.ipynb>`_

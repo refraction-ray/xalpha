@@ -73,6 +73,7 @@ class indicator():
 		:param price: price table of info().price
 		:param start: datetime obj for starting date of calculation
 		:param date: datetime obj for ending date of calculation
+		:returns: float, annualized returns of the price table
 		'''
 		datediff = (price[price['date']<=date].iloc[-1].date-start).days
 		totreturn = (price[price['date']<=date].iloc[-1].netvalue-price.iloc[0].netvalue)/price.iloc[0].netvalue
@@ -141,6 +142,13 @@ class indicator():
 		return (rp-rm)/var
 	
 	def max_drawdown(self, date=yesterdayobj):
+		'''
+		回测时间段的最大回撤
+
+		:param date: date obj or string
+		:returns: three elements tuple, the first two are the date obj of 
+			start and end of the time window, the third one is the drawdown amplitude in unit 1.
+		'''
 		li = [(row['date'], row['netvalue']) for i,row in self.price[self.price['date']<=date].iterrows()]
 		res = []
 		for i, _ in enumerate(li):
