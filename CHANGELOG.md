@@ -1,6 +1,8 @@
 # Changelog
 
 ## unreleased
+
+## v0.0.4 - 2018.08.09
 ### added
 * policy 模块增加网格交易类，以进行波段网格交易的回测分析和指导
 * 更直接的一键虚拟清仓功能添加到 record 类，并将具有 status 的类都视为有 record 的 Mix
