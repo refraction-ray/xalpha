@@ -40,6 +40,8 @@ def test_mulfix():
 	assert tot.v_positions().options['legend'][0]['data'][1]=='富国中证红利指数增强'
 	assert tot.v_positions_history('2017-01-01').options['legend'][0]['data'][-1]=='货币基金'
 	assert round(tot.combsummary('2018-08-04').iloc[-1]['投资收益率'],1) == 1.0
+	eva = tot.evaluation()
+	assert round(eva.correlation_table(end='2018-07-30').iloc[2,4], 3) == 0.095
 
 def test_policy_buyandhold():
 	allin = xa.policy.buyandhold(cm, '2015-06-01')

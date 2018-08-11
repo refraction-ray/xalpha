@@ -14,9 +14,14 @@
 
 其他四个系统的核心模块，所具有的核心数据表（都是 pandas.DataFrame 的形式），以及相互之间的关系，如下图所示。
 
-.. image:: structure.png
-   :target: https://user-images.githubusercontent.com/35157286/43990032-fd6f8a3a-9d87-11e8-95c4-206b13734b40.png
+.. image:: https://user-images.githubusercontent.com/35157286/43990032-fd6f8a3a-9d87-11e8-95c4-206b13734b40.png
+ 
 
 
 主要的数据结构
 ----------------
+
+*	记账单 status
+*	净值表 price
+*	现金流量表 cftable
+*	仓位分时表 remtable

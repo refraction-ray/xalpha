@@ -6,6 +6,7 @@ module for mul and mulfix class: fund combination management
 import pandas as pd
 from pyecharts import  Pie, ThemeRiver
 from xalpha.trade import xirrcal, vtradevolume, bottleneck, turnoverrate, trade
+from xalpha.evaluate import evaluate
 from xalpha.indicator import indicator
 from xalpha.info import cashinfo, fundinfo
 from xalpha.cons import yesterdayobj, yesterdaydash, myround, convert_date
@@ -107,6 +108,16 @@ class mul():
 		return xirrcal(self.totcftable, self.fundtradeobj, date, guess)
 
 
+	def evaluation(self, start=None):
+		'''
+		give the evaluation object to analysis funds properties themselves instead of trades
+
+		:returns: :class:`xalpha.evaluate.evaluate` object, with referenced funds the same as funds
+			we invested
+		'''
+		case = evaluate(*[fundtrade.aim for fundtrade in self.fundtradeobj],start=start)
+		return case
+
 	def v_positions(self, date=yesterdayobj, **vkwds):
 		'''
 		pie chart visulization of positions ratio in combination
@@ -169,7 +180,6 @@ class mulfix(mul,indicator):
 		self.fundtradeobj = list(self.fundtradeobj)
 		self.fundtradeobj.append(cashtrade)
 		self.fundtradeobj = tuple(self.fundtradeobj)
-		# inputl = [-sum(self.totcftable.iloc[:i].cash) for i in range(1,len(self.totcftable)+1)]
 		btnk = bottleneck(self.totcftable)
 		if btnk>totmoney:
 			raise Exception('the initial total cash is too low')
