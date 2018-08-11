@@ -316,8 +316,9 @@ class trade():
 		for i, row in pprice.iterrows():
 			date = row['date']
 			funddata.append( [date, row['netvalue']] )
-			cost = self.unitcost(date)
-			costdata.append([date, cost])
+			if (date-self.cftable.iloc[0].date).days>=0:
+				cost = self.unitcost(date)
+				costdata.append([date, cost])
 
 		line=Line()
 		line.add('fundvalue',[1 for _ in range(len(funddata))],funddata)

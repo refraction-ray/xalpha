@@ -72,7 +72,7 @@ class mul():
 		tturnover = turnoverrate(self.totcftable[self.totcftable['date']<=date],date)
 		# 计算的是总系统作为整体和外界的换手率，而非系统各成分之间的换手率
 		tearn = summarydf['基金收益总额'].sum()
-		trate = tearn/tbtnk
+		trate = round(tearn/tbtnk*100,4)
 		trow = pd.DataFrame([[tname,tcode,tunitvalue,tunitcost,tholdshare,
 			tcurrentvalue,tpurchase,tbtnk,tcost,toutput,tturnover,tearn,trate]],columns=columns)
 		summarydf = summarydf.append(trow,ignore_index=True)

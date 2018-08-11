@@ -88,7 +88,7 @@ class scheduled_tune(scheduled):
     '''
     def __init__(self, infoobj, totmoney, times, piece):
         '''
-        :param piece: list of tuples, eg.[(1000,2),(2000,1.5)]. It means when the fund netvalue 
+        :param piece: list of tuples, eg.[(1000,2),(2000,1.5)]. It means when the fund netvalue
             is small than some value, we choose to buy multiple times the totmoney. In this example,
             if the netvalue is larger than 2000, then no purchase happen at all.
         '''
