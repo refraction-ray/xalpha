@@ -20,6 +20,7 @@ class indicator():
 		'''
 		Once you want to utilize the indicator tool box for analysis, first run bcmkset function to set
 		the benchmark, otherwise most of the functions would raise error.
+		
 		:param infoobj: info obj, whose netvalue are used as benchmark
 		:param start: datetime obj, indicating the starting date of all analysis.
 			Note if use default start, there may be problems for some fundinfo obj, as lots of 
@@ -54,7 +55,7 @@ class indicator():
 	def comparison(self, date=yesterdayobj):
 		'''
 		:returns: tuple of two pd.Dataframe, the first is for aim and the second if for the benchmark index
-		all netvalues are normalized and set equal 1.00 on the self.start date
+			all netvalues are normalized and set equal 1.00 on the self.start date
 		'''
 		partp = self.price[self.price['date']<=date]
 		partm = self.bmprice[self.bmprice['date']<=date]

@@ -18,7 +18,7 @@ class mul():
 	'''
 	multiple fund positions manage class
 
-	:param *fundtradeobj: list of trade obj which you want to analyse together
+	:param fundtradeobj: list of trade obj which you want to analyse together
 	:param status: the status table of trade, all code in this table would be considered
 		one must provide one of the two paramters, if both are offered, status will be overlooked
 	'''
@@ -152,7 +152,7 @@ class mul():
 		'''
 		visualization on trade summary of the funds combination
 
-		:param **vkwds: keyword argument for pyecharts Bar.add()
+		:param vkwds: keyword argument for pyecharts Bar.add()
 		:returns: pyecharts.bar
 		'''
 		return vtradevolume(self.totcftable, **vkwds)

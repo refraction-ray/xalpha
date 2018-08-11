@@ -12,7 +12,7 @@ class evaluate():
     多个 info 对象的比较类，比较的对象只要实现了 price 属性，该属性为具有 date 和 netvalue 列的 pandas.DataFrame 即可。
     更进一步，也可讲做过 bcmkset 的 :class:`xalpha.multiple.mulfix` 类作为输入，只不过此时需要提前额外指定以下该对象的 name 和 code 两个属性。
 
-    :param *fundobjs: info object，或者如前所述一切具有 price 表的对象
+    :param fundobjs: info object，或者如前所述一切具有 price 表的对象
     :param start: date string or object, 比较的起始时间，默认使用所有 price 表中最近的起始时间。
         但需要注意，由于拉取的基金净值表，往往在开始几天缺失净值数据，即使使用默认时间也可能无法对齐所有净值数据。
         因此建议手动设置起始时间到最近的起始时间一周后左右。 
@@ -45,7 +45,7 @@ class evaluate():
         起点对齐归一的，各参考基金或指数的净值比较可视化
 
         :param end: string or object of date, the end date of the line
-        :param **vkwds: pyechart line.add() options
+        :param vkwds: pyechart line.add() options
         :returns: pyecharts.Line object
         '''
         partprice = self.totprice[self.totprice['date']<=end]

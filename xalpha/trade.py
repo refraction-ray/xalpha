@@ -68,7 +68,7 @@ def vtradevolume(cftable, freq='D', bar_category_gap='35%', **vkwds):
 	:param cftable: cftable (pandas.DataFrame) with at least date and cash columns
 	:param freq: one character string, frequency label, now supporting D for date, 
 		W for week and M for month, namely the trade volume is shown based on the time unit
-	:param **vkwds: keyword argument for pyecharts Bar.add()
+	:param vkwds: keyword argument for pyecharts Bar.add()
 	:returns: the Bar object
 	'''
 	if freq == 'D':
@@ -297,7 +297,7 @@ class trade():
 		'''
 		visualization on trade summary
 
-		:param **vkwds: keyword argument for pyecharts Bar.add(), and freq= label, 
+		:param vkwds: keyword argument for pyecharts Bar.add(), and freq= label, 
 			please ref to the API of trade.vtradevolume function
 		:returns: pyecharts.bar
 		'''

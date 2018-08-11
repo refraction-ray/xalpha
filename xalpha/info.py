@@ -109,8 +109,8 @@ class basicinfo(indicator):
 		give the cashout considering redemption rates as zero
 		
 		:returns: three elements tuple, the first is dateobj
-		the second is a positive float for cashout, 
-		the third is a negative float for share decrease
+			the second is a positive float for cashout, 
+			the third is a negative float for share decrease
 		'''
 		date = convert_date(date)
 		tots = sum([remitem[1] for remitem in rem if remitem[0]<=date])
@@ -248,8 +248,8 @@ class fundinfo(basicinfo):
 		give the cashout based on rem term considering redemption rates
 		
 		:returns: three elements tuple, the first is dateobj
-		the second is a positive float for cashout, 
-		the third is a negative float for share decrease
+			the second is a positive float for cashout, 
+			the third is a negative float for share decrease
 		'''
 #		 value = myround(share*self.price[self.price['date']==date].iloc[0].netvalue)
 		date = convert_date(date)
