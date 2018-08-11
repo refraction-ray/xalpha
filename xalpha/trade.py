@@ -236,6 +236,10 @@ class trade():
 		'''
 		date = convert_date(date)
 		partcftb = self.cftable[self.cftable['date']<=date]
+		if len(partcftb) == 0:
+			reportdict = {'基金名称':[self.aim.name],'基金代码':[self.aim.code]}
+			df = pd.DataFrame(reportdict,columns=reportdict.keys())
+			return df
 		# totinput = myround(-sum(partcftb.loc[:,'cash']))
 		totinput = myround(-sum([row['cash'] for _,row in partcftb.iterrows() if row['cash']<0]) )
 		totoutput = myround(sum([row['cash'] for _,row in partcftb.iterrows() if row['cash']>0]) )
@@ -269,6 +273,9 @@ class trade():
 		'''
 		date = convert_date(date)
 		partcftb = self.cftable[self.cftable['date']<=date]
+		if len(partcftb) == 0:
+			return {}
+
 		unitvalue = self.aim.price[self.aim.price['date']<=date].iloc[-1].netvalue
 		currentshare = myround(sum(partcftb.loc[:,'share']))
 		currentvalue = myround(currentshare*unitvalue)
@@ -284,6 +291,8 @@ class trade():
 		:returns: float number of unitcost
 		'''
 		partcftb = self.cftable[self.cftable['date']<=date]
+		if len(partcftb) == 0:
+			return 0
 		totnetinput = myround(-sum(partcftb.loc[:,'cash']))
 		currentshare = self.briefdailyreport(date).get('currentshare',0)
 		totnetinput

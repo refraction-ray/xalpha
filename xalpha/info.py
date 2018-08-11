@@ -17,6 +17,7 @@ from xalpha.cons import myround, convert_date, opendate, droplist, yesterday, ye
 import xalpha.remain as rm
 from xalpha.indicator import indicator
 
+_warnmess = 'Something weird on redem fee, please adjust self.segment by hand'
 
 def _download(url, tries=3):
 	for count in range(tries):
@@ -179,8 +180,10 @@ class fundinfo(basicinfo):
 		infodict = {"date":[dt.datetime.fromtimestamp(int(nodenet.children()[i].children()[0].right.value)/1e3, tz=tz_bj).replace(tzinfo=None) 
 					 for i in range(len(nodenet.children()))],
 			  "netvalue":[float(nodenet.children()[i].children()[1].right.value) for i in range(len(nodenet.children()))],
-			  "comment": [_nfloat(nodenet.children()[i].children()[3].right.value) for i in range(len(nodenet.children()))],
-			  "totvalue": [float(nodetot.children()[i].children()[1].value) for i in range(len(nodenet.children()))]}
+			  "comment": [_nfloat(nodenet.children()[i].children()[3].right.value) for i in range(len(nodenet.children()))]}
+		
+		if len(nodenet.children()) == len(nodetot.children()): # 防止总值和净值数据量不匹配，已知有该问题的基金：502010
+			infodict["totvalue"] = [float(nodetot.children()[i].children()[1].value) for i in range(len(nodenet.children()))]
 		
 		rate = [node.children()[0].children()[1] for node in nodevisitor.visit(tree) 
 			  if isinstance(node, ast.VarStatement) and (node.children()[0].children()[0].value=='fund_Rate')][0]
@@ -218,14 +221,19 @@ class fundinfo(basicinfo):
 				else:
 					num = int(num[:-1])*365
 				b[j][i] = num
-		b[0].insert(0,0)
-		for i in range(len(b)-1):
+		if len(b[0]) == 1: # 有时赎回费会写大于等于一天
+			b[0].insert(0,0)
+		elif len(b[0]) == 2:
+			b[0][0] = 0
+		else:
+			print(_warnmess)
+		for i in range(len(b)-1): # 有时赎回费两区间都是闭区间
 			if b[i][1]-b[i+1][0] == -1:
 				b[i][1] = b[i+1][0]
 			elif b[i][1]==b[i+1][0]:
 				pass
 			else:
-				print('Something weird on redem fee, please adjust self.segment by hand')
+				print(_warnmess)
 			  
 		return b
 	
