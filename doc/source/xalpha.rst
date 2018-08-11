@@ -12,6 +12,14 @@ xalpha.cons module
     :undoc-members:
     :show-inheritance:
 
+xalpha.evaluate module
+-----------------------
+
+.. automodule:: xalpha.evaluate
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 xalpha.indicator module
 -----------------------
 

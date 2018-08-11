@@ -1,4 +1,5 @@
 htmlcov/
+*.pptx
 real.ipynb
 .DS_Store
 __pycache__

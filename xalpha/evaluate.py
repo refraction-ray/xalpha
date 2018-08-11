@@ -10,7 +10,7 @@ from xalpha.cons import convert_date, yesterdayobj
 class evaluate():
     '''
     多个 info 对象的比较类，比较的对象只要实现了 price 属性，该属性为具有 date 和 netvalue 列的 pandas.DataFrame 即可。
-    更进一步，也可讲做过 bcmkset 的 :class:`xalpha.mul.mulfix` 类作为输入，只不过此时需要提前额外指定以下该对象的 name 和 code 两个属性。
+    更进一步，也可讲做过 bcmkset 的 :class:`xalpha.multiple.mulfix` 类作为输入，只不过此时需要提前额外指定以下该对象的 name 和 code 两个属性。
 
     :param *fundobjs: info object，或者如前所述一切具有 price 表的对象
     :param start: date string or object, 比较的起始时间，默认使用所有 price 表中最近的起始时间。
