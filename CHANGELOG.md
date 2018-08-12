@@ -1,6 +1,8 @@
 # Changelog
 
 ## unreleased
+
+## v0.0.5 - 2018.08.12 
 ### added
 * mul 类增加返回 evaluate 对象的函数
 * 增加了新的模块 evaluate 类，可以作为多净值系统的比较分析工具，现在提供净值可视化与相关系数分析的功能
