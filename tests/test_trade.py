@@ -52,7 +52,7 @@ def test_policy_buyandhold():
 	assert round(cm_m2.information_ratio('2016-07-01'),3) == -0.385
 	allin.sellout('2018-06-01')
 	cm_t2 = xa.trade(cm,allin.status)
-	assert round(cm_t2.xirrrate(guess=-0.9),2) == -0.33
+	assert round(cm_t2.xirrrate('2019-08-12',guess=-0.9),2) == -0.33
 
 def test_policy_scheduled():
 	auto = xa.policy.scheduled(cm, 1000, pd.date_range('2015-07-01','2018-07-01',freq='W-THU'))

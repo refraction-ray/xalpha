@@ -261,7 +261,11 @@ class fundinfo(basicinfo):
 		'''
 #		 value = myround(share*self.price[self.price['date']==date].iloc[0].netvalue)
 		date = convert_date(date)
-		row = self.price[self.price['date']>=date].iloc[0]
+		partprice = self.price[self.price['date']>=date]
+		if len(partprice) == 0:
+			row = self.price[self.price['date']<date].iloc[-1]
+		else:
+			row = partprice.iloc[0]
 		soldrem, _ = rm.sell(rem, share, row.date)
 		value = 0
 		sh = myround(sum([item[1] for item in soldrem]))
