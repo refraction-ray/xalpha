@@ -119,7 +119,11 @@ class basicinfo(indicator):
 			sh = tots
 		else:
 			sh = share
-		row = self.price[self.price['date']>=date].iloc[0]
+		partprice =  self.price[self.price['date']>=date]
+		if len(partprice) == 0:
+			row = self.price[self.price['date']<date].iloc[-1]
+		else:
+			row = partprice.iloc[0]
 		value = myround(sh*row.netvalue)
 		return (row.date, value, -myround(sh))
 	
