@@ -14,15 +14,18 @@
 
 *	单只基金交易的分析： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/trade.ipynb>`_
 
-*	多只基金交易组合的管理分析： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/mul.ipynb>`_
+*	多只基金投资组合的管理分析： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/mul.ipynb>`_
 
-*	简单的基金策略生成与回测： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/policy.ipynb>`_
+*	简单的静态基金策略生成与回测： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/policy.ipynb>`_
+
 
 研究案例
 -----------
 
 *	基金A类C类份额对比： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/ACshare.ipynb>`_
 
-*	基金指数增强效果研究： 
+*	基金指数增强效果研究： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/enhancefund.ipynb>`_
 
 *	定投策略的研究： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/schedulestudy.ipynb>`_
+
+*	ETF拯救世界投资计划的分析与可视化： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/ETFanalysis.ipynb>`_
