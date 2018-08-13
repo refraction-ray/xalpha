@@ -7,6 +7,7 @@ import pytest
 ca = xa.cashinfo(interest=0.0002, start='2015-01-01')
 zzhb = xa.indexinfo('0000827')
 hs300 = xa.fundinfo('000311')
+zogqb = xa.mfundinfo('001211')
 
 def test_cash():    
     assert round(ca.price[ca.price['date']=='2018-01-02'].iloc[0].netvalue,4) == 1.2453
@@ -40,6 +41,11 @@ def test_fund():
 	assert str(excinfo.value) == 'One cannot move share before the lastest operation' 
 	assert hs300.shuhui(320, '2018-01-01',[[pd.Timestamp('2011-01-03'),200],[pd.Timestamp('2017-12-29'),200]])[1] == 685.72
 	assert hs300.shengou(200,'2018-07-20')[2] == 105.24
+	hs300.info()
+
+def test_mfundinfo():
+	zogqb.bcmkset(xa.cashinfo())
+	assert round(zogqb.total_annualized_returns('2018-08-01'),3) == 0.036
 
 def test_evaluate():
 	comp = xa.evaluate(ca,zzhb,hs300)

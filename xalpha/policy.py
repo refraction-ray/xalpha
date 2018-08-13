@@ -84,7 +84,7 @@ class scheduled(policy):
 
 class scheduled_tune(scheduled):
     '''
-    定期不定额的方式进行投资，基于点数分段进行投资
+    定期不定额的方式进行投资，基于净值点数分段进行投资
     '''
     def __init__(self, infoobj, totmoney, times, piece):
         '''
@@ -160,7 +160,3 @@ class grid(policy):
                 action += -1/self.pos
                 self.pos += -1
         return action
-
-
-
-

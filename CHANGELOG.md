@@ -1,6 +1,10 @@
 # Changelog
 
 ## unreleased
+### added
+* 新增真实的货币基金类 mfundinfo，与虚拟货币基金类 cashinfo 互为补充
+### fixed
+* info 类赎回逻辑的进一步完善，未来赎回则视为最后一个有记录的净值日赎回
 
 ## v0.0.5 - 2018.08.12 
 ### added

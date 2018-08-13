@@ -337,3 +337,35 @@ class cashinfo(basicinfo):
 		dfdict = {'date': datel, 'netvalue':valuel, 'totvalue':valuel,'comment': [0 for _ in datel]}
 		df = pd.DataFrame(data=dfdict)
 		self.price = df[df['date'].isin(opendate)]
+
+class mfundinfo(basicinfo):
+	'''
+	真实的货币基金类，可以通过货币基金六位代码，来获取真实的货币基金业绩，并进行交易回测等
+
+	:param code: string of six digitals, code of real monetnary fund
+	'''
+	def __init__(self, code):
+		self.url = 'http://fund.eastmoney.com/pingzhongdata/'+code+'.js'
+		self.page = _download(self.url)
+		super().__init__(code)
+		
+	def _basic_init(self):
+		self.rate = 0
+		parser = Parser() 
+		tree = parser.parse(self.page.text)
+		nodenet = [node.children()[0].children()[1] for node in nodevisitor.visit(tree) 
+		   if isinstance(node, ast.VarStatement) and node.children()[0].children()[0].value=='Data_millionCopiesIncome'][0]
+		name = [node.children()[0].children()[1] for node in nodevisitor.visit(tree) 
+			 if isinstance(node, ast.VarStatement) and (node.children()[0].children()[0].value=='fS_name')][0]
+		self.name = name.value.strip('"')
+		tz_bj = dt.timezone(dt.timedelta(hours=8))
+		datel = [dt.datetime.fromtimestamp(int(nodenet.children()[i].children()[0].value)/1e3, tz=tz_bj).replace(tzinfo=None) 
+				 for i in range(len(nodenet.children()))]
+		ratel = [float(nodenet.children()[i].children()[1].value) for i in range(len(nodenet.children()))]
+		netvalue = [1]
+		for dailyrate in ratel:
+			netvalue.append(netvalue[-1]*(1+dailyrate*1e-4))
+		netvalue.remove(1)
+		
+		df = pd.DataFrame(data={'date':datel,'netvalue':netvalue,'totvalue':netvalue,'comment':[0 for _ in datel]})
+		self.price = df[df['date'].isin(opendate)]
