@@ -312,7 +312,7 @@ class trade():
 		'''
 		return vtradevolume(self.cftable, **vkwds)
 
-	def v_tradecost(self,end=yesterdayobj,**vkwds):
+	def v_tradecost(self,start=None,end=yesterdayobj,**vkwds):
 		'''
 		visualization giving the average cost line together with netvalue line
 
@@ -322,7 +322,9 @@ class trade():
 		funddata = []
 		costdata = []
 		pprice = self.aim.price[self.aim.price['date']<=end]
-		for i, row in pprice.iterrows():
+		if start is not None:
+			pprice = pprice[pprice['date']>=start]
+		for _ , row in pprice.iterrows():
 			date = row['date']
 			funddata.append( [date, row['netvalue']] )
 			if (date-self.cftable.iloc[0].date).days>=0:
@@ -356,3 +358,12 @@ class trade():
 
 	def __repr__(self):
 		return self.aim.name+' 交易情况'
+
+'''
+可视化图的合并可参考以下代码
+from pyecharts import Overlap
+overlap = Overlap()
+overlap.add(self.v_tradecost())
+overlap.add(self.v_tradevolume(bar_category_gap='95%'), yaxis_index=1,is_add_yaxis=True)
+overlap
+'''
