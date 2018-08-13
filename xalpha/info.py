@@ -200,7 +200,7 @@ class fundinfo(basicinfo):
 		df = pd.DataFrame(data=infodict)
 		df = df[df['date'].isin(opendate)] 
 		df = df.reset_index(drop=True)
-		self.price = df
+		self.price = df[df['date']<=yesterdaydash]
 		
 	def _feepreprocess(self):
 		'''
@@ -310,6 +310,7 @@ class indexinfo(basicinfo):
 		index = index.iloc[::-1]
 		index = index.reset_index(drop=True)
 		self.price = index[index['date'].isin(opendate)]
+		self.price = self.price[self.price['date']<=yesterdaydash]
 		self.name = my_list[-1][2]
 		self.rate = 0
 	
@@ -368,4 +369,5 @@ class mfundinfo(basicinfo):
 		netvalue.remove(1)
 		
 		df = pd.DataFrame(data={'date':datel,'netvalue':netvalue,'totvalue':netvalue,'comment':[0 for _ in datel]})
-		self.price = df[df['date'].isin(opendate)]
+		df = df[df['date'].isin(opendate)]
+		self.price = df[df['date']<=yesterdaydash]

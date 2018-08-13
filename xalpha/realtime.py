@@ -4,7 +4,11 @@
 '''
 from re import match
 import datetime as dt
-from xalpha.info import _download
+import pandas as pd
+from xalpha.info import _download, fundinfo
+from xalpha.cons import today
+from xalpha.trade import trade
+
 
 
 class rtdata():
@@ -22,56 +26,63 @@ class rtdata():
 		self.time = dt.datetime.strptime(match(r'.*"gztime":"([\d\s\-\:]*)".*',page.text)[1],'%Y-%m-%d %H:%M')
 
 
+def rfundinfo(code):
+	'''
+	give a fundinfo object with todays estimate netvalue at running time
+
+	:param code: string of six digitals for funds
+	:returns: the fundinfo object
+	'''
+	fundobj = fundinfo(code)
+	rt = rtdata(code)
+	rtdate = dt.datetime.combine(rt.time, dt.time.min)
+	rtvalue = rt.rtvalue
+	if (rtdate-fundobj.price.iloc[-1].date).days > 0:
+		fundobj.price = fundobj.price.append(pd.DataFrame([[rtdate,rtvalue,fundobj.price.iloc[-1].totvalue,0]],
+			columns=['date','netvalue','totvalue','comment']),ignore_index=True)
+	return fundobj
 
 class review():
 	'''
-	scan whether there are fund status should be warned
+	review policys and give the realtime purchase suggestions
 
-	:param confs: eg. `conf = [{'plan':'grid',code':'100032','type':'low','condition':'1.03','date':'2018-08-03'},
-		{'code':'100032','type':'high','condition': 1.022},{'code':'100032','date':'2018-08-03','suggestion':1000}]`
+	:param policylist: list of policy object
+	:param namelist: list of names of corresponding policy, default as 0 to n-1
+	:param date: object of datetime, check date, today is prefered, date other than is not guaranteed
 	'''
-	def __init__(self, confs):
-		self.confs = confs
-		message = []
-		for fund in self.confs:
-			fundrt = rtdata(fund['code'])
-			date = fund.get('date',None)
-			suggestion = fund.get('suggestion',None)
-			plan = fund.get('plan', None)
-			condition1 = (fund.get('type',None) == 'low' and fundrt.rtvalue<fund.get('condition',0))
-			condition2 = (fund.get('type',None) == 'high' and fundrt.rtvalue>fund.get('condition',1e6))
-			
-			idn = '%s(%s)实时净值为%s，'%(fundrt.name,fundrt.code,fundrt.rtvalue)
-			if fund.get('type',None) is not None: 
-				if condition1:
-					loh = '低'
-					val = '净值已%s于%s，'%(loh,fund['condition'])
-				elif condition2:
-					loh = '高'
-					val = '净值已%s于%s，'%(loh,fund['condition'])
-				else:
-					val = ''
-			else:
-				val = '净值允许交易，'
-			if date is not None:
-				if fundrt.time.date() == dt.datetime.strptime(fund['date'],'%Y-%m-%d').date():
-					dateinfo = '今日%s，满足日期限制，'%date
-				else:
-					dateinfo = ''
-			else:
-				dateinfo = '今日允许交易，'
-			if suggestion is not None:
-				if suggestion>0:
-					sug = '建议买入%s元'%suggestion
-				elif suggestion<0:
-					sug = '建议买出全部份额的%s%%'%suggestion
-			else:
-				sug = '建议进行交易'
-			if plan is not None:
-				orig = '，来自%s计划的提醒'%plan
-			else:
-				orig = ''
-			if len(val)!=0 and len(dateinfo)!=0:
-				message.append(idn+val+dateinfo+sug+orig)
+	def __init__(self, policylist, namelist=None, date=today):
+		self.warn = []
+		self.message = []
+		self.policylist = policylist
+		if namelist is None:
+			self.namelist = [i for i in range(len(policylist))]
+		else:
+			self.namelist = namelist
+		assert len(self.policylist) == len(self.namelist)
+		for i,policy in enumerate(policylist):
+			row = policy.status[policy.status['date']==date]
+			if len(row) == 1:
+				warn = (policy.aim.name, policy.aim.code, 
+					row.iloc[0].loc[policy.aim.code], self.namelist[i])
+				self.warn.append(warn)
+				if warn[2]>0:
+					sug = '买入%s元'%warn[2]
+				elif warn[2]<0:
+					share = trade(fundinfo(warn[1]),policy.status).briefdailyreport().get('currentshare',0)
+					share = -warn[2]/0.005* share
+					sug = '卖出%s份额'%share
+				self.message.append('根据%s计划，建议%s，%s(%s)'%(warn[3],sug,warn[0],warn[1]))
 
-		self.message = message
+		
+	def __str__(self):
+		message = '\n'.join(map(str, self.message)) 
+		return message
+	
+	def notification(self, conf):
+		'''
+		send email of self.message
+		'''
+		pass
+
+
+

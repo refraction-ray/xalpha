@@ -20,21 +20,26 @@ class policy(record):
         self.aim = infoobj
         self.totmoney = totmoney
         self.price = infoobj.price[(infoobj.price['date']>=start)&(infoobj.price['date']<=end)]
-        self.start = self.price.iloc[0].date
-        self.end = self.price.iloc[-1].date
-        datel = []
-        actionl = []
-        times = pd.date_range(self.start,self.end)
-        for date in times:
-            action = self.status_gen(date)
-            if action>0:
-                datel.append(date)
-                actionl.append(action)
-            elif action<0:
-                datel.append(date)
-                actionl.append(action*0.005)
-        df = pd.DataFrame(data={'date':datel, self.aim.code:actionl})
-        self.status = df
+        if len(self.price) == 0:
+            self.start = convert_date(start)
+            self.end = convert_date(end)
+            self.status = pd.DataFrame(data={'date':[],self.aim.code:[]})
+        else:
+            self.start = self.price.iloc[0].date
+            self.end = self.price.iloc[-1].date
+            datel = []
+            actionl = []
+            times = pd.date_range(self.start,self.end)
+            for date in times:
+                action = self.status_gen(date)
+                if action>0:
+                    datel.append(date)
+                    actionl.append(action)
+                elif action<0:
+                    datel.append(date)
+                    actionl.append(action*0.005)
+            df = pd.DataFrame(data={'date':datel, self.aim.code:actionl})
+            self.status = df
         
     def status_gen(self, date):
         '''
@@ -68,7 +73,8 @@ class scheduled(policy):
 
     :param infoobj: info obj
     :param totmoney: float, money value for purchase every time
-    :param times: datelist for purchase date, eg ['2017-01-01','2017-07-07',...]
+    :param times: datelist of datetime object for purchase date, eg ['2017-01-01','2017-07-07',...]
+        we recommend you use pd.date_range() to generate the schduled list
     '''
     def __init__(self, infoobj, totmoney, times):
         start = times[0]
@@ -81,6 +87,7 @@ class scheduled(policy):
             return self.totmoney
         else:
             return 0
+
 
 class scheduled_tune(scheduled):
     '''
@@ -104,6 +111,8 @@ class scheduled_tune(scheduled):
             return 0
         else:
             return 0
+
+
 
 class grid(policy):
     '''

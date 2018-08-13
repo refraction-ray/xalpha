@@ -9,7 +9,8 @@ from scipy import optimize
 import tushare as ts
 import pandas as pd
 
-
+# date obj of today
+today = dt.datetime.combine(dt.date.today(), dt.time.min)
 
 # string for yesterday, only used for indexinfo url
 yesterday = dt.datetime.strftime((dt.datetime.now()-dt.timedelta(1)), '%Y%m%d') 
