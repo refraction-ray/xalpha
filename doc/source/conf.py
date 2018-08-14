@@ -26,7 +26,7 @@ author = 'refraction-ray'
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = '0.0.5'
 
 
 # -- General configuration ---------------------------------------------------
@@ -98,6 +98,16 @@ html_static_path = ['_static']
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
+
+# rtd github link config
+html_context = {
+    "display_github": True, # Integrate GitHub
+    "github_user": "refraction-ray", # Username
+    "github_repo": "xalpha", # Repo name
+    "github_version": "master", # Version
+    "conf_py_path": "/source/", # Path in the checkout to the docs root
+}
+
 
 
 # -- Options for HTMLHelp output ---------------------------------------------

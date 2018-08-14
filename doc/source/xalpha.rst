@@ -1,9 +1,6 @@
 xalpha package
 ==============
 
-Submodules
-----------
-
 xalpha.cons module
 ------------------
 

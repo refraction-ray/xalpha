@@ -106,7 +106,7 @@ xalpha 可以用来对场外基金和指数进行方便的追踪和研究，
 
 交易策略的监视和定时提醒
 -----------------------
-使用 :class:`xalpha.realtime.review` 可以实现策略的监测和邮件的发送，具体使用示例可以查看 doc/sample/notification.py
+使用 :class:`xalpha.realtime.review` 可以实现策略的监测和邮件的发送，具体使用可以查看 `示例 <https://github.com/refraction-ray/xalpha/blob/master/doc/samples/notification.py>`_
 
 
 
