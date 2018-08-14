@@ -104,5 +104,9 @@ xalpha 可以用来对场外基金和指数进行方便的追踪和研究，
 	>>> st = xa.policy.buyandhold(yyws,'2016-01-01') # buy and hold from 2016-01-01, 且始终分红再投入
 	>>> st2 = xa.policy.scheduled(yyws, totmoney = 1000, times=pd.date_range('2016-01-01','2018-06-01',freq='W-THU')) # 定投 status 的生成：从2016-01-01 到 2018-06-01 每周四进行定额定投 1000 元。
 
+交易策略的监视和定时提醒
+-----------------------
+使用 :class:`xalpha.realtime.review` 可以实现策略的监测和邮件的发送，具体使用示例可以查看 doc/sample/notification.py
+
 
 

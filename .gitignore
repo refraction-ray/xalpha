@@ -1,4 +1,5 @@
 htmlcov/
+notification_my.py
 *.pptx
 real.ipynb
 .DS_Store

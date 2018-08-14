@@ -52,6 +52,14 @@ xalpha.policy module
     :undoc-members:
     :show-inheritance:
 
+xalpha.realtime module
+-------------------------
+
+.. automodule:: xalpha.realtime
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 xalpha.record module
 --------------------
 
