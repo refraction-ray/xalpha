@@ -20,3 +20,7 @@ def test_review(capsys):
 	check.notification(conf)
 	captured = capsys.readouterr()
 	assert captured.out == "没有提醒待发送\n"
+	check.content = 'a\nb'
+	check.notification(conf)
+	captured = capsys.readouterr()
+	assert captured.out == "邮件发送失败\n"

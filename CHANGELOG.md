@@ -1,6 +1,8 @@
 # Changelog
 
-## unreleased
+## Unreleased
+
+## v0.0.6 - 2018.08.14
 ### added
 * 新增真实的货币基金类 mfundinfo，与虚拟货币基金类 cashinfo 互为补充
 * 新增了 realtime 模块，可以根据存储制定的策略，提供实时的投资建议，并自动发送邮件通知
