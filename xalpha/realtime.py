@@ -1,13 +1,65 @@
 # -*- coding: utf-8 -*-
 '''
-
+module for realtime watch and notfication
 '''
+
+import smtplib
+from email import encoders
+from email.header import Header
+from email.mime.text import MIMEText
+from email.utils import formataddr, parseaddr
+
 from re import match
 import datetime as dt
 import pandas as pd
 from xalpha.info import _download, fundinfo
 from xalpha.cons import today
 from xalpha.trade import trade
+
+def _format_addr(s):
+	'''
+	parse the email sender and receiver, Chinese encode and support
+
+	:param s: eg. 'name <email@website.com>, name2 <email2@web2.com>'
+	'''
+	name, addr = parseaddr(s)
+	return formataddr((Header(name, 'utf-8').encode(), addr))
+
+def mail(title, content, sender=None, receiver=None, password=None, server = None, port = None, sender_name='sender',
+	receiver_name=None):
+	'''
+	send email 
+
+	:param title: str, title of the email
+	:param content: str, content of the email, plain text only
+	:param conf: all other paramters can be import as a dictionay, eg.conf = {'sender': 'aaa@bb.com',
+		'sender_name':'name', 'receiver':['aaa@bb.com','ccc@dd.com'], 'password':'123456',
+		'server':'smtp.bb.com','port':123, 'receiver_name':['me','guest']}. 
+		The receiver_name and sender_name options can be omitted.
+	'''
+	ret = True
+	try:
+		if receiver_name is None:
+			receiver_name = ['receiver' for _ in receiver]
+		msg = MIMEText(content,'plain','utf-8')
+		msg['From'] = _format_addr('%s <%s>'%(sender_name,sender))  
+		# 括号里的对应发件人邮箱昵称、发件人邮箱账号
+		receivestr = ''
+		for i,s in enumerate(receiver):
+			receivestr += receiver_name[i]
+			receivestr += ' <'
+			receivestr += s
+			receivestr += '>, '
+		msg['To'] = _format_addr(receivestr)		# 括号里的对应收件人邮箱昵称、收件人邮箱账号
+		msg['Subject'] = title	# 邮件的主题，即标题
+ 
+		server=smtplib.SMTP_SSL(server, port)    # 发件人邮箱中的SMTP服务器和端口号
+		server.login(sender, password)  # 括号中对应的是发件人邮箱账号、邮箱密码
+		server.sendmail(sender,receiver,msg.as_string())  # 括号中对应的是发件人邮箱账号、收件人邮箱账号、发送邮件
+		server.quit()  
+	except Exception:  
+		ret=False
+	return ret
 
 
 
@@ -42,6 +94,7 @@ def rfundinfo(code):
 			columns=['date','netvalue','totvalue','comment']),ignore_index=True)
 	return fundobj
 
+
 class review():
 	'''
 	review policys and give the realtime purchase suggestions
@@ -68,21 +121,32 @@ class review():
 				if warn[2]>0:
 					sug = '买入%s元'%warn[2]
 				elif warn[2]<0:
+					ratio = -warn[2]/0.005*100
 					share = trade(fundinfo(warn[1]),policy.status).briefdailyreport().get('currentshare',0)
 					share = -warn[2]/0.005* share
-					sug = '卖出%s份额'%share
+					sug = '卖出%s%%的份额，也即%s份额'%(ratio,share)
 				self.message.append('根据%s计划，建议%s，%s(%s)'%(warn[3],sug,warn[0],warn[1]))
+		self.content = '\n'.join(map(str, self.message)) 
 
 		
 	def __str__(self):
-		message = '\n'.join(map(str, self.message)) 
-		return message
+		return self.content
 	
 	def notification(self, conf):
 		'''
-		send email of self.message
+		send email of self.content, at least support for qq email sender
+
+		:param conf: the configuration dictionary for email send settings, no ** before the dict in needed.
+			eg.conf = {'sender': 'aaa@bb.com',
+			'sender_name':'name', 'receiver':['aaa@bb.com','ccc@dd.com'], 'password':'123456',
+			'server':'smtp.bb.com','port':123, 'receiver_name':['me','guest']}. 
+			The receiver_name and sender_name options can be omitted.
 		'''
-		pass
-
-
-
+		if self.content:
+			ret = mail('Notification', self.content, **conf)
+			if ret:
+				print("邮件发送成功")
+			else:
+				print("邮件发送失败")
+		else:
+			print('没有提醒待发送')
