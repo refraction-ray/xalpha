@@ -156,7 +156,162 @@ class indicator():
 			for j in range(i+1, len(li)):
 				res.append((li[i][0],li[j][0],(li[j][1]-li[i][1])/li[i][1]))
 		return min(res, key=lambda x:x[2])
+
 	
+	## 以上基本为聚宽提供的整体量化指标，以下是其他短线技术面指标
+
+	def ma(self, window=5, col='netvalue'):
+		'''
+		移动平均线指标
+		give the moving average as a new column 'MA' in the price table, return None
+
+		:param window: the date window of the MA calculation
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		self.price['MA'+str(window)] = self.price[col].rolling(window=window).mean()
+
+	def md(self, window=5, col='netvalue'):
+		'''
+		移动标准差指标
+		give the moving standard deviation as a new column 'MD' in the price table, return None
+
+		:param window: the date window of the MD calculation
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		self.price['MD'+str(window)] = self.price[col].rolling(window=window).std()
+
+	def ema(self, window=5, col='netvalue'):
+		'''
+		指数平均数指标
+		give the exponential moving average as a new column 'EMA' in the price table, return None
+
+		:param window: the span of date, where the decay factor alpha=2/(1+window)
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		self.price['EMA'+str(window)] = self.price[col].ewm(span=window).mean()
+
+	def macd(self, fast_window=12, slow_window=26, signal_window=9, col='netvalue'):
+		'''
+		指数平滑异同移动平均线
+		give the MACD index as three new columns 'MACD_DIFF/DEM/OSC' in the price table, return None
+		
+		:param fast_window: int, 
+		:param slow_window: int, 
+		:param signal_window: int, the ema window of the signal line
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		EMAfast = pd.Series(self.price[col].ewm(span=fast_window).mean())
+		EMAslow = pd.Series(self.price[col].ewm(span=slow_window).mean())
+		# 短期ema和长期ema的差
+		MACDDiff = pd.Series(EMAfast - EMAslow)
+		# 该差的再次 ema 平均
+		MACDDem = pd.Series(MACDDiff.ewm(span=signal_window).mean())
+		# ema平均过的差和原来差的差
+		MACDOsc = pd.Series(MACDDiff - MACDDem)
+		self.price['MACD_DIFF_' + str(fast_window) + '_' + str(slow_window)] = MACDDiff
+		self.price['MACD_DEM_' + str(fast_window) + '_' + str(slow_window)] = MACDDem
+		self.price['MACD_OSC_' + str(fast_window) + '_' + str(slow_window)] = MACDOsc
+
+	def mtm(self, window=10, col='netvalue'):
+		'''
+		动量指标，并未附加动量的平均线指标，如需计算动量平均线指标，使用ma或emca函数，col参数选择MTM列即可
+		give the MTM as a new column 'MTM' in the price table, return None
+
+		:param window: int, the difference between price now and window days ago
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		self.price['MTM'+str(window)] = self.price[col].diff(window)
+
+	def roc(self, window=10, col='netvalue'):
+		'''
+		变动率指标
+		give the ROC as a new column 'ROC' in the price table, return None, the ROC is in the unit of 1 instead of 1%
+
+		:param window: int, the change rate between price now and window days ago
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		abdiff = self.price[col].diff(window)
+		deno = self.price[col].shift(window)
+		reladiff = pd.Series(abdiff / deno)
+		self.price['ROC'+str(window)] = reladiff
+
+	def boll(self, window=10, deviation=2, col='netvalue'):
+		'''
+		布林线上下轨计算
+		give the bolling upper and lower band in the price table, the middle line is just ma line
+
+		:param window: int, the date window for ma and md
+		:param deviation: int or float, how many times deviation of sigma 
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		self.ma(window=window,col=col)
+		self.md(window=window,col=col)
+		self.price['BOLL_UPPER']=self.price['MA'+str(window)]+deviation*self.price['MD'+str(window)]
+		self.price['BOLL_LOWER']=self.price['MA'+str(window)]-deviation*self.price['MD'+str(window)]
+
+	def bias(self, window=10, col='netvalue'):
+		'''
+		乖离率
+		give the bias as BIAS column in price table
+
+		:param window: int, MA_window
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		self.ma(window=window,col=col)
+		self.price['BIAS'+str(window)]=(self.price[col]-self.price['MA'+str(window)])/self.price['MA'+str(window)]
+	
+	def rsi(self, window=14, col='netvalue'):
+		'''
+		相对强弱指标
+		give the rsi as RSI column in price table
+
+		:param window: int, MA_window
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		i = 0
+		UpI = [0]
+		DoI = [0]
+		while i + 1 <= len(self.price)-1:
+			Move = self.price.loc[i + 1, col] - self.price.loc[i, col]
+			if Move > 0:
+				UpD = Move
+				DoD = 0
+			else:
+				UpD = 0
+				DoD = -Move
+			UpI.append(UpD)
+			DoI.append(DoD)
+			i = i + 1
+			
+		UpI = pd.Series(UpI)
+		DoI = pd.Series(DoI)
+		PosDI = pd.Series(UpI.ewm(span=window).mean())
+		NegDI = pd.Series(DoI.ewm(span=window).mean())
+		self.price['RSI'+str(window)] = pd.Series(PosDI / (PosDI + NegDI))
+
+	def kdj(self, rsv_window=9, k_window=3, d_window=3, col='netvalue'):
+		'''
+		KDJ 随机指标
+		由于该模块不涉及日内高低价的信息，因此区间最高价最低价都由极值收盘价代替，因此和其他软件计算的 kdj 指标可能存在出入。
+		give k,d,j indexes as three columns KDJ_K/D/J in price table
+		
+		:param rsv_window: int
+		:param k_window: int
+		:param d_window: int
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		roll = self.price[col].rolling(window=rsv_window)
+		rsv = (self.price[col]-roll.min())/(roll.max()-roll.min())
+		k = rsv.rolling(window=k_window).mean()
+		d = k.rolling(window=d_window).mean()
+		j = 3*k-2*d
+		self.price['KDJ_K'] = k
+		self.price['KDJ_D'] = d
+		self.price['KDJ_J'] = j
+
+
+	## 以下是可视化部分
+
 	def v_netvalue(self, end=yesterdayobj(), benchmark = True, **vkwds):
 		'''
 		visulaization on  netvalue curve

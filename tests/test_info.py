@@ -28,6 +28,25 @@ def test_index():
 	assert zzhb.shengou(100, '2018-01-02')[2]==55.24
 	assert zzhb.shuhui(100,'2016-01-01', [[pd.Timestamp('2017-01-03'),200]])[2] == 0
 	zzhb.info()
+	zzhb.ma(window=10)
+	zzhb.md()
+	zzhb.ema(col='totvalue')
+	zzhb.macd()
+	zzhb.mtm()
+	zzhb.roc()
+	zzhb.boll()
+	zzhb.rsi()
+	zzhb.kdj()
+	row = zzhb.price[zzhb.price['date']=='2018-08-01'].iloc[0]
+	assert round(row['MD5'],3) == 0.012
+	assert round(row['MA10'],3) == 1.361
+	assert round(row['MACD_OSC_12_26'],4) ==0.0076
+	assert round(row['EMA5'],1) == 1318.8
+	assert round(row['MTM10'],4) == 0.0078
+	assert round(row['ROC10'],4) == 0.0058
+	assert round(row['BOLL_UPPER'],3) == 1.398
+	assert round(row['RSI14'],3) == 0.411
+	assert round(row['KDJ_J'],4) == 0.0456
 
 def test_fund():
 	assert hs300.label == 2

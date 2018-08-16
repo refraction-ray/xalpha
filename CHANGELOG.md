@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+### added
+* indicator 模块增加了大量技术面指标的计算工具
 ### fixed
 * 将时间常量修改为函数
 ## v0.0.6 - 2018.08.14
