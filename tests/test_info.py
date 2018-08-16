@@ -37,6 +37,11 @@ def test_index():
 	zzhb.boll()
 	zzhb.rsi()
 	zzhb.kdj()
+	zzhb.wnr()
+	zzhb.dma(col='totvalue')
+	zzhb.bbi()
+	zzhb.trix(col='totvalue')
+	zzhb.psy()
 	row = zzhb.price[zzhb.price['date']=='2018-08-01'].iloc[0]
 	assert round(row['MD5'],3) == 0.012
 	assert round(row['MA10'],3) == 1.361
@@ -47,6 +52,11 @@ def test_index():
 	assert round(row['BOLL_UPPER'],3) == 1.398
 	assert round(row['RSI14'],3) == 0.411
 	assert round(row['KDJ_J'],4) == 0.0456
+	assert round(row['WNR14'],2) == 0.27
+	assert round(row['AMA'],2) == -87.71
+	assert round(row['BBI'],3) == 1.356
+	assert round(row['TRIX10'],4) == 0.0005
+	assert round(row['PSYMA12'],2) == 0.47
 
 def test_fund():
 	assert hs300.label == 2

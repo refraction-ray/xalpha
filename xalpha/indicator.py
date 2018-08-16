@@ -8,6 +8,17 @@ from pyecharts import Line
 
 from xalpha.cons import yesterdayobj, opendate
 
+def _upcount(ls):
+	'''
+	count the ratio of upmove days by given a list
+	'''
+	count = 0
+	for i, l in enumerate(ls[1:]):
+		if l>ls[i]:
+			count += 1
+	return count/(len(ls)-1)
+
+
 class indicator():
 	'''
 	MixIn class provide quant indicator tool box which is desinged as interface for mulfix class as well
@@ -308,6 +319,80 @@ class indicator():
 		self.price['KDJ_K'] = k
 		self.price['KDJ_D'] = d
 		self.price['KDJ_J'] = j
+
+	def wnr(self, window=14, col='netvalue'):
+		'''
+		威廉指标，这里取超卖结果接近0的约定(wnr*-1)，事实上就是 rsv, 同样的区间极值价用极值收盘价替代 
+		give williams %R in WNR column in price table
+
+		:param window: int
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		roll = self.price[col].rolling(window=window)
+		wnr = (self.price[col]-roll.min())/(roll.max()-roll.min())
+		self.price['WNR'+str(window)] = wnr
+
+	def dma(self, fast_window=10, slow_window=50, ama_window=10, col='netvalue'):
+		'''
+		平行线差指标
+		give different of moving average as columns DMA and AMA in price table
+
+		:param fast_window: int
+		:param slow_window: int
+		:param ama_window:  int
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		dma = self.price[col].rolling(window=fast_window).mean()-self.price[col].rolling(window=slow_window).mean()
+		ama = dma.rolling(window=ama_window).mean()
+		self.price['DMA'] = dma
+		self.price['AMA'] = ama
+
+	def bbi(self, col='netvalue'):
+		'''
+		多空指标
+		give bull and bear line in column BBI in price table
+
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		bbi = self.price[col].rolling(3).mean()
+		bbi = bbi + self.price[col].rolling(6).mean()
+		bbi = bbi + self.price[col].rolling(12).mean()
+		bbi = bbi + self.price[col].rolling(24).mean()
+		bbi = bbi/4
+		self.price['BBI'] = bbi
+
+	def trix(self, window = 10, ma_window=10, col='netvalue'):
+		'''
+		三重指数平滑平均线
+		give the trix index in column TRIX, TRMA
+		
+		:param window: int
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		tr = self.price[col].ewm(span=window).mean()
+		tr = tr.ewm(span=window).mean()
+		tr = tr.ewm(span=window).mean()
+		trix = tr.diff(1)/tr.shift(1)
+		trma = trix.rolling(ma_window).mean()
+		self.price['TRIX'+str(window)] = trix
+		self.price['TRMA'+str(window)] = trma
+
+	def psy(self, count_window=12, ma_window=6, col='netvalue'):
+		'''
+		心理线指标（衡量过去 count_window 天涨幅天数）
+		give psy and psyma as column PSY and PSYMA in price table
+
+		:param count_window: int
+		:param ma_window: int
+		:param col: string, column name in dataframe you want to calculate
+		'''
+		psy = self.price[col].rolling(count_window+1).agg(_upcount)
+		psyma = psy.rolling(ma_window).mean()
+		self.price['PSY'+str(count_window)] = psy
+		self.price['PSYMA'+str(count_window)] = psyma
+
+
+
 
 
 	## 以下是可视化部分
