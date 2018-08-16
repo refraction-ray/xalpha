@@ -13,8 +13,9 @@ def _upcount(ls):
 	count the ratio of upmove days by given a list
 	'''
 	count = 0
-	for i, l in enumerate(ls[1:]):
-		if l>ls[i]:
+	for i in range(len(ls)-1):
+		# somehow after pandas 0.23(22?), the input is a series(dataframe?) and old list supporting syntax are illegal
+		if ls.iloc[i+1]>ls.iloc[i]:
 			count += 1
 	return count/(len(ls)-1)
 
@@ -386,7 +387,7 @@ class indicator():
 		:param ma_window: int
 		:param col: string, column name in dataframe you want to calculate
 		'''
-		psy = self.price[col].rolling(count_window+1).agg(_upcount)
+		psy = self.price[col].rolling(count_window+1).aggregate(_upcount)
 		psyma = psy.rolling(ma_window).mean()
 		self.price['PSY'+str(count_window)] = psy
 		self.price['PSYMA'+str(count_window)] = psyma
@@ -411,4 +412,24 @@ class indicator():
 		line.add('algorithm',xdata,ydata,is_datazoom_show = True,xaxis_type="time",**vkwds)
 		if benchmark is True:
 			line.add('benchmark',xdata,ydata2,is_datazoom_show = True,xaxis_type="time",**vkwds)
+		return line
+
+	def v_techindex(self, end=yesterdayobj(), col=None, **vkwds):
+		'''
+		visualization on netvalue curve and specified indicators
+
+		:param end: date string or obj, the end date of the figure
+		:param col: list, list of strings for price col name, eg.['MA5','BBI']
+			remember generate these indicators before the visualization
+		:param vkwds: keywords option for pyecharts.Line().add()
+		'''
+		partprice = self.price[self.price['date']<=end]
+		xdata = [1 for _ in range(len(partprice))]
+		netvaldata = [[row['date'], row['netvalue']] for _, row in partprice.iterrows()]
+		line = Line()
+		line.add('netvalue', xdata, netvaldata, is_datazoom_show=True,xaxis_type="time",**vkwds)
+		if col is not None:
+			for ind in col:
+				inddata = [[row['date'], row[ind]] for _, row in partprice.iterrows()]
+				line.add(ind, xdata, inddata, is_datazoom_show=True,xaxis_type="time",**vkwds)
 		return line

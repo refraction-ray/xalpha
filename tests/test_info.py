@@ -57,6 +57,7 @@ def test_index():
 	assert round(row['BBI'],3) == 1.356
 	assert round(row['TRIX10'],4) == 0.0005
 	assert round(row['PSYMA12'],2) == 0.47
+	zzhb.v_techindex(col=['TRIX10'])
 
 def test_fund():
 	assert hs300.label == 2
