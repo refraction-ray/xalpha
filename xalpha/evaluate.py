@@ -40,7 +40,7 @@ class evaluate():
             self.totprice[fund.code] *= 1/self.totprice[fund.code].iloc[0]
         self.totprice = self.totprice.reset_index(drop=True)
             
-    def v_netvalue(self, end=yesterdayobj, **vkwds):
+    def v_netvalue(self, end=yesterdayobj(), **vkwds):
         '''
         起点对齐归一的，各参考基金或指数的净值比较可视化
 
@@ -59,7 +59,7 @@ class evaluate():
             line.add(fund.name,xdata,ydatas[i],is_datazoom_show = True,xaxis_type="time",**vkwds)
         return line
     
-    def correlation_table(self, end=yesterdayobj):
+    def correlation_table(self, end=yesterdayobj()):
         '''
         give the correlation coefficient amongst referenced funds and indexes
 
@@ -70,7 +70,7 @@ class evaluate():
         covtable = partprice.iloc[:,1:].pct_change().corr()
         return covtable
     
-    def v_correlation(self, end=yesterdayobj, **vkwds):
+    def v_correlation(self, end=yesterdayobj(), **vkwds):
         '''
         各基金净值的相关程度热力图可视化
 

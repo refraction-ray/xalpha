@@ -18,7 +18,6 @@ setuptools.setup(
         'lxml',
         'slimit>=0.8.1',
         'pandas',
-        'tushare>=1.0.5',
         'scipy',
         'requests',
         'pyecharts>=0.5.5',

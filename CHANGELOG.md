@@ -1,7 +1,8 @@
 # Changelog
 
 ## Unreleased
-
+### fixed
+* 将时间常量修改为函数
 ## v0.0.6 - 2018.08.14
 ### added
 * 新增真实的货币基金类 mfundinfo，与虚拟货币基金类 cashinfo 互为补充

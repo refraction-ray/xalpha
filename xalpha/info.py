@@ -200,7 +200,7 @@ class fundinfo(basicinfo):
 		df = pd.DataFrame(data=infodict)
 		df = df[df['date'].isin(opendate)] 
 		df = df.reset_index(drop=True)
-		self.price = df[df['date']<=yesterdaydash]
+		self.price = df[df['date']<=yesterdaydash()]
 		
 	def _feepreprocess(self):
 		'''
@@ -293,7 +293,7 @@ class indexinfo(basicinfo):
 		0 for sh and 1 for sz. 
 	'''
 	def __init__(self, code):
-		date = yesterday
+		date = yesterday()
 		self.url = 'http://quotes.money.163.com/service/chddata.html?code='+code+'&start=19901219&end='+date+'&fields=TCLOSE'
 		super().__init__(code)
 		
@@ -310,7 +310,7 @@ class indexinfo(basicinfo):
 		index = index.iloc[::-1]
 		index = index.reset_index(drop=True)
 		self.price = index[index['date'].isin(opendate)]
-		self.price = self.price[self.price['date']<=yesterdaydash]
+		self.price = self.price[self.price['date']<=yesterdaydash()]
 		self.name = my_list[-1][2]
 		self.rate = 0
 	
@@ -331,7 +331,7 @@ class cashinfo(basicinfo):
 	def _basic_init(self):
 		self.name = "货币基金"
 		self.rate = 0
-		datel = list(pd.date_range(dt.datetime.strftime(self.start,'%Y-%m-%d'),yesterdaydash))
+		datel = list(pd.date_range(dt.datetime.strftime(self.start,'%Y-%m-%d'),yesterdaydash()))
 		valuel = []
 		for i,date in enumerate(datel):
 			valuel.append((1+self.interest)**i)
@@ -370,4 +370,4 @@ class mfundinfo(basicinfo):
 		
 		df = pd.DataFrame(data={'date':datel,'netvalue':netvalue,'totvalue':netvalue,'comment':[0 for _ in datel]})
 		df = df[df['date'].isin(opendate)]
-		self.price = df[df['date']<=yesterdaydash]
+		self.price = df[df['date']<=yesterdaydash()]

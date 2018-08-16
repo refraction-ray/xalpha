@@ -45,14 +45,14 @@ class indicator():
 		generate price table for mulfix class, the cinfo class has this attr by default
 		'''
 		if getattr(self, 'price', None) is None:
-			times = pd.date_range(self.totcftable.iloc[0].date, yesterdayobj)
+			times = pd.date_range(self.totcftable.iloc[0].date, yesterdayobj())
 			netvalue = []
 			for date in times:
 				netvalue.append(self.unitvalue(date))
 			self.price = pd.DataFrame(data={'date':times, 'netvalue': netvalue})
 			self.price = self.price[self.price['date'].isin(opendate)]
 		
-	def comparison(self, date=yesterdayobj):
+	def comparison(self, date=yesterdayobj()):
 		'''
 		:returns: tuple of two pd.Dataframe, the first is for aim and the second if for the benchmark index
 			all netvalues are normalized and set equal 1.00 on the self.start date
@@ -65,11 +65,11 @@ class indicator():
 		partm['netvalue'] = partm['netvalue']/normm
 		return (partp, partm)
 	
-	def total_return(self, date=yesterdayobj):
+	def total_return(self, date=yesterdayobj()):
 		return round((self.price[self.price['date']<=date].iloc[-1].netvalue-self.price.iloc[0].netvalue)
 					 /self.price.iloc[0].netvalue,4)
 	
-	def annualized_returns(price, start, date=yesterdayobj):
+	def annualized_returns(price, start, date=yesterdayobj()):
 		'''
 		:param price: price table of info().price
 		:param start: datetime obj for starting date of calculation
@@ -80,26 +80,26 @@ class indicator():
 		totreturn = (price[price['date']<=date].iloc[-1].netvalue-price.iloc[0].netvalue)/price.iloc[0].netvalue
 		return round((1+totreturn)**(365/datediff)-1,4)
 		
-	def total_annualized_returns(self, date=yesterdayobj):
+	def total_annualized_returns(self, date=yesterdayobj()):
 		return indicator.annualized_returns(self.price,self.start, date)
 
-	def benchmark_annualized_returns(self, date=yesterdayobj):
+	def benchmark_annualized_returns(self, date=yesterdayobj()):
 		return indicator.annualized_returns(self.bmprice,self.start, date)
 	
-	def beta(self, date=yesterdayobj):
+	def beta(self, date=yesterdayobj()):
 		bcmk = indicator.ratedaily(self.bmprice, date)
 		bt = indicator.ratedaily(self.price, date)
 		df = pd.DataFrame(data={'bcmk': bcmk,'bt': bt })
 		res=df.cov()
 		return res.loc['bcmk','bt']/res.loc['bcmk','bcmk']
 	
-	def alpha(self, date=yesterdayobj):
+	def alpha(self, date=yesterdayobj()):
 		rp = self.total_annualized_returns(date)
 		rm = self.benchmark_annualized_returns(date)
 		beta = self.beta(date)
 		return rp-(self.riskfree+beta*(rm-self.riskfree))
 	
-	def correlation_coefficient(self, date=yesterdayobj):
+	def correlation_coefficient(self, date=yesterdayobj()):
 		'''
 		correlation coefficient between aim and benchmark values,
 			可以很好地衡量指数基金的追踪效果
@@ -112,26 +112,26 @@ class indicator():
 		res=df.cov()
 		return res.loc['bcmk','bt']/((res.loc['bcmk','bcmk']**0.5)*res.loc['bt','bt']**0.5)   
 	
-	def ratedaily(price, date=yesterdayobj):
+	def ratedaily(price, date=yesterdayobj()):
 		partp = price[price['date']<=date]
 		return [(partp.iloc[i+1].netvalue-partp.iloc[i].netvalue) /
 					partp.iloc[i].netvalue for i in range(len(partp)-1)]
 		
-	def volatility(price, date=yesterdayobj):
+	def volatility(price, date=yesterdayobj()):
 		df = pd.DataFrame(data={'rate':indicator.ratedaily(price, date)})
 		return df.std().rate*15.8144
 	
-	def algorithm_volatility(self, date=yesterdayobj):
+	def algorithm_volatility(self, date=yesterdayobj()):
 		return indicator.volatility(self.price, date)
 	
-	def benchmark_volatility(self, date=yesterdayobj):
+	def benchmark_volatility(self, date=yesterdayobj()):
 		return indicator.volatility(self.bmprice, date)
 	
-	def sharpe(self, date=yesterdayobj):
+	def sharpe(self, date=yesterdayobj()):
 		rp = self.total_annualized_returns(date)
 		return (rp-self.riskfree)/self.algorithm_volatility(date)
 	
-	def information_ratio(self, date=yesterdayobj):
+	def information_ratio(self, date=yesterdayobj()):
 		rp = self.total_annualized_returns(date)
 		rm = self.benchmark_annualized_returns(date)
 		vp = indicator.ratedaily(self.price, date)
@@ -142,7 +142,7 @@ class indicator():
 		var = var*15.8144
 		return (rp-rm)/var
 	
-	def max_drawdown(self, date=yesterdayobj):
+	def max_drawdown(self, date=yesterdayobj()):
 		'''
 		回测时间段的最大回撤
 
@@ -157,7 +157,7 @@ class indicator():
 				res.append((li[i][0],li[j][0],(li[j][1]-li[i][1])/li[i][1]))
 		return min(res, key=lambda x:x[2])
 	
-	def v_netvalue(self, end=yesterdayobj, benchmark = True, **vkwds):
+	def v_netvalue(self, end=yesterdayobj(), benchmark = True, **vkwds):
 		'''
 		visulaization on  netvalue curve
 		

@@ -6,23 +6,25 @@ basic constants and functions
 import datetime as dt
 from decimal import Decimal
 from scipy import optimize
-import tushare as ts
 import pandas as pd
 
 # date obj of today
-today = dt.datetime.combine(dt.date.today(), dt.time.min)
+today = lambda: dt.datetime.combine(dt.date.today(), dt.time.min)
 
 # string for yesterday, only used for indexinfo url
-yesterday = dt.datetime.strftime((dt.datetime.now()-dt.timedelta(1)), '%Y%m%d') 
+yesterday = lambda: dt.datetime.strftime((dt.datetime.now()-dt.timedelta(1)), '%Y%m%d') 
 
 # string for yesterday with dash
-yesterdaydash = dt.datetime.strftime((dt.datetime.now()-dt.timedelta(1)), '%Y-%m-%d') 
+yesterdaydash = lambda: dt.datetime.strftime((dt.datetime.now()-dt.timedelta(1)), '%Y-%m-%d') 
 
 # datetime obj for yesterdate date with time set to be 0:0:0
-yesterdayobj = dt.datetime.strptime(yesterdaydash, '%Y-%m-%d')
+yesterdayobj = lambda: dt.datetime.strptime(yesterdaydash(), '%Y-%m-%d')
 
 # list: all the trade date of domestic stock market in the form of string
-opendate = list(ts.trade_cal()[ts.trade_cal()['isOpen']==1]['calendarDate']) 
+caldate = pd.read_csv('http://file.tushare.org/tsdata/calAll.csv')
+opendate = list(caldate[caldate['isOpen']==1]['calendarDate'])
+# directly use the tushare API instead of import tushare package for simplicity
+# opendate = list(ts.trade_cal()[ts.trade_cal()['isOpen']==1]['calendarDate']) 
 
 #fund code list which always round down for the purchase share approximation
 droplist = ['003318', '000311'] 

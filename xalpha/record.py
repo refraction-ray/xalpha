@@ -28,7 +28,7 @@ class record():
 		df.fillna(0, inplace=True)
 		self.status = df
 
-	def sellout(self, date=yesterdayobj, ratio=1):
+	def sellout(self, date=yesterdayobj(), ratio=1):
 		'''
 		Sell all the funds in the same ratio on certain day, it is a virtual process, 
 		so it can happen before the last action exsiting in the cftable, by sell out earlier,

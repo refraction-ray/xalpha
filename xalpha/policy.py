@@ -16,7 +16,7 @@ class policy(record):
     :param totmoney: float or int, characteristic money value, 
         not necessary to be the total amount of money
     '''
-    def __init__(self, infoobj, start, end=yesterdaydash, totmoney=100000):
+    def __init__(self, infoobj, start, end=yesterdaydash(), totmoney=100000):
         self.aim = infoobj
         self.totmoney = totmoney
         self.price = infoobj.price[(infoobj.price['date']>=start)&(infoobj.price['date']<=end)]
@@ -128,7 +128,7 @@ class grid(policy):
     :param end: date str of policy ending
     :param totmoney: 总钱数，平均分给各个网格买入仓位
     '''
-    def __init__(self, infoobj, buypercent, sellpercent, start, end=yesterdaydash, totmoney = 100000):
+    def __init__(self, infoobj, buypercent, sellpercent, start, end=yesterdaydash(), totmoney = 100000):
         assert len(buypercent) == len(sellpercent)
         self.division = len(buypercent)
         self.pos = 0

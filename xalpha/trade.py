@@ -44,7 +44,7 @@ def bottleneck(cftable):
 	inputl = [-sum(cftable.iloc[:i].cash) for i in range(1,len(cftable)+1)]
 	return myround(max(inputl))
 
-def turnoverrate(cftable, end=yesterdayobj):
+def turnoverrate(cftable, end=yesterdayobj()):
 	'''
 	calculate the annualized turnoverrate 
 
@@ -158,7 +158,7 @@ class trade():
 															  or ((lastdate in recorddate) 
 																  and (self.status[self.status['date']==lastdate].loc[:,code].any() == 0) ))):
 				lastdate += pd.Timedelta(1, unit='d')
-				if (lastdate - yesterdayobj).days>=1:
+				if (lastdate - yesterdayobj()).days>=1:
 					raise Exception("no other info to be add into cashflow table")
 			date = lastdate
 			label = 0
@@ -219,7 +219,7 @@ class trade():
 		self.remtable = self.remtable.append(pd.DataFrame([[rdate,rem]],columns=['date','rem']),ignore_index=True)
 
 
-	def xirrrate(self, date=yesterdayobj, guess=0.1):
+	def xirrrate(self, date=yesterdayobj(), guess=0.1):
 		'''
 		give the xirr rate for all the trade of the aim before date (virtually sold out on date)
 
@@ -227,7 +227,7 @@ class trade():
 		'''
 		return xirrcal(self.cftable,[self], date, guess)
 		
-	def dailyreport(self, date=yesterdayobj):
+	def dailyreport(self, date=yesterdayobj()):
 		'''
 		breif report dict of certain date status on the fund investment
 
@@ -264,7 +264,7 @@ class trade():
 		df = pd.DataFrame(reportdict,columns=reportdict.keys())
 		return df
 	
-	def briefdailyreport(self, date=yesterdayobj):
+	def briefdailyreport(self, date=yesterdayobj()):
 		'''
 		quick summary of highly used attrs for trade 
 
@@ -283,7 +283,7 @@ class trade():
 		return {'date':date, 'unitvalue': unitvalue, 'currentshare':currentshare,
 			'currentvalue':currentvalue}
 
-	def unitcost(self, date=yesterdayobj):
+	def unitcost(self, date=yesterdayobj()):
 		'''
 		give the unitcost of fund positions
 
@@ -312,7 +312,7 @@ class trade():
 		'''
 		return vtradevolume(self.cftable, **vkwds)
 
-	def v_tradecost(self,start=None,end=yesterdayobj,**vkwds):
+	def v_tradecost(self,start=None,end=yesterdayobj(),**vkwds):
 		'''
 		visualization giving the average cost line together with netvalue line
 
@@ -338,7 +338,7 @@ class trade():
 
 		return line
 	
-	def v_totvalue(self,end=yesterdayobj,**vkwds):
+	def v_totvalue(self,end=yesterdayobj(),**vkwds):
 		'''
 		visualization on the total values daily change of the aim 
 		'''

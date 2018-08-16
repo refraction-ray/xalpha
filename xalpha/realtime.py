@@ -102,7 +102,7 @@ class review():
 	:param namelist: list of names of corresponding policy, default as 0 to n-1
 	:param date: object of datetime, check date, today is prefered, date other than is not guaranteed
 	'''
-	def __init__(self, policylist, namelist=None, date=today):
+	def __init__(self, policylist, namelist=None, date=today()):
 		self.warn = []
 		self.message = []
 		self.policylist = policylist

@@ -33,7 +33,7 @@ class mul():
 		self.fundtradeobj = tuple(fundtradeobj)
 		self.totcftable = self._mergecftb()
 	
-	def tot(self, prop='基金现值', date=yesterdayobj):
+	def tot(self, prop='基金现值', date=yesterdayobj()):
 		'''
 		sum of all the values from one prop of fund daily report, 
 		of coures many of the props make no sense to sum
@@ -46,7 +46,7 @@ class mul():
 			res += fund.dailyreport().iloc[0][prop]
 		return res
 	
-	def combsummary(self, date=yesterdayobj):
+	def combsummary(self, date=yesterdayobj()):
 		'''
 		brief report table of every funds and the combination investment
 
@@ -101,7 +101,7 @@ class mul():
 		df = df.reset_index(drop=True)
 		return df
 	
-	def xirrrate(self, date=yesterdayobj, guess=0.1):
+	def xirrrate(self, date=yesterdayobj(), guess=0.1):
 		'''
 		xirr rate evauation of the whole invest combination
 		'''
@@ -118,7 +118,7 @@ class mul():
 		case = evaluate(*[fundtrade.aim for fundtrade in self.fundtradeobj],start=start)
 		return case
 
-	def v_positions(self, date=yesterdayobj, **vkwds):
+	def v_positions(self, date=yesterdayobj(), **vkwds):
 		'''
 		pie chart visulization of positions ratio in combination
 		'''
@@ -131,7 +131,7 @@ class mul():
 		pie.add("", sdata1, sdata2, legend_pos='left',legend_orient='vertical',**vkwds)
 		return pie
 	
-	def v_positions_history(self, end=yesterdaydash, **vkwds):
+	def v_positions_history(self, end=yesterdaydash(), **vkwds):
 		'''
 		river chart visulization of positions ratio history
 		use text size to avoid legend overlap in some sense, eg. legend_text_size=8
@@ -203,7 +203,7 @@ class mulfix(mul,indicator):
 		return pd.DataFrame(data=datadict)
 
 	
-	def unitvalue(self, date=yesterdayobj):
+	def unitvalue(self, date=yesterdayobj()):
 		'''
 		:returns: float at unitvalue of the whole investment combination
 		'''
