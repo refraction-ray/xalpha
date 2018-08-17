@@ -332,7 +332,7 @@ class trade():
 				costdata.append([date, cost])
 
 		line=Line()
-		line.add('fundvalue',[1 for _ in range(len(funddata))],funddata)
+		line.add('fundvalue',[1 for _ in range(len(funddata))],funddata, **vkwds)
 		line.add('average_cost',[1 for _ in range(len(costdata))],costdata,
 				 is_datazoom_show = True,xaxis_type="time",**vkwds)
 

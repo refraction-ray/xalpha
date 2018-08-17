@@ -16,7 +16,7 @@
 
 *	多只基金投资组合的管理分析： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/mul.ipynb>`_
 
-*	简单的静态基金策略生成与回测： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/policy.ipynb>`_
+*	基金交易策略生成与回测： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/policy.ipynb>`_
 
 
 研究案例
@@ -27,5 +27,7 @@
 *	基金指数增强效果研究： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/enhancefund.ipynb>`_
 
 *	定投策略的研究： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/schedulestudy.ipynb>`_
+
+*   基于技术指标的相关策略研究：
 
 *	ETF拯救世界投资计划的分析与可视化： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/ETFanalysis.ipynb>`_

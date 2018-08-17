@@ -222,7 +222,7 @@ class indicator_cross(policy):
 
 class indicator_points(policy):
     '''
-    基于技术指标的策略生成类之一，给出技术指标的两个阈值，基于该两值进行交易
+    基于技术指标的策略生成类之一，给出技术指标的多个阈值，基于这些点数值进行交易
 
     :param infoobj: info object, trading aim of the policy
     :param col: str, stands for the tracking column of price table, eg. 'netvalue' or 'PSY'

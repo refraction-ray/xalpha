@@ -35,6 +35,7 @@ def test_index():
 	zzhb.mtm()
 	zzhb.roc()
 	zzhb.boll()
+	zzhb.bias()
 	zzhb.rsi()
 	zzhb.kdj()
 	zzhb.wnr()
@@ -50,6 +51,7 @@ def test_index():
 	assert round(row['MTM10'],4) == 0.0078
 	assert round(row['ROC10'],4) == 0.0058
 	assert round(row['BOLL_UPPER'],3) == 1.398
+	assert round(row['BIAS10'],3) == -0.012
 	assert round(row['RSI14'],3) == 0.411
 	assert round(row['KDJ_J'],4) == 0.0456
 	assert round(row['WNR14'],2) == 0.27
