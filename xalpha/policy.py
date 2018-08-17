@@ -169,3 +169,121 @@ class grid(policy):
                 action += -1/self.pos
                 self.pos += -1
         return action
+
+class indicator_cross(policy):
+    '''
+    制定两个任意技术指标之间（或和净值之间）交叉时买入卖出的策略。若收盘时恰好交叉，不操作，等第二日趋势确认。
+
+    :param info: info object, trading aim of the policy
+    :param col: a tuple with two strings, eg ('netvalue','MA10'), when the left one is over the 
+        right one, we buy and otherwise we sell, that is the core of cross policy, you can choose 
+        any two columns as you like, as long as you generate them on the info object before input
+        也即左栏数据从下向上穿过右栏数据时，买入；反之亦然
+    :param start: date str of policy starting
+    :param end: date str of policy ending
+    :param totmoney: float or int, total money, in the cross policy, we dont have position division,
+        instead we buy all or sell all on the given cross
+    '''
+    def __init__(self, infoobj, col, start, end=yesterdaydash(), totmoney=100000):
+        self.col = col
+        self.pos = 0
+        super().__init__(infoobj, start, end, totmoney)
+
+    def status_gen(self, date):
+        if date.strftime('%Y-%m-%d') not in opendate:
+            return 0
+        rows = self.price[self.price['date']<=date]
+        if len(rows) == 1:
+            return 0
+        valuel = rows.iloc[-1].loc[self.col[0]]
+        valuelb = rows.iloc[-2].loc[self.col[0]]
+        valuer = rows.iloc[-1].loc[self.col[1]]
+        valuerb = rows.iloc[-2].loc[self.col[1]]
+        cond = (valuerb-valuelb)*(valuer-valuel)
+
+        if cond > 0:
+            return 0
+        if cond == 0 and (valuer-valuel == 0):
+            return 0
+        if (cond == 0 and (valuer-valuel) != 0) or cond<0:
+            if valuer > valuel:
+                if self.pos == 1:
+                    self.pos = 0
+                    return -1
+                else:
+                    return 0
+            else:
+                if self.pos == 0:
+                    self.pos = 1
+                    return self.totmoney
+                else:
+                    return 0
+
+
+class indicator_points(policy):
+    '''
+    基于技术指标的策略生成类之一，给出技术指标的两个阈值，基于该两值进行交易
+
+    :param infoobj: info object, trading aim of the policy
+    :param col: str, stands for the tracking column of price table, eg. 'netvalue' or 'PSY'
+    :param buy: list of tuple, eg [(0.1,1),(0.2,2),(0.3,5)]. buy 1/(1+2+5) of totmoney, when the col
+        value approach 0.1 and so on.
+    :param sell: similar list of tuple as buy input. the difference is you can omit setting of sell list,
+        this implies you don't want to sell. 初始化不设置sell参数，在col设为netvalue时，用于进行金字塔底仓购买特别有效.
+        注意不论是 sell 还是 buy 列表，都要将更难实现（离中间值更远）的点位列在后边。比如如果现在是低买模式，
+        那么 buy 列表越考后的点数就越小。此外，不建议设置的买点卖点有重叠区域，可能会出现策略逻辑错误。
+    :param buylow: Bool, Ture 代表，对应点位是跌破买，涨破卖，如果是 False 则反之，默认是 True
+    :param start: date str of policy starting
+    :param end: date str of policy ending
+    :param totmoney: float or int, total money, in the points policy, we share them as different positions, based on
+        the instruction of sell and buy list
+    '''
+    def __init__(self, infoobj, start, col, buy, sell=None, buylow=True, end=yesterdaydash(), totmoney=100000):
+        self.pos = 0
+        self.col = col
+        self.buylow = buylow
+        self.selllevel = 0
+        bdivision = sum([it[1] for it in buy])
+        self.buy = []
+        for item in buy:
+            self.buy.append((item[0],item[1]/bdivision))
+
+        if sell is not None:
+            self.sell = []
+            sdivision = sum([it[1] for it in sell])
+            for item in sell:
+                self.sell.append((item[0],item[1]/sdivision))
+        else:
+            self.sell = sell
+
+        super().__init__(infoobj, start, end, totmoney)
+
+    def status_gen(self, date):
+        if date.strftime('%Y-%m-%d') not in opendate:
+            return 0
+        rows = self.price[self.price['date'] <= date]
+        if len(rows) == 1:
+            return 0
+        value = rows.iloc[-1].loc[self.col]
+        valueb = rows.iloc[-2].loc[self.col]
+        action = 0
+        if self.buylow is True:
+            judge = 1
+        else:
+            judge = -1
+        for i,term in enumerate(self.buy):
+            if judge*(value - term[0]) <= 0 < judge*(valueb - term[0]) \
+                    and self.pos+sum([it[1] for it in self.buy[i:]]) <= 1:
+                self.pos += term[1]
+                action += myround(self.totmoney*term[1])
+                self.selllevel = 0
+        if self.sell is not None:
+            for i,term in enumerate(self.sell):
+                if judge*(value - term[0]) >= 0 > judge*(valueb - term[0]) \
+                        and self.pos > 0 and self.selllevel <= i:
+                    deltaaction = myround(term[1]/sum([it[1] for it in self.sell[i:]]))
+                    action -= (1+action)*deltaaction # 需考虑一日卖出多仓的情形
+                    self.pos = (1-deltaaction)*self.pos
+                    self.selllevel = i+1
+
+        return action

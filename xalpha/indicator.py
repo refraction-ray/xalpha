@@ -421,7 +421,8 @@ class indicator():
 		:param end: date string or obj, the end date of the figure
 		:param col: list, list of strings for price col name, eg.['MA5','BBI']
 			remember generate these indicators before the visualization
-		:param vkwds: keywords option for pyecharts.Line().add()
+		:param vkwds: keywords option for pyecharts.Line().add(). eg, you may need is_symbol_show=False
+			to hide the symbols on lines
 		'''
 		partprice = self.price[self.price['date']<=end]
 		xdata = [1 for _ in range(len(partprice))]

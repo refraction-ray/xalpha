@@ -1,4 +1,5 @@
 htmlcov/
+.idea/
 notification_my.py
 *.pptx
 real.ipynb

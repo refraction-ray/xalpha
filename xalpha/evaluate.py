@@ -11,6 +11,7 @@ class evaluate():
     '''
     多个 info 对象的比较类，比较的对象只要实现了 price 属性，该属性为具有 date 和 netvalue 列的 pandas.DataFrame 即可。
     更进一步，也可讲做过 bcmkset 的 :class:`xalpha.multiple.mulfix` 类作为输入，只不过此时需要提前额外指定以下该对象的 name 和 code 两个属性。
+    由于该类需要各基金净值表可以严格对齐，因此需要对节假日和国内不同的 QDII 基金进行补齐，由于第一个基金为基准，因此第一个输入不建议是 QDII 基金
 
     :param fundobjs: info object，或者如前所述一切具有 price 表的对象
     :param start: date string or object, 比较的起始时间，默认使用所有 price 表中最近的起始时间。
@@ -31,10 +32,14 @@ class evaluate():
         datelist = fundobjs[0].price[fundobjs[0].price['date']>=self.start].date
         self.totprice = pd.DataFrame(datelist, columns=['date'])
         for fund in fundobjs:
-            pricelist = fund.price[fund.price['date']>=self.start].netvalue
-            assert len(datelist) == len(pricelist)
-            # if this assert error is raise, it is usually casued by data loss on the several first days of 
-            # new funds, please set the start date manually for this class to avoid this
+            pricelist = []
+            for sdate in datelist: # 将不同净值表按第0个基金的净值表为基准进行补齐，尤其是对于 QDII 基金的异常的防止
+                row = fund.price[fund.price['date']==sdate]
+                if len(row) == 1:
+                    pricelist.append(row.iloc[0].netvalue)
+                elif len(row) == 0:
+                    pricelist.append(fund.price[fund.price['date']<=sdate].iloc[-1].netvalue)
+            assert len(pricelist) == len(datelist)
 
             self.totprice[fund.code] = list(pricelist)
             self.totprice[fund.code] *= 1/self.totprice[fund.code].iloc[0]

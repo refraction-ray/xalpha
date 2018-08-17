@@ -67,3 +67,17 @@ def test_policy_grid():
 	tr = xa.trade(cm,gr.status)
 	assert round(tr.xirrrate('2018-07-13'),2) == 11.78
 
+def test_policy_indicator_cross():
+	cm.bbi()
+	techst = xa.policy.indicator_cross(cm,col=['netvalue','BBI'],start='2018-01-01',end='2018-07-07')
+	cm_tt = xa.trade(cm, techst.status)
+	assert round(cm_tt.dailyreport('2018-07-09').iloc[0].loc['换手率'],1) == 14.1
+
+def test_policy_indicator_points():
+	zz500 = xa.indexinfo('0000905')
+	zz500.psy()
+	st = xa.policy.indicator_points(zz500, col='PSYMA12', start='2017-01-01', buy=[(0.6, 1), (0.7, 1)],
+									sell=[(0.4, 1), (0.3, 1)], buylow=False)
+	zz500_t = xa.trade(zz500, st.status)
+	assert zz500_t.dailyreport('2018-05-01').iloc[0].loc['基金收益总额'] == -6302.26
+
