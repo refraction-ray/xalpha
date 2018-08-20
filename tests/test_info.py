@@ -98,8 +98,12 @@ def test_csvio():
 	len1 = len(hs300.price)
 	hs300 = xa.fundinfo('000311', **ioconf)
 	len2 = len(hs300.price)
+	delete_csvlines(path=ioconf['path']+'000311.csv')
+	hs300 = xa.fundinfo('000311', **ioconf)
+	len3 = len(hs300.price)
 	assert len1 == len2
-	delete_csvlines(path=ioconf['path']+'001211.csv',end=2)
+	assert len1 == len3
+	delete_csvlines(path=ioconf['path']+'001211.csv')
 	zogqb2 = xa.mfundinfo('001211', **ioconf)
 	assert zogqb.price.iloc[-1].netvalue == zogqb2.price.iloc[-1].netvalue
 	delete_csvlines(path=ioconf['path']+'0000827.csv')

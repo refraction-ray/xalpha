@@ -21,7 +21,8 @@ setuptools.setup(
         'scipy',
         'requests',
         'pyecharts>=0.5.5',
-        'beautifulsoup4'],
+        'beautifulsoup4',
+        'sqlalchemy'],
     tests_require=['pytest'],
     classifiers=(
         "Programming Language :: Python :: 3",

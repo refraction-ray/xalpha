@@ -6,7 +6,7 @@ import re
 import datetime as dt
 import pandas as pd
 import json
-
+from sqlalchemy import exc
 from slimit import ast
 from slimit.parser import Parser
 from slimit.visitors import nodevisitor
@@ -77,8 +77,8 @@ class basicinfo(indicator):
     :param code: string of code for specific product
     :param fetch: boolean, when open the fetch option, the class will try fetching from local files first in the init
     :param save: boolean, when open the save option, automatically save the class to files
-    :param path: string, the file path prefix of IO
-    :param form: string, the format of IO, options including: 'csv'
+    :param path: string, the file path prefix of IO. or in sql case, path is the engine from sqlalchemy.
+    :param form: string, the format of IO, options including: 'csv','sql'
     :param label: int, 1 or 2, label to the different round scheme of shares, reserved for fundinfo class
     '''
     def __init__(self, code, fetch=False, save=False, path='', form='csv', label=1):
@@ -94,11 +94,15 @@ class basicinfo(indicator):
         else:
             try:
                 self.fetch(path, self.format)
-                self.update()
-            except FileNotFoundError as e:
+                df = self.update() # update the price table as well as the file
+                if (df is not None) and save is True:
+                    self.save(path, self.format, option='a', delta=df)
+
+            except (FileNotFoundError, exc.ProgrammingError) as e:
+                fetch = False
                 self._basic_init()
 
-        if save is True:
+        if (save is True) and (fetch is False):
             self.save(path, self.format)
 
     def _basic_init(self):
@@ -156,27 +160,44 @@ class basicinfo(indicator):
     def __repr__(self):
         return self.name
 
-    def save(self, path, format = None):
+    def save(self, path, form = None, option='r', delta = None):
         '''
         save info to files
-        :param path: string of the folder path prefix! end with /
-        :param format: string, option:'csv'
+        :param path: string of the folder path prefix! or engine obj from sqlalchemy
+        :param form: string, option:'csv'
+        :param option: string, r for replace and a for append output
+        :param delta: if option is a, you have to specify the delta which is the incremental part of price table
         '''
-        if format is None:
-            format = self.format
-        if format == 'csv':
+        if form is None:
+            form = self.format
+        if form == 'csv' and option == 'r':
             self._save_csv(path)
+        elif form == 'csv' and option == 'a':
+            self._save_csv_a(path, delta)
+        elif form == 'sql' and option == 'r':
+            self._save_sql(path)
+        elif form == 'sql' and option == 'a':
+            self._save_sql_a(path, delta)
 
-    def fetch(self, path, format=None):
+    def _save_csv_a(self, path, df):
+        df.sort_index(axis=1).to_csv(path + self.code + '.csv', mode='a', header=None, index=False,
+                                     date_format='%Y-%m-%d')
+
+    def _save_sql_a(self, path, df):
+        df.sort_index(axis=1).to_sql('xa'+self.code, path, if_exists='append', index=False)
+
+    def fetch(self, path, form=None):
         '''
         fetch info from files
         :param path: string of the folder path prefix! end with /
-        :param format: string, option:'csv'
+        :param form: string, option:'csv'
         '''
-        if format is None:
-            format = self.format
-        if format == 'csv':
+        if form is None:
+            form = self.format
+        if form == 'csv':
             self._fetch_csv(path)
+        elif form == 'sql':
+            self._fetch_sql(path)
 
     def _save_csv(self, path):
         '''
@@ -196,7 +217,9 @@ class basicinfo(indicator):
 
     def update(self):
         '''
-        对类的价格表进行增量更新，适合 fetch 打开的情形
+        对类的价格表进行增量更新，并进行增量存储，适合 fetch 打开的情形
+
+        :returns: the incremental part of price table or None
         '''
         raise NotImplementedError
    
@@ -361,9 +384,9 @@ class fundinfo(basicinfo):
         :param path:  string of folder path
         '''
         s = json.dumps({'feeinfo': self.feeinfo, 'name': self.name, 'rate': self.rate, 'segment': self.segment})
-        df = self.price.append(pd.DataFrame([[s, 0, 0, 0]], columns=['date', 'netvalue', 'comment', 'totvalue']),
-                             ignore_index=True, sort=True)
-        df.to_csv(path + self.code + '.csv', index=False)
+        df = pd.DataFrame([[s, 0, 0, 0]], columns=['date', 'netvalue', 'comment', 'totvalue'])
+        df = df.append(self.price, ignore_index=True, sort=True)
+        df.sort_index(axis=1).to_csv(path + self.code + '.csv', index=False, date_format='%Y-%m-%d')
 
     def _fetch_csv(self, path):
         '''
@@ -374,16 +397,50 @@ class fundinfo(basicinfo):
         '''
         try:
             content = pd.read_csv(path + self.code + '.csv')
-            pricetable = content.iloc[:-1]
+            pricetable = content.iloc[1:]
             datel = list(pd.to_datetime(pricetable.date))
             self.price = pricetable[['netvalue', 'totvalue', 'comment']]
             self.price['date'] = datel
-            saveinfo = json.loads(content.iloc[-1].date)
+            saveinfo = json.loads(content.iloc[0].date)
             self.segment = saveinfo['segment']
             self.feeinfo = saveinfo['feeinfo']
             self.name = saveinfo['name']
             self.rate = saveinfo['rate']
         except FileNotFoundError as e:
+            print('no saved copy of this fund')
+            raise e
+
+    def _save_sql(self, path):
+        '''
+        save the information and pricetable into sql, not recommend to use manually,
+        just set the save label to be true when init the object
+
+        :param path:  engine object from sqlalchemy
+        '''
+        s = json.dumps({'feeinfo': self.feeinfo, 'name': self.name, 'rate': self.rate, 'segment': self.segment})
+        df = pd.DataFrame([[pd.Timestamp('1990-01-01'), 0, s, 0]], columns=['date', 'netvalue', 'comment', 'totvalue'])
+        df = df.append(self.price, ignore_index=True, sort=True)
+        df.sort_index(axis=1).to_sql('xa'+ self.code, con=path, if_exists='replace', index=False)
+
+    def _fetch_sql(self, path):
+        '''
+        fetch the information and pricetable from sql, not recommend to use manually,
+        just set the fetch label to be true when init the object
+
+        :param path:  engine object from sqlalchemy
+        '''
+        try:
+            content = pd.read_sql('xa' + self.code, path)
+            pricetable = content.iloc[1:]
+            commentl = [float(com) for com in pricetable.comment]
+            self.price = pricetable[['date','netvalue', 'totvalue']]
+            self.price['comment'] = commentl
+            saveinfo = json.loads(content.iloc[0].comment)
+            self.segment = saveinfo['segment']
+            self.feeinfo = saveinfo['feeinfo']
+            self.name = saveinfo['name']
+            self.rate = saveinfo['rate']
+        except exc.ProgrammingError as e:
             print('no saved copy of this fund')
             raise e
 
@@ -394,7 +451,7 @@ class fundinfo(basicinfo):
         lastdate = self.price.iloc[-1].date
         diffdays = (yesterdayobj() - lastdate).days
         if diffdays == 0:
-            return 0
+            return None
         self._updateurl = 'http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=' + self.code + '&page=1&per=' + \
                           str(diffdays)
         con = _download(self._updateurl)
@@ -418,6 +475,8 @@ class fundinfo(basicinfo):
         df = df[df['date'] <= yesterdayobj()]
         if len(df) != 0:
             self.price = self.price.append(df, ignore_index=True, sort=True)
+            return df
+
 
 
 class indexinfo(basicinfo):
@@ -463,7 +522,7 @@ class indexinfo(basicinfo):
 
         :param path:  string of folder path
         '''
-        self.price.to_csv(path + self.code + '.csv', index=False)
+        self.price.sort_index(axis=1).to_csv(path + self.code + '.csv', index=False, date_format='%Y-%m-%d')
 
     def _fetch_csv(self, path):
         '''
@@ -481,6 +540,31 @@ class indexinfo(basicinfo):
         except FileNotFoundError as e:
             print('no saved copy of this index')
             raise e
+
+    def _save_sql(self, path):
+        '''
+        save the information and pricetable into sql, not recommend to use manually,
+        just set the save label to be true when init the object
+
+        :param path:  engine object from sqlalchemy
+        '''
+        self.price.sort_index(axis=1).to_sql('xa'+ self.code, con=path, if_exists='replace', index=False)
+
+    def _fetch_sql(self, path):
+        '''
+        fetch the information and pricetable from sql, not recommend to use manually,
+        just set the fetch label to be true when init the object
+
+        :param path:  engine object from sqlalchemy
+        '''
+        try:
+            pricetable = pd.read_sql('xa' + self.code, path)
+            self.price = pricetable
+
+        except exc.ProgrammingError as e:
+            print('no saved copy of this index')
+            raise e
+
 
     def update(self):
         lastdate = self.price.iloc[-1].date
@@ -501,6 +585,7 @@ class indexinfo(basicinfo):
             df = df.reset_index(drop=True)
             df = df[df['date'] <= yesterdayobj()]
             self.price = self.price.append(df,ignore_index=True, sort=True)
+            return df
 
 
 class cashinfo(basicinfo):
@@ -526,6 +611,7 @@ class cashinfo(basicinfo):
         dfdict = {'date': datel, 'netvalue':valuel, 'totvalue':valuel,'comment': [0 for _ in datel]}
         df = pd.DataFrame(data=dfdict)
         self.price = df[df['date'].isin(opendate)]
+
 
 class mfundinfo(basicinfo):
     '''
@@ -573,9 +659,9 @@ class mfundinfo(basicinfo):
 
         :param path:  string of folder path
         '''
-        df = self.price.append(pd.DataFrame([[0, 0, self.name, 0]], columns=['date', 'netvalue', 'comment', 'totvalue']),
-                             ignore_index=True, sort=True)
-        df.to_csv(path + self.code + '.csv', index=False)
+        df = pd.DataFrame([[0, 0, self.name, 0]], columns=['date', 'netvalue', 'comment', 'totvalue'])
+        df = df.append(self.price, ignore_index=True, sort=True)
+        df.sort_index(axis=1).to_csv(path + self.code + '.csv', index=False, date_format='%Y-%m-%d')
 
     def _fetch_csv(self, path):
         '''
@@ -586,14 +672,45 @@ class mfundinfo(basicinfo):
         '''
         try:
             content = pd.read_csv(path + self.code + '.csv')
-            pricetable = content.iloc[:-1]
+            pricetable = content.iloc[1:]
             datel = list(pd.to_datetime(pricetable.date))
             self.price = pricetable[['netvalue', 'totvalue', 'comment']]
             self.price['date'] = datel
-            self.name = content.iloc[-1].comment
+            self.name = content.iloc[0].comment
         except FileNotFoundError as e:
             print('no saved copy of this fund')
             raise e
+
+    def _save_sql(self, path):
+        '''
+        save the information and pricetable into sql, not recommend to use manually,
+        just set the save label to be true when init the object
+
+        :param path:  engine object from sqlalchemy
+        '''
+        s =  json.dumps({'name':self.name})
+        df = pd.DataFrame([[pd.Timestamp('1990-01-01'), 0, s, 0]], columns=['date', 'netvalue', 'comment', 'totvalue'])
+        df = df.append(self.price, ignore_index=True, sort=True)
+        df.sort_index(axis=1).to_sql('xa'+ self.code, con=path, if_exists='replace', index=False)
+
+    def _fetch_sql(self, path):
+        '''
+        fetch the information and pricetable from sql, not recommend to use manually,
+        just set the fetch label to be true when init the object
+
+        :param path:  engine object from sqlalchemy
+        '''
+        try:
+            content = pd.read_sql('xa' + self.code, path)
+            pricetable = content.iloc[1:]
+            commentl = [float(com) for com in pricetable.comment]
+            self.price = pricetable[['date','netvalue', 'totvalue']]
+            self.price['comment'] = commentl
+            self.name = json.loads(content.iloc[0].comment)['name']
+        except exc.ProgrammingError as e:
+            print('no saved copy of this fund')
+            raise e
+
 
     def update(self):
         '''
@@ -603,7 +720,7 @@ class mfundinfo(basicinfo):
         startvalue = self.price.iloc[-1].totvalue
         diffdays = (yesterdayobj() - lastdate).days
         if diffdays == 0:
-            return 0
+            return None
         self._updateurl = 'http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=' + self.code + '&page=1&per=' + \
                           str(diffdays)
         con = _download(self._updateurl)
@@ -632,3 +749,4 @@ class mfundinfo(basicinfo):
         df = df[df['date'] <= yesterdayobj()]
         if len(df) != 0:
             self.price = self.price.append(df, ignore_index=True, sort=True)
+            return df

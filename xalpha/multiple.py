@@ -21,7 +21,7 @@ class mul():
         one must provide one of the two paramters, if both are offered, status will be overlooked
     :param fetch: boolean, when open the fetch option, info class will try fetching from local files first in the init
     :param save: boolean, when open the save option, info classes automatically save the class to files
-    :param path: string, the file path prefix of IO
+    :param path: string, the file path prefix of IO, or object or engine from sqlalchemy to connect sql database
     :param form: string, the format of IO, options including: 'csv'
     '''
 
@@ -62,7 +62,7 @@ class mul():
                    '基金持有成本', '基金分红与赎回', '换手率', '基金收益总额', '投资收益率']
         summarydf = pd.DataFrame([], columns=columns)
         for fund in self.fundtradeobj:
-            summarydf = summarydf.append(fund.dailyreport(date), ignore_index=True)
+            summarydf = summarydf.append(fund.dailyreport(date), ignore_index=True, sort=True)
         tname = '总计'
         tcode = 'total'
         tunitvalue = float('NaN')
@@ -80,9 +80,9 @@ class mul():
         trow = pd.DataFrame([[tname, tcode, tunitvalue, tunitcost, tholdshare,
                               tcurrentvalue, tpurchase, tbtnk, tcost, toutput, tturnover, tearn, trate]],
                             columns=columns)
-        summarydf = summarydf.append(trow, ignore_index=True)
+        summarydf = summarydf.append(trow, ignore_index=True, sort=True)
 
-        return summarydf
+        return summarydf[columns].sort_values(by="基金现值",ascending=False) 
 
     def _mergecftb(self):
         '''
