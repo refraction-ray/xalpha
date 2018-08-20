@@ -157,12 +157,22 @@ class basicinfo(indicator):
         return self.name
 
     def save(self, path, format = None):
+        '''
+        save info to files
+        :param path: string of the folder path prefix! end with /
+        :param format: string, option:'csv'
+        '''
         if format is None:
             format = self.format
         if format == 'csv':
             self._save_csv(path)
 
     def fetch(self, path, format=None):
+        '''
+        fetch info from files
+        :param path: string of the folder path prefix! end with /
+        :param format: string, option:'csv'
+        '''
         if format is None:
             format = self.format
         if format == 'csv':
@@ -383,6 +393,8 @@ class fundinfo(basicinfo):
         '''
         lastdate = self.price.iloc[-1].date
         diffdays = (yesterdayobj() - lastdate).days
+        if diffdays == 0:
+            return 0
         self._updateurl = 'http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=' + self.code + '&page=1&per=' + \
                           str(diffdays)
         con = _download(self._updateurl)
@@ -590,6 +602,8 @@ class mfundinfo(basicinfo):
         lastdate = self.price.iloc[-1].date
         startvalue = self.price.iloc[-1].totvalue
         diffdays = (yesterdayobj() - lastdate).days
+        if diffdays == 0:
+            return 0
         self._updateurl = 'http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=' + self.code + '&page=1&per=' + \
                           str(diffdays)
         con = _download(self._updateurl)
