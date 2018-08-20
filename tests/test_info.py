@@ -4,10 +4,11 @@ import xalpha as xa
 import pandas as pd
 import pytest
 
+ioconf = {'save': True, 'fetch': True, 'path': 'pytest', 'form': 'csv'}
 ca = xa.cashinfo(interest=0.0002, start='2015-01-01')
-zzhb = xa.indexinfo('0000827')
+zzhb = xa.indexinfo('0000827', **ioconf)
 hs300 = xa.fundinfo('000311')
-zogqb = xa.mfundinfo('001211')
+zogqb = xa.mfundinfo('001211', **ioconf)
 
 def test_cash():    
     assert round(ca.price[ca.price['date']=='2018-01-02'].iloc[0].netvalue,4) == 1.2453
@@ -85,3 +86,22 @@ def test_evaluate():
 	comp.v_correlation()
 	comp2 = xa.evaluate(ca, zzhb, start='2018-01-01')
 	assert round(comp2.correlation_table('2018-08-01').iloc[0,1],3)==0.064
+
+def delete_csvlines(path, end=1):
+	df = pd.read_csv(path)
+	for _ in range(5):
+		df = df.drop(df.index[len(df) - end])
+	df.to_csv(path, index=False)
+
+def test_csvio():
+	hs300 = xa.fundinfo('000311', **ioconf)
+	len1 = len(hs300.price)
+	hs300 = xa.fundinfo('000311', **ioconf)
+	len2 = len(hs300.price)
+	assert len1 == len2
+	delete_csvlines(path=ioconf['path']+'001211.csv',end=2)
+	zogqb2 = xa.mfundinfo('001211', **ioconf)
+	assert zogqb.price.iloc[-1].netvalue == zogqb2.price.iloc[-1].netvalue
+	delete_csvlines(path=ioconf['path']+'0000827.csv')
+	zzhb2 = xa.indexinfo('0000827', **ioconf)
+	assert len(zzhb2.price)==len(zzhb.price)

@@ -1,4 +1,5 @@
 htmlcov/
+pytest*.csv
 .idea/
 notification_my.py
 *.pptx

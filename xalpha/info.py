@@ -75,8 +75,14 @@ class basicinfo(indicator):
     redemption fee as zero when shuhui() function is implemented
 
     :param code: string of code for specific product
+    :param fetch: boolean, when open the fetch option, the class will try fetching from local files first in the init
+    :param save: boolean, when open the save option, automatically save the class to files
+    :param path: string, the file path prefix of IO
+    :param form: string, the format of IO, options including: 'csv'
+    :param label: int, 1 or 2, label to the different round scheme of shares, reserved for fundinfo class
     '''
     def __init__(self, code, fetch=False, save=False, path='', form='csv', label=1):
+        # 增量 IO 的逻辑都由 basicinfo 类来处理，对于具体的子类，只需实现_save_form 和 _fetch_form 以及 update 函数即可
         self.code = code
         self.format = form
         self.label = label
@@ -196,6 +202,10 @@ class fundinfo(basicinfo):
     :param code: str, 基金六位代码字符
     :param label: integer 1 or 2, 取2表示基金申购时份额直接舍掉小数点两位之后。当基金处于 cons.droplist 名单中时，
         label 总会被自动设置为2。非名单内基金可以显式令 label=2.
+    :param fetch: boolean, when open the fetch option, the class will try fetching from local files first in the init
+    :param save: boolean, when open the save option, automatically save the class to files
+    :param path: string, the file path prefix of IO
+    :param form: string, the format of IO, options including: 'csv'
     '''
     def __init__(self, code, label = 1, fetch=False, save=False, path='', form='csv'):
         if label == 2 or (code in droplist):
@@ -334,12 +344,24 @@ class fundinfo(basicinfo):
         print("fund redemption fee info: %s" %self.feeinfo)
 
     def _save_csv(self, path):
+        '''
+        save the information and pricetable into path+code.csv, not recommend to use manually,
+        just set the save label to be true when init the object
+
+        :param path:  string of folder path
+        '''
         s = json.dumps({'feeinfo': self.feeinfo, 'name': self.name, 'rate': self.rate, 'segment': self.segment})
         df = self.price.append(pd.DataFrame([[s, 0, 0, 0]], columns=['date', 'netvalue', 'comment', 'totvalue']),
                              ignore_index=True, sort=True)
         df.to_csv(path + self.code + '.csv', index=False)
 
     def _fetch_csv(self, path):
+        '''
+        fetch the information and pricetable from path+code.csv, not recommend to use manually,
+        just set the fetch label to be true when init the object
+
+        :param path:  string of folder path
+        '''
         try:
             content = pd.read_csv(path + self.code + '.csv')
             pricetable = content.iloc[:-1]
@@ -356,6 +378,9 @@ class fundinfo(basicinfo):
             raise e
 
     def update(self):
+        '''
+        function to incrementally update the pricetable after fetch the old one
+        '''
         lastdate = self.price.iloc[-1].date
         diffdays = (yesterdayobj() - lastdate).days
         self._updateurl = 'http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=' + self.code + '&page=1&per=' + \
@@ -392,14 +417,19 @@ class indexinfo(basicinfo):
 
     :param code: string with seven digitals! note the code here has an extra digit at the beginning,
         0 for sh and 1 for sz.
+    :param fetch: boolean, when open the fetch option, the class will try fetching from local files first in the init
+    :param save: boolean, when open the save option, automatically save the class to files
+    :param path: string, the file path prefix of IO
+    :param form: string, the format of IO, options including: 'csv'
     '''
-    def __init__(self, code):
+    def __init__(self, code, fetch=False, save=False, path='', form='csv'):
         date = yesterday()
-        self.url = 'http://quotes.money.163.com/service/chddata.html?code='+code+'&start=19901219&end='+date+'&fields=TCLOSE'
-        super().__init__(code)
+        self.rate = 0
+        self._url = 'http://quotes.money.163.com/service/chddata.html?code='+code+'&start=19901219&end='+date+'&fields=TCLOSE'
+        super().__init__(code, fetch=fetch, save=save, path=path, form=form)
 
     def _basic_init(self):
-        raw = _download(self.url)
+        raw = _download(self._url)
         cr = csv.reader(raw.text.splitlines(), delimiter=',')
         my_list = list(cr)
         factor = float(my_list[-1][3])
@@ -413,7 +443,52 @@ class indexinfo(basicinfo):
         self.price = index[index['date'].isin(opendate)]
         self.price = self.price[self.price['date']<=yesterdaydash()]
         self.name = my_list[-1][2]
-        self.rate = 0
+
+    def _save_csv(self, path):
+        '''
+        save the information and pricetable into path+code.csv, not recommend to use manually,
+        just set the save label to be true when init the object
+
+        :param path:  string of folder path
+        '''
+        self.price.to_csv(path + self.code + '.csv', index=False)
+
+    def _fetch_csv(self, path):
+        '''
+        fetch the information and pricetable from path+code.csv, not recommend to use manually,
+        just set the fetch label to be true when init the object
+
+        :param path:  string of folder path
+        '''
+        try:
+            pricetable = pd.read_csv(path + self.code + '.csv')
+            datel = list(pd.to_datetime(pricetable.date))
+            self.price = pricetable[['netvalue', 'totvalue', 'comment']]
+            self.price['date'] = datel
+
+        except FileNotFoundError as e:
+            print('no saved copy of this index')
+            raise e
+
+    def update(self):
+        lastdate = self.price.iloc[-1].date
+        lastdatestr = lastdate.strftime('%Y%m%d')
+        weight = self.price.iloc[1].totvalue
+        self._updateurl = 'http://quotes.money.163.com/service/chddata.html?code='+\
+            self.code+'&start='+lastdatestr+'&end='+yesterday()+'&fields=TCLOSE'
+        df = pd.read_csv(self._updateurl, encoding = 'gb2312')
+        self.name = df.iloc[0].loc['名称']
+        if len(df)>1:
+            df = df.rename(columns={'收盘价': 'totvalue'})
+            df['date'] = pd.to_datetime(df.日期)
+            df = df.drop(['股票代码', '名称', '日期'], axis=1)
+            df['netvalue'] = df.totvalue / weight
+            df['comment'] = [0 for _ in range(len(df))]
+            df = df.iloc[::-1].iloc[1:]
+            df = df[df['date'].isin(opendate)]
+            df = df.reset_index(drop=True)
+            df = df[df['date'] <= yesterdayobj()]
+            self.price = self.price.append(df,ignore_index=True, sort=True)
 
 
 class cashinfo(basicinfo):
@@ -445,16 +520,21 @@ class mfundinfo(basicinfo):
     真实的货币基金类，可以通过货币基金六位代码，来获取真实的货币基金业绩，并进行交易回测等
 
     :param code: string of six digitals, code of real monetnary fund
+    :param fetch: boolean, when open the fetch option, the class will try fetching from local files first in the init
+    :param save: boolean, when open the save option, automatically save the class to files
+    :param path: string, the file path prefix of IO
+    :param form: string, the format of IO, options including: 'csv'
+
     '''
-    def __init__(self, code):
-        self.url = 'http://fund.eastmoney.com/pingzhongdata/'+code+'.js'
-        self.page = _download(self.url)
-        super().__init__(code)
+    def __init__(self, code, fetch=False, save=False, path='', form='csv'):
+        self._url = 'http://fund.eastmoney.com/pingzhongdata/'+code+'.js'
+        self.rate = 0
+        super().__init__(code, fetch=fetch, save=save, path=path, form=form)
 
     def _basic_init(self):
-        self.rate = 0
+        self._page = _download(self._url)
         parser = Parser()
-        tree = parser.parse(self.page.text)
+        tree = parser.parse(self._page.text)
         nodenet = [node.children()[0].children()[1] for node in nodevisitor.visit(tree)
            if isinstance(node, ast.VarStatement) and node.children()[0].children()[0].value=='Data_millionCopiesIncome'][0]
         name = [node.children()[0].children()[1] for node in nodevisitor.visit(tree)
@@ -471,4 +551,70 @@ class mfundinfo(basicinfo):
 
         df = pd.DataFrame(data={'date':datel,'netvalue':netvalue,'totvalue':netvalue,'comment':[0 for _ in datel]})
         df = df[df['date'].isin(opendate)]
+        df = df.reset_index(drop=True)
         self.price = df[df['date']<=yesterdaydash()]
+
+    def _save_csv(self, path):
+        '''
+        save the information and pricetable into path+code.csv, not recommend to use manually,
+        just set the save label to be true when init the object
+
+        :param path:  string of folder path
+        '''
+        df = self.price.append(pd.DataFrame([[0, 0, self.name, 0]], columns=['date', 'netvalue', 'comment', 'totvalue']),
+                             ignore_index=True, sort=True)
+        df.to_csv(path + self.code + '.csv', index=False)
+
+    def _fetch_csv(self, path):
+        '''
+        fetch the information and pricetable from path+code.csv, not recommend to use manually,
+        just set the fetch label to be true when init the object
+
+        :param path:  string of folder path
+        '''
+        try:
+            content = pd.read_csv(path + self.code + '.csv')
+            pricetable = content.iloc[:-1]
+            datel = list(pd.to_datetime(pricetable.date))
+            self.price = pricetable[['netvalue', 'totvalue', 'comment']]
+            self.price['date'] = datel
+            self.name = content.iloc[-1].comment
+        except FileNotFoundError as e:
+            print('no saved copy of this fund')
+            raise e
+
+    def update(self):
+        '''
+        function to incrementally update the pricetable after fetch the old one
+        '''
+        lastdate = self.price.iloc[-1].date
+        startvalue = self.price.iloc[-1].totvalue
+        diffdays = (yesterdayobj() - lastdate).days
+        self._updateurl = 'http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=' + self.code + '&page=1&per=' + \
+                          str(diffdays)
+        con = _download(self._updateurl)
+        soup = BeautifulSoup(con.text, "lxml")
+        items = soup.findAll('td')
+        date = []
+        earnrate = []
+        comment = []
+        for i in range(int(len(items) / 6)):
+            ts = pd.Timestamp(items[6 * i].string)
+            if (ts - lastdate).days > 0:
+                date.append(ts)
+                earnrate.append(float(items[6 * i + 1].string) * 1e-4)
+                comment.append(_nfloat(items[6 * i + 5].string))
+        date = date[::-1]
+        earnrate = earnrate[::-1]
+        comment = comment[::-1]
+        netvalue = [startvalue]
+        for earn in earnrate:
+            netvalue.append(netvalue[-1]*(1+earn))
+        netvalue.remove(startvalue)
+
+        df = pd.DataFrame({'date': date, 'netvalue': netvalue, 'totvalue': netvalue, 'comment': comment})
+        df = df[df['date'].isin(opendate)]
+        df = df.reset_index(drop=True)
+        df = df[df['date'] <= yesterdayobj()]
+        if len(df) != 0:
+            self.price = self.price.append(df, ignore_index=True, sort=True)

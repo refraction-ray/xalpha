@@ -3,6 +3,7 @@
 ## Unreleased
 ### added
 * record 类增加 save_csv 函数，将账单一键保存
+* info 各个类增加了增量更新的逻辑，可以将数据本地化到 csv 文件，大幅提升了速度
 
 ## v0.0.7 - 2018.08.17
 ### added
@@ -35,7 +36,7 @@
 ## v0.0.4 - 2018.08.09
 ### added
 * policy 模块增加网格交易类，以进行波段网格交易的回测分析和指导
-* 更直接的一键虚拟清仓功能添加到 record 类，并将具有 status 的类都视为有 record 的 Mix
+* 更直接的一键虚拟清仓功能添加到 record 类，并将具有 status 的类都视为有 record 的 MixIn
 * v_tradevolume() 这一基于现金表的可视化函数，增加了 freq＝ 的关键字参数，可选 D，W，M，从而直接展示不同时间为单位的交易总量柱形图
 
 ### changed
