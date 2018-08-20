@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## v0.1.0 - 2018.08.20
 ### added
 * record 类增加 save_csv 函数，将账单一键保存
 * info 各个类增加了增量更新的逻辑，可以将数据本地化到 csv 文件，大幅提升了速度
