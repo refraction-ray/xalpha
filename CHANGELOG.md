@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+### changed
+* 更简洁的底层逻辑，用来处理多个基金日期不完全相同的情形
 
 ## v0.1.0 - 2018.08.20
 ### added

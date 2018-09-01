@@ -22,7 +22,7 @@ class mul():
     :param fetch: boolean, when open the fetch option, info class will try fetching from local files first in the init
     :param save: boolean, when open the save option, info classes automatically save the class to files
     :param path: string, the file path prefix of IO, or object or engine from sqlalchemy to connect sql database
-    :param form: string, the format of IO, options including: 'csv'
+    :param form: string, the format of IO, options including: 'csv','sql'
     '''
 
     def __init__(self, *fundtradeobj, status=None, fetch=False, save=False, path='', form='csv'):
@@ -156,7 +156,7 @@ class mul():
         visualization on trade summary of the funds combination
 
         :param vkwds: keyword argument for pyecharts Bar.add()
-        :returns: pyecharts.bar
+        :returns: pyecharts.Bar()
         '''
         return vtradevolume(self.totcftable, **vkwds)
 
@@ -169,6 +169,10 @@ class mulfix(mul, indicator):
     :param fundtradeobj: trade obj to be include
     :param status: status table,  if no trade obj is provided, it will include all fund
         based on code in status table
+    :param fetch: boolean, when open the fetch option, info class will try fetching from local files first in the init
+    :param save: boolean, when open the save option, info classes automatically save the class to files
+    :param path: string, the file path prefix of IO, or object or engine from sqlalchemy to connect sql database
+    :param form: string, the format of IO, options including: 'csv','sql'
     :param totmoney: positive float, the total money as the input at the beginning
     :param cashobj: cashinfo object, which is designed to balance the cash in and out
     '''

@@ -21,6 +21,13 @@ from xalpha.indicator import indicator
 _warnmess = 'Something weird on redem fee, please adjust self.segment by hand'
 
 def _download(url, tries=3):
+    '''
+    wrapper of requests.get(), in case of internet failure
+
+    :param url: string of the url
+    :param tries: int, attempts to reconnect the url
+    :return: request.get() object
+    '''
     for count in range(tries):
         try:
             page = rq.get(url)
@@ -52,6 +59,9 @@ def _nfloat(string):
     deal with comment column in fundinfo price table,
     positive value for fenhong and negative value for chaifen,
     keep other unrocognized pattern as original string
+
+    :param string: string of input from original data
+    :returns: make fenhong and songpei as float number
     '''
     result = 0
     if string != '""' and string is not None:
@@ -77,7 +87,7 @@ class basicinfo(indicator):
     :param code: string of code for specific product
     :param fetch: boolean, when open the fetch option, the class will try fetching from local files first in the init
     :param save: boolean, when open the save option, automatically save the class to files
-    :param path: string, the file path prefix of IO. or in sql case, path is the engine from sqlalchemy.
+    :param path: string, the file path prefix of IO. Or in sql case, path is the engine from sqlalchemy.
     :param form: string, the format of IO, options including: 'csv','sql'
     :param label: int, 1 or 2, label to the different round scheme of shares, reserved for fundinfo class
     '''
@@ -118,7 +128,11 @@ class basicinfo(indicator):
     def shengou(self, value, date):
         '''
         give the realdate deltacash deltashare tuple based on purchase date and purchase amount
+        if the date is not a trade date, then the purchase would happen on the next trade day, if the date is
+        in the furture, then the trade date is taken as yesterday.
 
+        :param value: the money for purchase
+        :param date: string or object of date
         :returns: three elements tuple, the first is the actual dateobj of commit
             the second is a negative float for cashin,
             the third is a positive float for share increase
@@ -129,8 +143,12 @@ class basicinfo(indicator):
 
     def shuhui(self, share, date, rem):
         '''
-        give the cashout considering redemption rates as zero
+        give the cashout considering redemption rates as zero.
+        if the date is not a trade date, then the purchase would happen on the next trade day, if the date is
+        in the furture, then the trade date is taken as yesterday.
 
+        :param share: float or int, number of shares to be sold
+        :param date: string or object of date
         :returns: three elements tuple, the first is dateobj
             the second is a positive float for cashout,
             the third is a negative float for share decrease
@@ -162,7 +180,8 @@ class basicinfo(indicator):
 
     def save(self, path, form = None, option='r', delta = None):
         '''
-        save info to files
+        save info to files, this function is designed to redirect to more specific functions
+
         :param path: string of the folder path prefix! or engine obj from sqlalchemy
         :param form: string, option:'csv'
         :param option: string, r for replace and a for append output
@@ -189,8 +208,10 @@ class basicinfo(indicator):
     def fetch(self, path, form=None):
         '''
         fetch info from files
-        :param path: string of the folder path prefix! end with /
-        :param form: string, option:'csv'
+
+        :param path: string of the folder path prefix! end with / in csv case;
+            engine from sqlalchemy.create_engine() in sql case.
+        :param form: string, option:'csv' or 'sql
         '''
         if form is None:
             form = self.format
@@ -199,27 +220,12 @@ class basicinfo(indicator):
         elif form == 'sql':
             self._fetch_sql(path)
 
-    def _save_csv(self, path):
-        '''
-        save the class to csv files, no returns
-
-        :param path: string of the folder path! end with /
-        '''
-        raise NotImplementedError
-
-    def _fetch_csv(self, path):
-        '''
-        read the class from csv files, no returns
-
-        :param path: string of the folder path! end with /
-        '''
-        raise NotImplementedError
 
     def update(self):
         '''
         对类的价格表进行增量更新，并进行增量存储，适合 fetch 打开的情形
 
-        :returns: the incremental part of price table or None
+        :returns: the incremental part of price table or None if no incremental part exsits
         '''
         raise NotImplementedError
    

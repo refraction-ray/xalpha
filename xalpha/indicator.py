@@ -51,6 +51,9 @@ class indicator():
 		self.riskfree = riskfree
 		self.bmprice = self.benchmark.price[self.benchmark.price['date']>=self.start]
 		self.price = self.price[self.price['date']>=self.start]
+		self.bmprice = self.bmprice[self.bmprice['date'].isin(self.price['date'])]
+		self.price = self.price[self.price['date'].isin(self.bmprice['date'])]
+		# the price data is removed from the infoobj before start date
 		
 	def _pricegenerate(self):
 		'''
@@ -406,8 +409,8 @@ class indicator():
 		'''
 		a, b = self.comparison(end)
 		xdata = [1 for _ in range(len(a))]
-		ydata = [[row['date'],row['netvalue']] for i, row in a.iterrows()]
-		ydata2 = [[row['date'],row['netvalue']] for i, row in b.iterrows()]
+		ydata = [[row['date'],row['netvalue']] for _, row in a.iterrows()]
+		ydata2 = [[row['date'],row['netvalue']] for _, row in b.iterrows()]
 		line=Line()
 		line.add('algorithm',xdata,ydata,is_datazoom_show = True,xaxis_type="time",**vkwds)
 		if benchmark is True:

@@ -20,7 +20,13 @@ class evaluate():
     '''
     def __init__(self, *fundobjs, start=None):
         self.fundobjs = fundobjs
-        startdate = max([fund.price.iloc[0].date for fund in fundobjs])
+        self.totprice = self.fundobjs[0].price[['date','netvalue']].rename(columns={'netvalue': fundobjs[0].code})
+        for fundobj in fundobjs[1:]:
+            self.totprice = self.totprice.merge(fundobj.price[['date','netvalue']].
+                                                rename(columns={'netvalue': fundobj.code}), on='date')
+
+
+        startdate = self.totprice.iloc[0].date
         if start is None:
             self.start = startdate
         else:
@@ -28,23 +34,13 @@ class evaluate():
             if start < startdate:
                 raise Exception('Too early start date')  
             else:
-                self.start = convert_date(start)
-        datelist = fundobjs[0].price[fundobjs[0].price['date']>=self.start].date
-        self.totprice = pd.DataFrame(datelist, columns=['date'])
-        for fund in fundobjs:
-            pricelist = []
-            for sdate in datelist: # 将不同净值表按第0个基金的净值表为基准进行补齐，尤其是对于 QDII 基金的异常的防止
-                row = fund.price[fund.price['date']==sdate]
-                if len(row) == 1:
-                    pricelist.append(row.iloc[0].netvalue)
-                elif len(row) == 0:
-                    pricelist.append(fund.price[fund.price['date']<=sdate].iloc[-1].netvalue)
-            assert len(pricelist) == len(datelist)
-
-            self.totprice[fund.code] = list(pricelist)
-            self.totprice[fund.code] *= 1/self.totprice[fund.code].iloc[0]
+                self.start = start
+                self.totprice = self.totprice[self.totprice['date']>=self.start]
         self.totprice = self.totprice.reset_index(drop=True)
-            
+        for col in self.totprice.columns:
+            if col != 'date':
+                self.totprice[col] = self.totprice[col]/self.totprice[col].iloc[0]
+
     def v_netvalue(self, end=yesterdayobj(), **vkwds):
         '''
         起点对齐归一的，各参考基金或指数的净值比较可视化
