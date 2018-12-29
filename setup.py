@@ -1,12 +1,13 @@
 import setuptools
+from xalpha import __version__, __author__
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="xalpha",
-    version="0.1.0",
-    author="refraction-ray",
+    version=__version__,
+    author=__author__,
     author_email="refraction-ray@protonmail.com",
     description="all about fund investment",
     long_description=long_description,
