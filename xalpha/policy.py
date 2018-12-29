@@ -6,6 +6,7 @@ import pandas as pd
 from xalpha.cons import yesterdaydash, opendate, myround
 from xalpha.record import record
 
+
 class policy(record):
     '''
     base class for policy making, self.status to get the generating status table
@@ -16,31 +17,32 @@ class policy(record):
     :param totmoney: float or int, characteristic money value, 
         not necessary to be the total amount of money
     '''
+
     def __init__(self, infoobj, start, end=yesterdaydash(), totmoney=100000):
         self.aim = infoobj
         self.totmoney = totmoney
-        self.price = infoobj.price[(infoobj.price['date']>=start)&(infoobj.price['date']<=end)]
+        self.price = infoobj.price[(infoobj.price['date'] >= start) & (infoobj.price['date'] <= end)]
         if len(self.price) == 0:
             self.start = convert_date(start)
             self.end = convert_date(end)
-            self.status = pd.DataFrame(data={'date':[],self.aim.code:[]})
+            self.status = pd.DataFrame(data={'date': [], self.aim.code: []})
         else:
             self.start = self.price.iloc[0].date
             self.end = self.price.iloc[-1].date
             datel = []
             actionl = []
-            times = pd.date_range(self.start,self.end)
+            times = pd.date_range(self.start, self.end)
             for date in times:
                 action = self.status_gen(date)
-                if action>0:
+                if action > 0:
                     datel.append(date)
                     actionl.append(action)
-                elif action<0:
+                elif action < 0:
                     datel.append(date)
-                    actionl.append(action*0.005)
-            df = pd.DataFrame(data={'date':datel, self.aim.code:actionl})
+                    actionl.append(action * 0.005)
+            df = pd.DataFrame(data={'date': datel, self.aim.code: actionl})
             self.status = df
-        
+
     def status_gen(self, date):
         '''
         give policy decision based on given date
@@ -50,16 +52,18 @@ class policy(record):
         '''
         raise NotImplementedError
 
+
 class buyandhold(policy):
     '''
     simple policy class where buy at the start day and hold forever,
     始终选择分红再投入
     '''
+
     def status_gen(self, date):
         if date == self.start:
             return self.totmoney
         elif date in self.aim.specialdate:
-            if self.price[self.price['date']==date].iloc[0].comment>0:
+            if self.price[self.price['date'] == date].iloc[0].comment > 0:
                 return 0.05
             else:
                 return 0
@@ -76,12 +80,13 @@ class scheduled(policy):
     :param times: datelist of datetime object for purchase date, eg ['2017-01-01','2017-07-07',...]
         we recommend you use pd.date_range() to generate the schduled list
     '''
+
     def __init__(self, infoobj, totmoney, times):
         start = times[0]
         end = times[-1]
         self.times = times
         super().__init__(infoobj, start, end, totmoney)
-        
+
     def status_gen(self, date):
         if date in self.times:
             return self.totmoney
@@ -93,6 +98,7 @@ class scheduled_tune(scheduled):
     '''
     定期不定额的方式进行投资，基于净值点数分段进行投资
     '''
+
     def __init__(self, infoobj, totmoney, times, piece):
         '''
         :param piece: list of tuples, eg.[(1000,2),(2000,1.5)]. It means when the fund netvalue
@@ -104,14 +110,13 @@ class scheduled_tune(scheduled):
 
     def status_gen(self, date):
         if date in self.times:
-            value = self.price[self.price['date']>=date].iloc[0].netvalue
+            value = self.price[self.price['date'] >= date].iloc[0].netvalue
             for term in self.piece:
-                if value<=term[0]:
-                    return term[1]*self.totmoney
+                if value <= term[0]:
+                    return term[1] * self.totmoney
             return 0
         else:
             return 0
-
 
 
 class grid(policy):
@@ -128,24 +133,25 @@ class grid(policy):
     :param end: date str of policy ending
     :param totmoney: 总钱数，平均分给各个网格买入仓位
     '''
-    def __init__(self, infoobj, buypercent, sellpercent, start, end=yesterdaydash(), totmoney = 100000):
+
+    def __init__(self, infoobj, buypercent, sellpercent, start, end=yesterdaydash(), totmoney=100000):
         assert len(buypercent) == len(sellpercent)
         self.division = len(buypercent)
         self.pos = 0
-        self.zero = infoobj.price[infoobj.price['date']>=start].iloc[0].loc['netvalue']
+        self.zero = infoobj.price[infoobj.price['date'] >= start].iloc[0].loc['netvalue']
         buypts = [self.zero]
         sellpts = []
         for term in buypercent:
-            buypts.append(buypts[-1]*(1-term/100.))
-        for i,term in enumerate(sellpercent):
-            sellpts.append(buypts[i+1]*(1+term/100.))
+            buypts.append(buypts[-1] * (1 - term / 100.))
+        for i, term in enumerate(sellpercent):
+            sellpts.append(buypts[i + 1] * (1 + term / 100.))
         self.buypts = buypts[1:]
         self.sellpts = sellpts
         self.buypercent = buypercent
         self.sellpercent = sellpercent
         super().__init__(infoobj, start, end, totmoney)
 
-    def status_gen(self,date):
+    def status_gen(self, date):
         # 过滤交易日这一需求，交给各个类自由裁量，这里网格类就需要过掉非交易日干扰，
         # 而定投类中则不过掉，遇到非交易日顺延定投更合理些
         if date.strftime('%Y-%m-%d') not in opendate:
@@ -154,21 +160,22 @@ class grid(policy):
         if date == self.start:
             if self.buypercent[0] == 0:
                 self.pos += 1
-                return myround(self.totmoney/self.division)
+                return myround(self.totmoney / self.division)
             else:
                 return 0
-        value = self.price[self.price['date']<=date].iloc[-1].loc['netvalue']
-        valueb = self.price[self.price['date']<=date].iloc[-2].loc['netvalue']
+        value = self.price[self.price['date'] <= date].iloc[-1].loc['netvalue']
+        valueb = self.price[self.price['date'] <= date].iloc[-2].loc['netvalue']
         action = 0
-        for i,buypt in enumerate(self.buypts):
-            if (value-buypt)<=0 and (valueb-buypt)>0 and self.pos<=i:
+        for i, buypt in enumerate(self.buypts):
+            if (value - buypt) <= 0 and (valueb - buypt) > 0 and self.pos <= i:
                 self.pos += 1
-                action += myround(self.totmoney/self.division)
-        for j,sellpt in enumerate(self.sellpts):
-            if (value-sellpt)>=0 and (valueb-sellpt)<0 and self.pos>j:
-                action += -1/self.pos
+                action += myround(self.totmoney / self.division)
+        for j, sellpt in enumerate(self.sellpts):
+            if (value - sellpt) >= 0 and (valueb - sellpt) < 0 and self.pos > j:
+                action += -1 / self.pos
                 self.pos += -1
         return action
+
 
 class indicator_cross(policy):
     '''
@@ -184,6 +191,7 @@ class indicator_cross(policy):
     :param totmoney: float or int, total money, in the cross policy, we dont have position division,
         instead we buy all or sell all on the given cross
     '''
+
     def __init__(self, infoobj, col, start, end=yesterdaydash(), totmoney=100000):
         self.col = col
         self.pos = 0
@@ -192,20 +200,20 @@ class indicator_cross(policy):
     def status_gen(self, date):
         if date.strftime('%Y-%m-%d') not in opendate:
             return 0
-        rows = self.price[self.price['date']<=date]
+        rows = self.price[self.price['date'] <= date]
         if len(rows) == 1:
             return 0
         valuel = rows.iloc[-1].loc[self.col[0]]
         valuelb = rows.iloc[-2].loc[self.col[0]]
         valuer = rows.iloc[-1].loc[self.col[1]]
         valuerb = rows.iloc[-2].loc[self.col[1]]
-        cond = (valuerb-valuelb)*(valuer-valuel)
+        cond = (valuerb - valuelb) * (valuer - valuel)
 
         if cond > 0:
             return 0
-        if cond == 0 and (valuer-valuel == 0):
+        if cond == 0 and (valuer - valuel == 0):
             return 0
-        if (cond == 0 and (valuer-valuel) != 0) or cond<0:
+        if (cond == 0 and (valuer - valuel) != 0) or cond < 0:
             if valuer > valuel:
                 if self.pos == 1:
                     self.pos = 0
@@ -238,6 +246,7 @@ class indicator_points(policy):
     :param totmoney: float or int, total money, in the points policy, we share them as different positions, based on
         the instruction of sell and buy list
     '''
+
     def __init__(self, infoobj, start, col, buy, sell=None, buylow=True, end=yesterdaydash(), totmoney=100000):
         self.pos = 0
         self.col = col
@@ -246,13 +255,13 @@ class indicator_points(policy):
         bdivision = sum([it[1] for it in buy])
         self.buy = []
         for item in buy:
-            self.buy.append((item[0],item[1]/bdivision))
+            self.buy.append((item[0], item[1] / bdivision))
 
         if sell is not None:
             self.sell = []
             sdivision = sum([it[1] for it in sell])
             for item in sell:
-                self.sell.append((item[0],item[1]/sdivision))
+                self.sell.append((item[0], item[1] / sdivision))
         else:
             self.sell = sell
 
@@ -271,19 +280,19 @@ class indicator_points(policy):
             judge = 1
         else:
             judge = -1
-        for i,term in enumerate(self.buy):
-            if judge*(value - term[0]) <= 0 < judge*(valueb - term[0]) \
-                    and self.pos+sum([it[1] for it in self.buy[i:]]) <= 1:
+        for i, term in enumerate(self.buy):
+            if judge * (value - term[0]) <= 0 < judge * (valueb - term[0]) \
+                    and self.pos + sum([it[1] for it in self.buy[i:]]) <= 1:
                 self.pos += term[1]
-                action += myround(self.totmoney*term[1])
+                action += myround(self.totmoney * term[1])
                 self.selllevel = 0
         if self.sell is not None:
-            for i,term in enumerate(self.sell):
-                if judge*(value - term[0]) >= 0 > judge*(valueb - term[0]) \
+            for i, term in enumerate(self.sell):
+                if judge * (value - term[0]) >= 0 > judge * (valueb - term[0]) \
                         and self.pos > 0 and self.selllevel <= i:
-                    deltaaction = myround(term[1]/sum([it[1] for it in self.sell[i:]]))
-                    action -= (1+action)*deltaaction # 需考虑一日卖出多仓的情形
-                    self.pos = (1-deltaaction)*self.pos
-                    self.selllevel = i+1
+                    deltaaction = myround(term[1] / sum([it[1] for it in self.sell[i:]]))
+                    action -= (1 + action) * deltaaction  # 需考虑一日卖出多仓的情形
+                    self.pos = (1 - deltaaction) * self.pos
+                    self.selllevel = i + 1
 
         return action

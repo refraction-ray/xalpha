@@ -15,6 +15,7 @@ from xalpha.info import _download, fundinfo
 from xalpha.cons import today
 from xalpha.trade import trade
 
+
 def _format_addr(s):
     '''
     parse the email sender and receiver, Chinese encode and support
@@ -24,8 +25,9 @@ def _format_addr(s):
     name, addr = parseaddr(s)
     return formataddr((Header(name, 'utf-8').encode(), addr))
 
-def mail(title, content, sender=None, receiver=None, password=None, server = None, port = None, sender_name='sender',
-    receiver_name=None):
+
+def mail(title, content, sender=None, receiver=None, password=None, server=None, port=None, sender_name='sender',
+         receiver_name=None):
     '''
     send email
 
@@ -40,26 +42,25 @@ def mail(title, content, sender=None, receiver=None, password=None, server = Non
     try:
         if receiver_name is None:
             receiver_name = ['receiver' for _ in receiver]
-        msg = MIMEText(content,'plain','utf-8')
-        msg['From'] = _format_addr('%s <%s>'%(sender_name,sender))
+        msg = MIMEText(content, 'plain', 'utf-8')
+        msg['From'] = _format_addr('%s <%s>' % (sender_name, sender))
         # 括号里的对应发件人邮箱昵称、发件人邮箱账号
         receivestr = ''
-        for i,s in enumerate(receiver):
+        for i, s in enumerate(receiver):
             receivestr += receiver_name[i]
             receivestr += ' <'
             receivestr += s
             receivestr += '>, '
-        msg['To'] = _format_addr(receivestr)		# 括号里的对应收件人邮箱昵称、收件人邮箱账号
-        msg['Subject'] = title	# 邮件的主题，即标题
- 
-        server=smtplib.SMTP_SSL(server, port)    # 发件人邮箱中的SMTP服务器和端口号
+        msg['To'] = _format_addr(receivestr)  # 括号里的对应收件人邮箱昵称、收件人邮箱账号
+        msg['Subject'] = title  # 邮件的主题，即标题
+
+        server = smtplib.SMTP_SSL(server, port)  # 发件人邮箱中的SMTP服务器和端口号
         server.login(sender, password)  # 括号中对应的是发件人邮箱账号、邮箱密码
-        server.sendmail(sender,receiver,msg.as_string())  # 括号中对应的是发件人邮箱账号、收件人邮箱账号、发送邮件
+        server.sendmail(sender, receiver, msg.as_string())  # 括号中对应的是发件人邮箱账号、收件人邮箱账号、发送邮件
         server.quit()
     except Exception:
-        ret=False
+        ret = False
     return ret
-
 
 
 class rtdata():
@@ -68,13 +69,14 @@ class rtdata():
 
     :param code: string of six digitals for funds
     '''
+
     def __init__(self, code):
-        url = 'http://fundgz.1234567.com.cn/js/'+code+'.js'
+        url = 'http://fundgz.1234567.com.cn/js/' + code + '.js'
         page = _download(url)
         self.code = code
-        self.rtvalue = float(match(r'.*"gsz":"(\d*\.\d*)",.*',page.text)[1])
-        self.name = match(r'.*"name":"([^,]*)",.*',page.text)[1]
-        self.time = dt.datetime.strptime(match(r'.*"gztime":"([\d\s\-\:]*)".*',page.text)[1],'%Y-%m-%d %H:%M')
+        self.rtvalue = float(match(r'.*"gsz":"(\d*\.\d*)",.*', page.text)[1])
+        self.name = match(r'.*"name":"([^,]*)",.*', page.text)[1]
+        self.time = dt.datetime.strptime(match(r'.*"gztime":"([\d\s\-\:]*)".*', page.text)[1], '%Y-%m-%d %H:%M')
 
 
 def rfundinfo(code, label=1, fetch=False, save=False, path='', form='csv'):
@@ -92,9 +94,10 @@ def rfundinfo(code, label=1, fetch=False, save=False, path='', form='csv'):
     rt = rtdata(code)
     rtdate = dt.datetime.combine(rt.time, dt.time.min)
     rtvalue = rt.rtvalue
-    if (rtdate-fundobj.price.iloc[-1].date).days > 0:
-        fundobj.price = fundobj.price.append(pd.DataFrame([[rtdate,rtvalue,fundobj.price.iloc[-1].totvalue,0]],
-            columns=['date','netvalue','totvalue','comment']),ignore_index=True)
+    if (rtdate - fundobj.price.iloc[-1].date).days > 0:
+        fundobj.price = fundobj.price.append(pd.DataFrame([[rtdate, rtvalue, fundobj.price.iloc[-1].totvalue, 0]],
+                                                          columns=['date', 'netvalue', 'totvalue', 'comment']),
+                                             ignore_index=True)
     return fundobj
 
 
@@ -106,6 +109,7 @@ class review():
     :param namelist: list of names of corresponding policy, default as 0 to n-1
     :param date: object of datetime, check date, today is prefered, date other than is not guaranteed
     '''
+
     def __init__(self, policylist, namelist=None, date=today()):
         self.warn = []
         self.message = []
@@ -115,22 +119,21 @@ class review():
         else:
             self.namelist = namelist
         assert len(self.policylist) == len(self.namelist)
-        for i,policy in enumerate(policylist):
-            row = policy.status[policy.status['date']==date]
+        for i, policy in enumerate(policylist):
+            row = policy.status[policy.status['date'] == date]
             if len(row) == 1:
                 warn = (policy.aim.name, policy.aim.code,
-                    row.iloc[0].loc[policy.aim.code], self.namelist[i])
+                        row.iloc[0].loc[policy.aim.code], self.namelist[i])
                 self.warn.append(warn)
-                if warn[2]>0:
-                    sug = '买入%s元'%warn[2]
-                elif warn[2]<0:
-                    ratio = -warn[2]/0.005*100
-                    share = trade(fundinfo(warn[1]),policy.status).briefdailyreport().get('currentshare',0)
-                    share = -warn[2]/0.005* share
-                    sug = '卖出%s%%的份额，也即%s份额'%(ratio,share)
-                self.message.append('根据%s计划，建议%s，%s(%s)'%(warn[3],sug,warn[0],warn[1]))
+                if warn[2] > 0:
+                    sug = '买入%s元' % warn[2]
+                elif warn[2] < 0:
+                    ratio = -warn[2] / 0.005 * 100
+                    share = trade(fundinfo(warn[1]), policy.status).briefdailyreport().get('currentshare', 0)
+                    share = -warn[2] / 0.005 * share
+                    sug = '卖出%s%%的份额，也即%s份额' % (ratio, share)
+                self.message.append('根据%s计划，建议%s，%s(%s)' % (warn[3], sug, warn[0], warn[1]))
         self.content = '\n'.join(map(str, self.message))
-
 
     def __str__(self):
         return self.content

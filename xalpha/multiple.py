@@ -82,7 +82,7 @@ class mul():
                             columns=columns)
         summarydf = summarydf.append(trow, ignore_index=True, sort=True)
 
-        return summarydf[columns].sort_values(by="基金现值",ascending=False) 
+        return summarydf[columns].sort_values(by="基金现值", ascending=False)
 
     def _mergecftb(self):
         '''
@@ -177,7 +177,8 @@ class mulfix(mul, indicator):
     :param cashobj: cashinfo object, which is designed to balance the cash in and out
     '''
 
-    def __init__(self, *fundtradeobj, status=None, fetch=False, save=False, path='', form='csv', totmoney=100000, cashobj=None):
+    def __init__(self, *fundtradeobj, status=None, fetch=False, save=False, path='', form='csv', totmoney=100000,
+                 cashobj=None):
         super().__init__(*fundtradeobj, status=status, fetch=fetch, save=save, path=path, form=form)
         if cashobj is None:
             cashobj = cashinfo()

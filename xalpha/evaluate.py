@@ -7,6 +7,7 @@ import pandas as pd
 from pyecharts import Line, HeatMap
 from xalpha.cons import convert_date, yesterdayobj
 
+
 class evaluate():
     '''
     多个 info 对象的比较类，比较的对象只要实现了 price 属性，该属性为具有 date 和 netvalue 列的 pandas.DataFrame 即可。
@@ -18,13 +19,13 @@ class evaluate():
         但需要注意，由于拉取的基金净值表，往往在开始几天缺失净值数据，即使使用默认时间也可能无法对齐所有净值数据。
         因此建议手动设置起始时间到最近的起始时间一周后左右。 
     '''
+
     def __init__(self, *fundobjs, start=None):
         self.fundobjs = fundobjs
-        self.totprice = self.fundobjs[0].price[['date','netvalue']].rename(columns={'netvalue': fundobjs[0].code})
+        self.totprice = self.fundobjs[0].price[['date', 'netvalue']].rename(columns={'netvalue': fundobjs[0].code})
         for fundobj in fundobjs[1:]:
-            self.totprice = self.totprice.merge(fundobj.price[['date','netvalue']].
+            self.totprice = self.totprice.merge(fundobj.price[['date', 'netvalue']].
                                                 rename(columns={'netvalue': fundobj.code}), on='date')
-
 
         startdate = self.totprice.iloc[0].date
         if start is None:
@@ -32,14 +33,14 @@ class evaluate():
         else:
             start = convert_date(start)
             if start < startdate:
-                raise Exception('Too early start date')  
+                raise Exception('Too early start date')
             else:
                 self.start = start
-                self.totprice = self.totprice[self.totprice['date']>=self.start]
+                self.totprice = self.totprice[self.totprice['date'] >= self.start]
         self.totprice = self.totprice.reset_index(drop=True)
         for col in self.totprice.columns:
             if col != 'date':
-                self.totprice[col] = self.totprice[col]/self.totprice[col].iloc[0]
+                self.totprice[col] = self.totprice[col] / self.totprice[col].iloc[0]
 
     def v_netvalue(self, end=yesterdayobj(), **vkwds):
         '''
@@ -49,17 +50,17 @@ class evaluate():
         :param vkwds: pyechart line.add() options
         :returns: pyecharts.Line object
         '''
-        partprice = self.totprice[self.totprice['date']<=end]
+        partprice = self.totprice[self.totprice['date'] <= end]
         xdata = [1 for _ in range(len(partprice))]
         ydatas = []
         for fund in self.fundobjs:
-            ydata = [[row['date'],row[fund.code]] for _, row in partprice.iterrows()]
+            ydata = [[row['date'], row[fund.code]] for _, row in partprice.iterrows()]
             ydatas.append(ydata)
         line = Line()
-        for i,fund in enumerate(self.fundobjs):   
-            line.add(fund.name,xdata,ydatas[i],is_datazoom_show = True,xaxis_type="time",**vkwds)
+        for i, fund in enumerate(self.fundobjs):
+            line.add(fund.name, xdata, ydatas[i], is_datazoom_show=True, xaxis_type="time", **vkwds)
         return line
-    
+
     def correlation_table(self, end=yesterdayobj()):
         '''
         give the correlation coefficient amongst referenced funds and indexes
@@ -67,10 +68,10 @@ class evaluate():
         :param end: string or object of date, the end date of the line
         :returns: pandas DataFrame, with correlation coefficient as elements
         '''
-        partprice = self.totprice[self.totprice['date']<=end]
-        covtable = partprice.iloc[:,1:].pct_change().corr()
+        partprice = self.totprice[self.totprice['date'] <= end]
+        covtable = partprice.iloc[:, 1:].pct_change().corr()
         return covtable
-    
+
     def v_correlation(self, end=yesterdayobj(), **vkwds):
         '''
         各基金净值的相关程度热力图可视化
@@ -80,9 +81,8 @@ class evaluate():
         '''
         ctable = self.correlation_table(end)
         x_axis = list(ctable.columns)
-        data = [[i, j, ctable.iloc[i,j]] for i in range(len(ctable)) for j in range(len(ctable))]
+        data = [[i, j, ctable.iloc[i, j]] for i in range(len(ctable)) for j in range(len(ctable))]
         heatmap = HeatMap()
         heatmap.add("", x_axis, x_axis, data, is_visualmap=True, visual_pos='center',
-                    visual_text_color="#000", visual_range=[-1,1], visual_orient='horizontal', **vkwds)
+                    visual_text_color="#000", visual_range=[-1, 1], visual_orient='horizontal', **vkwds)
         return heatmap
-        

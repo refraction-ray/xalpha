@@ -5,6 +5,7 @@ module for status table IO
 import pandas as pd
 from xalpha.cons import convert_date, yesterdayobj
 
+
 class record():
     '''
     basic class for status table read in from csv file.
@@ -23,9 +24,10 @@ class record():
     :param readkwds: keywords options for pandas.read_csv() function. eg. skiprows=1, skipfooter=2,
         see more on `pandas doc <https://pandas.pydata.org/pandas-docs/stable/generated/pandas.read_csv.html>`_.
     '''
+
     def __init__(self, path='input.csv', **readkwds):
         df = pd.read_csv(path, **readkwds)
-        df.date=[pd.Timestamp.strptime(str(int(df.iloc[i].date)),"%Y%m%d") for i in range(len(df))]
+        df.date = [pd.Timestamp.strptime(str(int(df.iloc[i].date)), "%Y%m%d") for i in range(len(df))]
         df.fillna(0, inplace=True)
         self.status = df
 
@@ -39,15 +41,15 @@ class record():
         :param ratio: float between 0 to 1, the ratio of selling for each funds
         '''
         date = convert_date(date)
-        s = self.status[self.status['date']<=date]
+        s = self.status[self.status['date'] <= date]
         row = []
-        ratio = ratio*0.005
+        ratio = ratio * 0.005
         for term in s.columns:
-            if term!='date':
+            if term != 'date':
                 row.append(-ratio)
             else:
                 row.append(date)
-        s = s.append(pd.DataFrame([row], columns=s.columns),ignore_index=True)
+        s = s.append(pd.DataFrame([row], columns=s.columns), ignore_index=True)
         self.status = s
 
     def save_csv(self, path=None, index=False, **tocsvkwds):
@@ -59,4 +61,4 @@ class record():
         :param tocsvkwds: keywords options for pandas.to_csv() function, see
             `pandas doc <https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.to_csv.html>`_.
         '''
-        self.status.to_csv(path, index = index, **tocsvkwds)
+        self.status.to_csv(path, index=index, **tocsvkwds)
