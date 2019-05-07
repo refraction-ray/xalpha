@@ -4,7 +4,7 @@ module for implementation of indicator class, which is designed as MinIn for sys
 '''
 
 import pandas as pd
-from pyecharts import Line
+from pyecharts.charts import Line
 
 from xalpha.cons import yesterdayobj, opendate
 

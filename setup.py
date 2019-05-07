@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="xalpha",
-    version="0.1.1",
+    version="0.1.2",
     author="refraction-ray",
     author_email="refraction-ray@protonmail.com",
     description="all about fund investment",
@@ -20,7 +20,7 @@ setuptools.setup(
         'pandas',
         'scipy',
         'requests',
-        'pyecharts>=0.5.5',
+        'pyecharts>=1.0.0',
         'beautifulsoup4',
         'sqlalchemy'],
     tests_require=['pytest'],

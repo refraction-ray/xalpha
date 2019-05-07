@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.1.2 - 2019.05.07
+### changed
+* support pyecharts 1.0.0
+
 ## v0.1.1 - 2018.12.29
 ### changed
 * 更简洁的底层逻辑，用来处理多个基金日期不完全相同的情形

@@ -4,7 +4,7 @@ module for trade class
 '''
 import datetime as dt
 import pandas as pd
-from pyecharts import Line, Bar
+from pyecharts.charts import Line, Bar
 import xalpha.remain as rm
 from xalpha.cons import convert_date, xirr, myround, yesterdayobj
 

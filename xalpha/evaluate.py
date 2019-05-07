@@ -4,7 +4,7 @@ modules for evaluation and comparison on multiple object with price dataframe
 '''
 
 import pandas as pd
-from pyecharts import Line, HeatMap
+from pyecharts.charts import Line, HeatMap
 from xalpha.cons import convert_date, yesterdayobj
 
 

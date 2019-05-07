@@ -4,7 +4,7 @@ module for mul and mulfix class: fund combination management
 '''
 
 import pandas as pd
-from pyecharts import Pie, ThemeRiver
+from pyecharts.charts import Pie, ThemeRiver
 from xalpha.trade import xirrcal, vtradevolume, bottleneck, turnoverrate, trade
 from xalpha.evaluate import evaluate
 from xalpha.indicator import indicator
