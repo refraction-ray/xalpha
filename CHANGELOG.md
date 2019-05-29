@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.1.2 - 2019.05.29
 ### added
 * 增加了 fundinfo 和 mfundinfo 的自动选择逻辑
 * 增加了新格式交易单的读取接口
@@ -21,7 +21,7 @@
 * info 各个类增加了增量更新的逻辑，可以将数据本地化到 csv 文件，大幅提升了速度
 * info 类的增量更新亦可选择任意 sqlalchemy 支持连接的数据库，将数据本地化
 ### fixed
-* 进一步校正 trade 类 dailireport 在未发生过交易时的展示逻辑
+* 进一步校正 trade 类 dailyreport 在未发生过交易时的展示逻辑
 
 ## v0.0.7 - 2018.08.17
 ### added
