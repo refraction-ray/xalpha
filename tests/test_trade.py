@@ -6,9 +6,12 @@ import pytest
 import pandas as pd
 
 path = 'demo.csv'
+path1 = 'demo1.csv'
 cm = xa.fundinfo('164818')
 statb = xa.record(path).status
+statl = xa.record(path1, format="list").status
 cm_t = xa.trade(cm, statb)
+ioconf = {'save': True, 'fetch': True, 'path': 'pytest', 'form': 'csv'}
 
 
 def test_trade():
@@ -89,3 +92,8 @@ def test_policy_indicator_points():
                                     sell=[(0.4, 1), (0.3, 1)], buylow=False)
     zz500_t = xa.trade(zz500, st.status)
     assert zz500_t.dailyreport('2018-05-01').iloc[0].loc['基金收益总额'] == -6302.26
+
+
+def test_record_list():
+    tot = xa.mulfix(status=statl, totmoney=50000, **ioconf)
+    assert round(tot.combsummary('2019-05-04').iloc[0]['投资收益率'], 1) == 10.6

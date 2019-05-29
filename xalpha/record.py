@@ -25,11 +25,23 @@ class record():
         see more on `pandas doc <https://pandas.pydata.org/pandas-docs/stable/generated/pandas.read_csv.html>`_.
     '''
 
-    def __init__(self, path='input.csv', **readkwds):
+    def __init__(self, path='input.csv', format='matrix', **readkwds):
         df = pd.read_csv(path, **readkwds)
-        df.date = [pd.Timestamp.strptime(str(int(df.iloc[i].date)), "%Y%m%d") for i in range(len(df))]
-        df.fillna(0, inplace=True)
-        self.status = df
+        if format == 'matrix':
+            df.date = [pd.Timestamp.strptime(str(int(df.iloc[i].date)), "%Y%m%d") for i in range(len(df))]
+            df.fillna(0, inplace=True)
+            self.status = df
+        elif format == 'list':
+            fund = df.fund.unique()
+            fund_s = ['{:06d}'.format(i) for i in fund]
+            date_s = df.date.unique()
+            dfnew = pd.DataFrame(columns=['date'] + fund_s, index=date_s, dtype='float64')
+            dfnew.fillna(0, inplace=True)
+            dfnew['date'] = [pd.Timestamp.strptime(i, "%Y/%m/%d") for i in date_s]
+            for i in range(len(df)):
+                dfnew.at[df.iloc[i].date, '{:06d}'.format(df.iloc[i].fund)] = df.iloc[i].trade
+            dfnew = dfnew.sort_values(by=['date'])
+            self.status = dfnew
 
     def sellout(self, date=yesterdayobj(), ratio=1):
         '''

@@ -15,6 +15,7 @@ import requests as rq
 from bs4 import BeautifulSoup
 
 from xalpha.cons import myround, convert_date, opendate, droplist, yesterday, yesterdaydash, yesterdayobj
+from xalpha.exceptions import FundTypeError
 import xalpha.remain as rm
 from xalpha.indicator import indicator
 
@@ -115,6 +116,7 @@ class basicinfo(indicator):
                     self.save(path, self.format, option='a', delta=df)
 
             except (FileNotFoundError, exc.ProgrammingError) as e:
+                print("no saved copy of %s" % self.code)
                 fetch = False
                 self._basic_init()
 
@@ -272,6 +274,9 @@ class fundinfo(basicinfo):
 
     def _basic_init(self):
         self._page = _download(self._url)
+        if self._page.text[:800].find("Data_millionCopiesIncome") >= 0:
+            raise FundTypeError("This code seems to be a mfund, use mfundinfo instead")
+
         parser = Parser()  # parse the js text of API page using slimit module
         tree = parser.parse(self._page.text)
         nodenet = [node.children()[0].children()[1] for node in nodevisitor.visit(tree)
@@ -323,6 +328,7 @@ class fundinfo(basicinfo):
                         item.string != "---"]
         self.segment = fundinfo._piecewise(self.feeinfo)
 
+    @staticmethod
     def _piecewise(a):
         '''
         Transform the words list into a pure number segment list for redemption fee, eg. [[0,7],[7,365],[365]]
@@ -420,12 +426,14 @@ class fundinfo(basicinfo):
             self.price = pricetable[['netvalue', 'totvalue', 'comment']]
             self.price['date'] = datel
             saveinfo = json.loads(content.iloc[0].date)
+            if not isinstance(saveinfo, dict):
+                raise FundTypeError("This csv doesn't looks like from fundinfo")
             self.segment = saveinfo['segment']
             self.feeinfo = saveinfo['feeinfo']
             self.name = saveinfo['name']
             self.rate = saveinfo['rate']
         except FileNotFoundError as e:
-            print('no saved copy of this fund')
+            # print('no saved copy of fund %s' % self.code)
             raise e
 
     def _save_sql(self, path):
@@ -454,12 +462,14 @@ class fundinfo(basicinfo):
             self.price = pricetable[['date', 'netvalue', 'totvalue']]
             self.price['comment'] = commentl
             saveinfo = json.loads(content.iloc[0].comment)
+            if not isinstance(saveinfo, dict):
+                raise FundTypeError("This csv doesn't looks like from fundinfo")
             self.segment = saveinfo['segment']
             self.feeinfo = saveinfo['feeinfo']
             self.name = saveinfo['name']
             self.rate = saveinfo['rate']
         except exc.ProgrammingError as e:
-            print('no saved copy of this fund')
+            # print('no saved copy of %s' % self.code)
             raise e
 
     def update(self):
@@ -556,7 +566,7 @@ class indexinfo(basicinfo):
             self.price['date'] = datel
 
         except FileNotFoundError as e:
-            print('no saved copy of this index')
+            # print('no saved copy of %s' % self.code)
             raise e
 
     def _save_sql(self, path):
@@ -580,7 +590,7 @@ class indexinfo(basicinfo):
             self.price = pricetable
 
         except exc.ProgrammingError as e:
-            print('no saved copy of this index')
+            # print('no saved copy of %s' % self.code)
             raise e
 
     def update(self):
@@ -650,6 +660,9 @@ class mfundinfo(basicinfo):
 
     def _basic_init(self):
         self._page = _download(self._url)
+        if self._page.text[:800].find("Data_fundSharesPositions") >= 0:
+            raise FundTypeError("This code seems to be a fund, use fundinfo instead")
+
         parser = Parser()
         tree = parser.parse(self._page.text)
         nodenet = [node.children()[0].children()[1] for node in nodevisitor.visit(tree)
@@ -700,7 +713,7 @@ class mfundinfo(basicinfo):
             self.price['date'] = datel
             self.name = content.iloc[0].comment
         except FileNotFoundError as e:
-            print('no saved copy of this fund')
+            # print('no saved copy of %s' % self.code)
             raise e
 
     def _save_sql(self, path):
@@ -730,7 +743,7 @@ class mfundinfo(basicinfo):
             self.price['comment'] = commentl
             self.name = json.loads(content.iloc[0].comment)['name']
         except exc.ProgrammingError as e:
-            print('no saved copy of this fund')
+            # print('no saved copy of %s' % self.code)
             raise e
 
     def update(self):

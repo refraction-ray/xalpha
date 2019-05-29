@@ -8,8 +8,9 @@ from pyecharts import Pie, ThemeRiver
 from xalpha.trade import xirrcal, vtradevolume, bottleneck, turnoverrate, trade
 from xalpha.evaluate import evaluate
 from xalpha.indicator import indicator
-from xalpha.info import cashinfo, fundinfo
+from xalpha.info import cashinfo, fundinfo, mfundinfo
 from xalpha.cons import yesterdayobj, yesterdaydash, myround, convert_date
+from xalpha.exceptions import FundTypeError, TradeBehaviorError
 
 
 class mul():
@@ -32,7 +33,10 @@ class mul():
             # unless you are sure corresponding funds are added to the droplist
             fundtradeobj = []
             for code in status.columns[1:]:
-                fundtradeobj.append(trade(fundinfo(code, fetch=fetch, save=save, path=path, form=form), status))
+                try:
+                    fundtradeobj.append(trade(fundinfo(code, fetch=fetch, save=save, path=path, form=form), status))
+                except FundTypeError:
+                    fundtradeobj.append(trade(mfundinfo(code, fetch=fetch, save=save, path=path, form=form), status))
         self.fundtradeobj = tuple(fundtradeobj)
         self.totcftable = self._mergecftb()
 
@@ -191,7 +195,7 @@ class mulfix(mul, indicator):
         self.fundtradeobj = tuple(self.fundtradeobj)
         btnk = bottleneck(self.totcftable)
         if btnk > totmoney:
-            raise Exception('the initial total cash is too low')
+            raise TradeBehaviorError('the initial total cash is too low')
         self.totcftable = pd.DataFrame(data={'date': [nst.iloc[0].date], 'cash': [-totmoney]})
 
     def _vcash(totmoney, totcftable, cashobj):

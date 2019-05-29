@@ -2,6 +2,7 @@ import sys
 
 sys.path.insert(0, "../")
 import xalpha as xa
+from xalpha.exceptions import FundTypeError
 import pandas as pd
 import pytest
 
@@ -78,12 +79,18 @@ def test_fund():
     assert hs300.shuhui(320, '2018-01-01', [[pd.Timestamp('2011-01-03'), 200], [pd.Timestamp('2017-12-29'), 200]])[
                1] == 685.72
     assert hs300.shengou(200, '2018-07-20')[2] == 105.24
+    with pytest.raises(FundTypeError) as excinfo:
+        xa.mfundinfo("000311")
+    assert str(excinfo.value) == "This code seems to be a fund, use fundinfo instead"
     hs300.info()
 
 
 def test_mfundinfo():
     zogqb.bcmkset(xa.cashinfo())
     assert round(zogqb.total_annualized_returns('2018-08-01'), 3) == 0.036
+    with pytest.raises(FundTypeError) as excinfo:
+        xa.fundinfo("001211")
+    assert str(excinfo.value) == "This code seems to be a mfund, use mfundinfo instead"
 
 
 def test_evaluate():

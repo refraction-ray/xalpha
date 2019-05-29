@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-basic constants and functions
+basic constants and utility functions
 '''
 
 import datetime as dt

@@ -7,6 +7,7 @@ import pandas as pd
 from pyecharts import Line, Bar
 import xalpha.remain as rm
 from xalpha.cons import convert_date, xirr, myround, yesterdayobj
+from xalpha.exceptions import ParserFailure, TradeBehaviorError
 
 
 def xirrcal(cftable, trades, date, guess):
@@ -98,7 +99,7 @@ def vtradevolume(cftable, freq='D', bar_category_gap='35%', **vkwds):
     bar.add('买入', [0 for _ in range(len(buydata))], buydata, xaxis_type='time', bar_category_gap=bar_category_gap)
     bar.add('卖出', [0 for _ in range(len(selldata))], selldata, xaxis_type='time', is_datazoom_show=True,
             bar_category_gap=bar_category_gap, **vkwds)
-    bar
+    # bar
     return bar
 
 
@@ -157,7 +158,7 @@ class trade():
                 rdate, cash, share = self.aim.shengou(value, date)
                 rem = rm.buy([], share, rdate)
             else:
-                raise Exception("You cannot sell first when you never buy")
+                raise TradeBehaviorError("You cannot sell first when you never buy")
         elif len(self.cftable) > 0:
             recorddate = list(self.status.date)
             lastdate = self.cftable.iloc[-1].date + pd.Timedelta(1, unit='d')
@@ -223,7 +224,7 @@ class trade():
                     cash += dcash2
                     share += dshare2
                 else:
-                    raise Exception('comments not recoginized')
+                    raise ParserFailure('comments not recoginized')
 
         self.cftable = self.cftable.append(pd.DataFrame([[rdate, cash, share]], columns=['date', 'cash', 'share']),
                                            ignore_index=True)
@@ -309,7 +310,7 @@ class trade():
             return 0
         totnetinput = myround(-sum(partcftb.loc[:, 'cash']))
         currentshare = self.briefdailyreport(date).get('currentshare', 0)
-        totnetinput
+        # totnetinput
         if currentshare > 0:
             unitcost = totnetinput / currentshare
         else:

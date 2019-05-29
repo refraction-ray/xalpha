@@ -1,6 +1,13 @@
 # Changelog
 
 ## Unreleased
+### added
+* 增加了 fundinfo 和 mfundinfo 的自动选择逻辑
+* 增加了新格式交易单的读取接口
+* 增加了统一的异常接口
+### fixed
+* 暂时固定 pyecharts 为老版本（将在下一次发布时修改为支持 pyecharts 1.0+）
+* fundinfo 增量更新，指定为货币基金代码的时候，可以妥善地报异常
 
 ## v0.1.1 - 2018.12.29
 ### changed
