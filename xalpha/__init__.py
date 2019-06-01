@@ -1,6 +1,6 @@
-__version__ = '0.1.2'
-__author__ = 'refraction-ray'
-__name__ = 'xalpha'
+__version__ = "0.1.2"
+__author__ = "refraction-ray"
+__name__ = "xalpha"
 
 import xalpha.policy
 import xalpha.remain

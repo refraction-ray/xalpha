@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 module for status table IO
-'''
+"""
 import pandas as pd
 
 from xalpha.cons import convert_date, yesterdayobj
 
 
-class record():
-    '''
+class record:
+    """
     basic class for status table read in from csv file.
     staus table 是关于对应基金的申赎寄账单，不同的行代表不同日期，不同的列代表不同基金，
     第一行各单元格分别为 date, 及基金代码。第一列各单元格分别为 date 及各个交易日期，形式 eg. 20170129
@@ -24,41 +24,48 @@ class record():
     :param path: string for the csv file path
     :param readkwds: keywords options for pandas.read_csv() function. eg. skiprows=1, skipfooter=2,
         see more on `pandas doc <https://pandas.pydata.org/pandas-docs/stable/generated/pandas.read_csv.html>`_.
-    '''
+    """
 
-    def __init__(self, path='input.csv', format='matrix', **readkwds):
+    def __init__(self, path="input.csv", format="matrix", **readkwds):
         df = pd.read_csv(path, **readkwds)
-        if format == 'matrix':
-            df.date = [pd.Timestamp.strptime(str(int(df.iloc[i].date)), "%Y%m%d") for i in range(len(df))]
+        if format == "matrix":
+            df.date = [
+                pd.Timestamp.strptime(str(int(df.iloc[i].date)), "%Y%m%d")
+                for i in range(len(df))
+            ]
             df.fillna(0, inplace=True)
             self.status = df
-        elif format == 'list':
+        elif format == "list":
             fund = df.fund.unique()
-            fund_s = ['{:06d}'.format(i) for i in fund]
+            fund_s = ["{:06d}".format(i) for i in fund]
             date_s = df.date.unique()
-            dfnew = pd.DataFrame(columns=['date'] + fund_s, index=date_s, dtype='float64')
+            dfnew = pd.DataFrame(
+                columns=["date"] + fund_s, index=date_s, dtype="float64"
+            )
             dfnew.fillna(0, inplace=True)
-            dfnew['date'] = [pd.Timestamp.strptime(i, "%Y/%m/%d") for i in date_s]
+            dfnew["date"] = [pd.Timestamp.strptime(i, "%Y/%m/%d") for i in date_s]
             for i in range(len(df)):
-                dfnew.at[df.iloc[i].date, '{:06d}'.format(df.iloc[i].fund)] = df.iloc[i].trade
-            dfnew = dfnew.sort_values(by=['date'])
+                dfnew.at[df.iloc[i].date, "{:06d}".format(df.iloc[i].fund)] = df.iloc[
+                    i
+                ].trade
+            dfnew = dfnew.sort_values(by=["date"])
             self.status = dfnew
 
     def sellout(self, date=yesterdayobj(), ratio=1):
-        '''
+        """
         Sell all the funds in the same ratio on certain day, it is a virtual process,
         so it can happen before the last action exsiting in the cftable, by sell out earlier,
         it means all actions behind vanish. The status table in self.status would be directly changed.
 
         :param date: string or datetime obj of the selling date
         :param ratio: float between 0 to 1, the ratio of selling for each funds
-        '''
+        """
         date = convert_date(date)
-        s = self.status[self.status['date'] <= date]
+        s = self.status[self.status["date"] <= date]
         row = []
         ratio = ratio * 0.005
         for term in s.columns:
-            if term != 'date':
+            if term != "date":
                 row.append(-ratio)
             else:
                 row.append(date)
@@ -66,12 +73,12 @@ class record():
         self.status = s
 
     def save_csv(self, path=None, index=False, **tocsvkwds):
-        '''
+        """
         save the status table to csv file in path, no returns
 
         :param path: string of file path
         :param index: boolean, whether save the index to the csv file, default False
         :param tocsvkwds: keywords options for pandas.to_csv() function, see
             `pandas doc <https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.to_csv.html>`_.
-        '''
+        """
         self.status.to_csv(path, index=index, **tocsvkwds)
