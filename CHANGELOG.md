@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### fixed
+* 调整到支持 pyecharts 1.0+ 的可视化 API，部分可视化效果有待进一步调整
+
 ## v0.1.2 - 2019.05.29
 ### added
 * 增加了 fundinfo 和 mfundinfo 的自动选择逻辑

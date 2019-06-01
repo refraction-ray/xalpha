@@ -4,9 +4,9 @@ module for implementation of indicator class, which is designed as MinIn for sys
 '''
 
 import pandas as pd
-from pyecharts import Line
+from pyecharts.charts import Line
 
-from xalpha.cons import yesterdayobj, opendate
+from xalpha.cons import yesterdayobj, opendate, line_opts
 
 
 def _upcount(ls):
@@ -30,7 +30,7 @@ class indicator():
     Make sure first run obj.bcmkset() before you want to use functions in this class.
     '''
 
-    def bcmkset(self, infoobj, start=None, riskfree=0.0371724):
+    def bcmkset(self, infoobj, start=None, riskfree=0.0371724, name="基金组合"):
         '''
         Once you want to utilize the indicator tool box for analysis, first run bcmkset function to set
         the benchmark, otherwise most of the functions would raise error.
@@ -43,7 +43,7 @@ class indicator():
         :param riskfree: float, annual rate in the unit of 100%, strongly suggest make this value
             consistent with the interest parameter when instanciate cashinfo() class
         '''
-        self._pricegenerate()
+        self._pricegenerate(name)
         if start is None:
             self.start = self.price.iloc[0].date
         elif isinstance(start, str):
@@ -58,7 +58,7 @@ class indicator():
 
     # the price data is removed from the infoobj before start date
 
-    def _pricegenerate(self):
+    def _pricegenerate(self, name):
         '''
         generate price table for mulfix class, the cinfo class has this attr by default
         '''
@@ -69,6 +69,7 @@ class indicator():
                 netvalue.append(self.unitvalue(date))
             self.price = pd.DataFrame(data={'date': times, 'netvalue': netvalue})
             self.price = self.price[self.price['date'].isin(opendate)]
+            self.name = name
 
     def comparison(self, date=yesterdayobj()):
         '''
@@ -400,39 +401,46 @@ class indicator():
 
     ## 以下是可视化部分
 
-    def v_netvalue(self, end=yesterdayobj(), benchmark=True, **vkwds):
+    def v_netvalue(self, end=yesterdayobj(), benchmark=True, vopts=None):
         '''
         visulaization on  netvalue curve
 
-        :param vkwds: parameters for the pyecharts options in line.add(), eg. yaxis_min=0.7
+        :param end: dateobject for indicating the end date in the figure, default to yesterday
+        :param benchmark: bool, whether include benchmark's netvalue curve, default true
+        :param vopts: dict, options for pyecharts instead of builtin settings
         '''
         a, b = self.comparison(end)
-        xdata = [1 for _ in range(len(a))]
-        ydata = [[row['date'], row['netvalue']] for _, row in a.iterrows()]
-        ydata2 = [[row['date'], row['netvalue']] for _, row in b.iterrows()]
+        if vopts is None:
+            vopts = line_opts
         line = Line()
-        line.add('algorithm', xdata, ydata, is_datazoom_show=True, xaxis_type="time", **vkwds)
+        line.add_xaxis([d.date() for d in list(a.date)])
+        line.add_yaxis(y_axis=list(a.netvalue), series_name=self.name, is_symbol_show=False)
+        line.set_global_opts(**vopts)
         if benchmark is True:
-            line.add('benchmark', xdata, ydata2, is_datazoom_show=True, xaxis_type="time", **vkwds)
-        return line
+            line.add_yaxis(series_name=self.benchmark.name, y_axis=list(b.netvalue), is_symbol_show=False)
+        return line.render_notebook()
 
-    def v_techindex(self, end=yesterdayobj(), col=None, **vkwds):
+    def v_techindex(self, end=yesterdayobj(), col=None, vopts=None):
         '''
         visualization on netvalue curve and specified indicators
 
         :param end: date string or obj, the end date of the figure
         :param col: list, list of strings for price col name, eg.['MA5','BBI']
-            remember generate these indicators before the visualization
-        :param vkwds: keywords option for pyecharts.Line().add(). eg, you may need is_symbol_show=False
-            to hide the symbols on lines
+            remember generate these indicators before the visualization,
+            these cols don't automatically generate for visualization
+        :param vopts: dict, options for pyecharts instead of builtin settings
         '''
         partprice = self.price[self.price['date'] <= end]
-        xdata = [1 for _ in range(len(partprice))]
-        netvaldata = [[row['date'], row['netvalue']] for _, row in partprice.iterrows()]
+        xdata = [d.date() for d in list(partprice.date)]
+        netvaldata = list(partprice.netvalue)
+        if vopts is None:
+            vopts = line_opts
         line = Line()
-        line.add('netvalue', xdata, netvaldata, is_datazoom_show=True, xaxis_type="time", **vkwds)
+        line.add_xaxis(xdata)
+        line.add_yaxis(series_name='netvalue', y_axis=netvaldata, is_symbol_show=False)
+        line.set_global_opts(**vopts)
         if col is not None:
             for ind in col:
-                inddata = [[row['date'], row[ind]] for _, row in partprice.iterrows()]
-                line.add(ind, xdata, inddata, is_datazoom_show=True, xaxis_type="time", **vkwds)
-        return line
+                inddata = list(partprice[ind])
+                line.add_yaxis(series_name=ind, y_axis=inddata, is_symbol_show=False)
+        return line.render_notebook()

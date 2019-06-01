@@ -3,16 +3,17 @@
 module for realtime watch and notfication
 '''
 
+import datetime as dt
 import smtplib
 from email.header import Header
 from email.mime.text import MIMEText
 from email.utils import formataddr, parseaddr
-
 from re import match
-import datetime as dt
+
 import pandas as pd
-from xalpha.info import _download, fundinfo
+
 from xalpha.cons import today
+from xalpha.info import _download, fundinfo
 from xalpha.trade import trade
 
 

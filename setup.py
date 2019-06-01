@@ -20,7 +20,7 @@ setuptools.setup(
         'pandas',
         'scipy',
         'requests',
-        'pyecharts==0.5.5',
+        'pyecharts>=1.1.0',
         'beautifulsoup4',
         'sqlalchemy'],
     tests_require=['pytest'],

@@ -3,9 +3,9 @@
 modules for evaluation and comparison on multiple object with price dataframe
 '''
 
-import pandas as pd
-from pyecharts import Line, HeatMap
-from xalpha.cons import convert_date, yesterdayobj
+from pyecharts.charts import Line, HeatMap
+
+from xalpha.cons import convert_date, yesterdayobj, line_opts, heatmap_opts
 
 
 class evaluate():
@@ -42,24 +42,25 @@ class evaluate():
             if col != 'date':
                 self.totprice[col] = self.totprice[col] / self.totprice[col].iloc[0]
 
-    def v_netvalue(self, end=yesterdayobj(), **vkwds):
+    def v_netvalue(self, end=yesterdayobj(), vopts=None):
         '''
         起点对齐归一的，各参考基金或指数的净值比较可视化
 
         :param end: string or object of date, the end date of the line
         :param vkwds: pyechart line.add() options
-        :returns: pyecharts.Line object
+        :param vopts: dict, options for pyecharts instead of builtin settings
+        :returns: pyecharts.charts.Line.render_notebook()
         '''
         partprice = self.totprice[self.totprice['date'] <= end]
-        xdata = [1 for _ in range(len(partprice))]
-        ydatas = []
-        for fund in self.fundobjs:
-            ydata = [[row['date'], row[fund.code]] for _, row in partprice.iterrows()]
-            ydatas.append(ydata)
+
         line = Line()
-        for i, fund in enumerate(self.fundobjs):
-            line.add(fund.name, xdata, ydatas[i], is_datazoom_show=True, xaxis_type="time", **vkwds)
-        return line
+        if vopts is None:
+            vopts = line_opts
+        line.set_global_opts(**vopts)
+        line.add_xaxis([d.date() for d in list(partprice.date)])
+        for fund in self.fundobjs:
+            line.add_yaxis(series_name=fund.name, y_axis=list(partprice[fund.code]), is_symbol_show=False)
+        return line.render_notebook()
 
     def correlation_table(self, end=yesterdayobj()):
         '''
@@ -72,17 +73,21 @@ class evaluate():
         covtable = partprice.iloc[:, 1:].pct_change().corr()
         return covtable
 
-    def v_correlation(self, end=yesterdayobj(), **vkwds):
+    def v_correlation(self, end=yesterdayobj(), vopts=None):
         '''
         各基金净值的相关程度热力图可视化
 
         :param end: string or object of date, the end date of the line
-        :returns: pyecharts.Heatmap object
+        :returns: pyecharts.charts.Heatmap.render_notebook object
         '''
         ctable = self.correlation_table(end)
         x_axis = list(ctable.columns)
         data = [[i, j, ctable.iloc[i, j]] for i in range(len(ctable)) for j in range(len(ctable))]
         heatmap = HeatMap()
-        heatmap.add("", x_axis, x_axis, data, is_visualmap=True, visual_pos='center',
-                    visual_text_color="#000", visual_range=[-1, 1], visual_orient='horizontal', **vkwds)
-        return heatmap
+        heatmap.add_xaxis(x_axis)
+        heatmap.add_yaxis(series_name="相关性", yaxis_data=x_axis, value=data)
+        if vopts is None:
+            vopts = heatmap_opts
+        heatmap.set_global_opts(**vopts)
+
+        return heatmap.render_notebook()

@@ -5,8 +5,10 @@ basic constants and utility functions
 
 import datetime as dt
 from decimal import Decimal
-from scipy import optimize
+
 import pandas as pd
+from pyecharts.options import DataZoomOpts, AxisOpts, TooltipOpts, VisualMapOpts, LegendOpts
+from scipy import optimize
 
 # date obj of today
 today = lambda: dt.datetime.combine(dt.date.today(), dt.time.min)
@@ -28,6 +30,30 @@ opendate = list(caldate[caldate['isOpen'] == 1]['calendarDate'])
 
 # fund code list which always round down for the purchase share approximation
 droplist = ['003318', '000311']
+
+line_opts = {
+    "datazoom_opts": [DataZoomOpts(is_show=True, type_="slider", range_start=50, range_end=100),
+                      DataZoomOpts(is_show=True, type_="slider", orient="vertical", range_start=50,
+                                   range_end=100)],
+    "tooltip_opts": TooltipOpts(is_show=True, trigger="axis", trigger_on="mousemove",
+                                axis_pointer_type="cross")
+}
+
+heatmap_opts = {
+    "visualmap_opts": VisualMapOpts(min_=-1, max_=1, orient="horizontal", pos_right="middle", pos_top="bottom")
+}
+
+pie_opts = {
+    "tooltip_opts": TooltipOpts(),
+    "legend_opts": LegendOpts(orient='vertical', pos_left="left")
+}
+
+themeriver_opts = {
+    "xaxis_opts": AxisOpts(type_="time"),
+    "datazoom_opts": [DataZoomOpts(range_start=60, range_end=100)],
+    "tooltip_opts": TooltipOpts(trigger_on="mousemove", trigger="item"),
+    "legend_opts": LegendOpts(pos_top="top")
+}
 
 
 def xnpv(rate, cashflows):

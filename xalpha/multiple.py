@@ -4,13 +4,15 @@ module for mul and mulfix class: fund combination management
 '''
 
 import pandas as pd
-from pyecharts import Pie, ThemeRiver
-from xalpha.trade import xirrcal, vtradevolume, bottleneck, turnoverrate, trade
+from pyecharts import options as opts
+from pyecharts.charts import Pie, ThemeRiver
+
+from xalpha.cons import yesterdayobj, yesterdaydash, myround, convert_date, pie_opts
 from xalpha.evaluate import evaluate
+from xalpha.exceptions import FundTypeError, TradeBehaviorError
 from xalpha.indicator import indicator
 from xalpha.info import cashinfo, fundinfo, mfundinfo
-from xalpha.cons import yesterdayobj, yesterdaydash, myround, convert_date
-from xalpha.exceptions import FundTypeError, TradeBehaviorError
+from xalpha.trade import xirrcal, vtradevolume, bottleneck, turnoverrate, trade
 
 
 class mul():
@@ -28,7 +30,7 @@ class mul():
 
     def __init__(self, *fundtradeobj, status=None, fetch=False, save=False, path='', form='csv'):
         if not fundtradeobj:
-            # warning: not a very good way to atoumatic generate these fund obj
+            # warning: not a very good way to automatic generate these fund obj
             # because there might be some funds use round_down for share calculation, ie, label=2 must be given
             # unless you are sure corresponding funds are added to the droplist
             fundtradeobj = []
@@ -125,18 +127,19 @@ class mul():
         case = evaluate(*[fundtrade.aim for fundtrade in self.fundtradeobj], start=start)
         return case
 
-    def v_positions(self, date=yesterdayobj(), **vkwds):
+    def v_positions(self, date=yesterdayobj(), vopts=None):
         '''
         pie chart visualization of positions ratio in combination
         '''
         sdata = sorted([(fob.aim.name, fob.briefdailyreport(date).get('currentvalue', 0)) for fob in self.fundtradeobj],
                        key=lambda x: x[1], reverse=True)
-        sdata1 = [item[0] for item in sdata]
-        sdata2 = [item[1] for item in sdata]
 
         pie = Pie()
-        pie.add("", sdata1, sdata2, legend_pos='left', legend_orient='vertical', **vkwds)
-        return pie
+        if vopts is None:
+            vopts = pie_opts
+        pie.add(series_name="总值占比", data_pair=sdata)
+        pie.set_global_opts(**vopts)
+        return pie.render_notebook()
 
     def v_positions_history(self, end=yesterdaydash(), **vkwds):
         '''
@@ -150,19 +153,23 @@ class mul():
             sdata = sorted([(date, fob.briefdailyreport(date).get('currentvalue', 0), fob.aim.name)
                             for fob in self.fundtradeobj], key=lambda x: x[1], reverse=True)
             tdata.extend(sdata)
-        tr = ThemeRiver()
-        tr.add([foj.aim.name for foj in self.fundtradeobj], tdata, is_datazoom_show=True,
-               is_label_show=False, legend_top="0%", legend_orient='horizontal', **vkwds)
-        return tr
 
-    def v_tradevolume(self, **vkwds):
+        tr = ThemeRiver()
+        tr.add(series_name=[foj.aim.name for foj in self.fundtradeobj], data=tdata,
+               label_opts=opts.LabelOpts(is_show=False),
+               singleaxis_opts=opts.SingleAxisOpts(type_="time", pos_bottom="10%"))
+
+        return tr.render_notebook()
+
+    def v_tradevolume(self, freq="D"):
         '''
         visualization on trade summary of the funds combination
 
-        :param vkwds: keyword argument for pyecharts Bar.add()
+        :param freq: one character string, frequency label, now supporting D for date,
+        W for week and M for month, namely the trade volume is shown based on the time unit
         :returns: pyecharts.Bar()
         '''
-        return vtradevolume(self.totcftable, **vkwds)
+        return vtradevolume(self.totcftable, freq=freq)
 
 
 class mulfix(mul, indicator):

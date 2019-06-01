@@ -3,6 +3,7 @@
 module for status table IO
 '''
 import pandas as pd
+
 from xalpha.cons import convert_date, yesterdayobj
 
 

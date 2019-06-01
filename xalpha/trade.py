@@ -3,10 +3,13 @@
 module for trade class
 '''
 import datetime as dt
+
 import pandas as pd
-from pyecharts import Line, Bar
+from pyecharts.charts import Line, Bar
+from pyecharts.options import AxisOpts, DataZoomOpts
+
 import xalpha.remain as rm
-from xalpha.cons import convert_date, xirr, myround, yesterdayobj
+from xalpha.cons import convert_date, xirr, myround, yesterdayobj, line_opts
 from xalpha.exceptions import ParserFailure, TradeBehaviorError
 
 
@@ -67,40 +70,46 @@ def turnoverrate(cftable, end=yesterdayobj()):
     return turnover * 365 / (end - start).days
 
 
-def vtradevolume(cftable, freq='D', bar_category_gap='35%', **vkwds):
+def vtradevolume(cftable, freq='D'):
     '''
     aid function on visualization of trade summary
 
     :param cftable: cftable (pandas.DataFrame) with at least date and cash columns
     :param freq: one character string, frequency label, now supporting D for date,
         W for week and M for month, namely the trade volume is shown based on the time unit
-    :param vkwds: keyword argument for pyecharts Bar.add()
     :returns: the Bar object
     '''
+    ### WARN: datazoom and time conflict, sliding till 1970..., need further look into pyeacharts
+    ### very unsatisfied about current visualize effect, and it seems the order of add and set option matters a lot
     if freq == 'D':
-        selldata = [[row['date'], row['cash']] for _, row in cftable.iterrows() if row['cash'] > 0]
-        buydata = [[row['date'], row['cash']] for _, row in cftable.iterrows() if row['cash'] < 0]
+        datedata = [d.to_pydatetime() for d in cftable['date']]
+        selldata = [[row['date'].to_pydatetime(), row['cash']] for _, row in cftable.iterrows() if row['cash'] > 0]
+        buydata = [[row['date'].to_pydatetime(), row['cash']] for _, row in cftable.iterrows() if row['cash'] < 0]
     elif freq == 'W':
         cfmerge = cftable.groupby([cftable['date'].dt.year, cftable['date'].dt.week])['cash'].sum()
+        datedata = [dt.datetime.strptime(str(a) + '4', '(%Y, %W)%w') for a, _ in cfmerge.iteritems()]
         selldata = [[dt.datetime.strptime(str(a) + '4', '(%Y, %W)%w'), b] \
                     for a, b in cfmerge.iteritems() if b > 0]
         buydata = [[dt.datetime.strptime(str(a) + '4', '(%Y, %W)%w'), b] \
                    for a, b in cfmerge.iteritems() if b < 0]
     elif freq == 'M':
         cfmerge = cftable.groupby([cftable['date'].dt.year, cftable['date'].dt.month])['cash'].sum()
+        datedata = [dt.datetime.strptime(str(a) + '15', '(%Y, %m)%d') for a, _ in cfmerge.iteritems()]
         selldata = [[dt.datetime.strptime(str(a) + '15', '(%Y, %m)%d'), b] \
                     for a, b in cfmerge.iteritems() if b > 0]
         buydata = [[dt.datetime.strptime(str(a) + '15', '(%Y, %m)%d'), b] \
                    for a, b in cfmerge.iteritems() if b < 0]
     else:
-        raise Exception('no such freq tag supporting')
+        raise ParserFailure('no such freq tag supporting')
 
     bar = Bar()
-    bar.add('买入', [0 for _ in range(len(buydata))], buydata, xaxis_type='time', bar_category_gap=bar_category_gap)
-    bar.add('卖出', [0 for _ in range(len(selldata))], selldata, xaxis_type='time', is_datazoom_show=True,
-            bar_category_gap=bar_category_gap, **vkwds)
-    # bar
-    return bar
+    bar.add_xaxis(datedata)
+    bar.add_yaxis(series_name="卖出", yaxis_data=selldata, category_gap="90%")
+    bar.add_yaxis(series_name="买入", yaxis_data=buydata, category_gap="90%")
+
+    bar.set_global_opts(xaxis_opts=AxisOpts(type_="time"), datazoom_opts=[DataZoomOpts(range_start=99, range_end=100)])
+
+    return bar.render_notebook()
 
 
 class trade():
@@ -317,21 +326,20 @@ class trade():
             unitcost = 0
         return unitcost
 
-    def v_tradevolume(self, **vkwds):
+    def v_tradevolume(self, freq="D"):
         '''
         visualization on trade summary
 
-        :param vkwds: keyword argument for pyecharts Bar.add(), and freq= label,
-            please ref to the API of trade.vtradevolume function
-        :returns: pyecharts.bar
+        :param freq: string, "D", "W" and "M" are supported
+        :returns: pyecharts.charts.bar.render_notebook()
         '''
-        return vtradevolume(self.cftable, **vkwds)
+        return vtradevolume(self.cftable, freq=freq)
 
-    def v_tradecost(self, start=None, end=yesterdayobj(), **vkwds):
+    def v_tradecost(self, start=None, end=yesterdayobj(), vopts=None):
         '''
         visualization giving the average cost line together with netvalue line
 
-        :param vkwds: keywords options for line.add()
+        :param vopts: global option for line in pyecharts
         :returns: pyecharts.line
         '''
         funddata = []
@@ -341,41 +349,48 @@ class trade():
             pprice = pprice[pprice['date'] >= start]
         for _, row in pprice.iterrows():
             date = row['date']
-            funddata.append([date, row['netvalue']])
+            funddata.append(row['netvalue'])
+            cost = 0
             if (date - self.cftable.iloc[0].date).days >= 0:
                 cost = self.unitcost(date)
-                costdata.append([date, cost])
+            costdata.append(cost)
 
         line = Line()
-        line.add('fundvalue', [1 for _ in range(len(funddata))], funddata, **vkwds)
-        line.add('average_cost', [1 for _ in range(len(costdata))], costdata,
-                 is_datazoom_show=True, xaxis_type="time", **vkwds)
+        if vopts is None:
+            vopts = line_opts
 
-        return line
+        line.add_xaxis([d.date() for d in pprice.date])
+        line.add_yaxis(series_name="基金净值", y_axis=funddata, is_symbol_show=False)
+        line.add_yaxis(series_name="持仓成本", y_axis=costdata, is_symbol_show=False)
+        line.set_global_opts(**vopts)
+        return line.render_notebook()
 
-    def v_totvalue(self, end=yesterdayobj(), **vkwds):
+    def v_totvalue(self, end=yesterdayobj(), vopts=None):
         '''
         visualization on the total values daily change of the aim
         '''
-        valuedata = []
         partp = self.aim.price[self.aim.price['date'] >= self.cftable.iloc[0].date]
         partp = partp[partp['date'] <= end]
-        for i, row in partp.iterrows():
-            date = row['date']
-            valuedata.append([date, self.briefdailyreport(date).get('currentvalue', 0)])
+
+        date = [d.date() for d in partp.date]
+        valuedata = [self.briefdailyreport(d).get('currentvalue', 0) for d in partp.date]
 
         line = Line()
-        line.add('totvalue', [1 for _ in range(len(valuedata))], valuedata,
-                 is_datazoom_show=True, xaxis_type="time", **vkwds)
+        if vopts is None:
+            vopts = line_opts
 
-        return line
+        line.add_xaxis(date)
+        line.add_yaxis(series_name="持仓总值", y_axis=valuedata, is_symbol_show=False)
+        line.set_global_opts(**vopts)
+
+        return line.render_notebook()
 
     def __repr__(self):
         return self.aim.name + ' 交易情况'
 
 
 '''
-可视化图的合并可参考以下代码
+可视化图的合并可参考以下代码 v0.5.5
 from pyecharts import Overlap
 overlap = Overlap()
 overlap.add(self.v_tradecost())

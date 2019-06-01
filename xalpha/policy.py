@@ -3,6 +3,7 @@
 modules for policy making: generate status table for backtesting
 '''
 import pandas as pd
+
 from xalpha.cons import yesterdaydash, opendate, myround
 from xalpha.record import record
 

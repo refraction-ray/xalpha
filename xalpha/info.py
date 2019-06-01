@@ -2,21 +2,22 @@
 '''
 modules of info class, including cashinfo, indexinfo and fundinfo class
 '''
-import re
+import csv
 import datetime as dt
-import pandas as pd
 import json
-from sqlalchemy import exc
+import re
+
+import pandas as pd
+import requests as rq
+from bs4 import BeautifulSoup
 from slimit import ast
 from slimit.parser import Parser
 from slimit.visitors import nodevisitor
-import csv
-import requests as rq
-from bs4 import BeautifulSoup
+from sqlalchemy import exc
 
+import xalpha.remain as rm
 from xalpha.cons import myround, convert_date, opendate, droplist, yesterday, yesterdaydash, yesterdayobj
 from xalpha.exceptions import FundTypeError
-import xalpha.remain as rm
 from xalpha.indicator import indicator
 
 _warnmess = 'Something weird on redem fee, please adjust self.segment by hand'
