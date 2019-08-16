@@ -936,9 +936,7 @@ class mfundinfo(basicinfo):
         lastdate = self.price.iloc[-1].date
         startvalue = self.price.iloc[-1].totvalue
         diffdays = (yesterdayobj() - lastdate).days
-        if (
-            diffdays == 0
-        ):
+        if diffdays == 0:
             return None
         elif diffdays <= 10:
             self._updateurl = (

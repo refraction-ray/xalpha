@@ -47,7 +47,9 @@ class indicator:
         if start is None:
             self.start = self.price.iloc[0].date
         elif isinstance(start, str):
-            self.start = pd.Timestamp.strptime(start, "%Y-%m-%d")
+            self.start = pd.to_datetime(
+                start, format="%Y-%m-%d"
+            )  # pd.Timestamp.strptime(start, "%Y-%m-%d")
         self.benchmark = infoobj
 
         self.riskfree = riskfree
