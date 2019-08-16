@@ -30,7 +30,9 @@ class record:
         df = pd.read_csv(path, **readkwds)
         if format == "matrix":
             df.date = [
-                pd.Timestamp.strptime(str(int(df.iloc[i].date)), "%Y%m%d")
+                # pd.Timestamp.strptime(str(int(df.iloc[i].date)), "%Y%m%d")
+                # higher version of pandas timestamp doesn't support strptime anymore? why? what is the gain here?
+                pd.to_datetime(str(int(df.iloc[i].date)), format="%Y%m%d")
                 for i in range(len(df))
             ]
             df.fillna(0, inplace=True)
@@ -43,7 +45,8 @@ class record:
                 columns=["date"] + fund_s, index=date_s, dtype="float64"
             )
             dfnew.fillna(0, inplace=True)
-            dfnew["date"] = [pd.Timestamp.strptime(i, "%Y/%m/%d") for i in date_s]
+            # dfnew["date"] = [pd.Timestamp.strptime(i, "%Y/%m/%d") for i in date_s]
+            dfnew["date"] = [pd.to_datetime(i, format="%Y/%m/%d") for i in date_s]
             for i in range(len(df)):
                 dfnew.at[df.iloc[i].date, "{:06d}".format(df.iloc[i].fund)] += df.iloc[
                     i
