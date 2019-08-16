@@ -25,13 +25,13 @@ from xalpha.cons import (
     yesterdaydash,
     yesterdayobj,
 )
-from xalpha.exceptions import FundTypeError
+from xalpha.exceptions import FundTypeError, TradeBehaviorError
 from xalpha.indicator import indicator
 
 _warnmess = "Something weird on redem fee, please adjust self.segment by hand"
 
 
-def _download(url, tries=3):
+def _download(url, tries=5):
     """
     wrapper of requests.get(), in case of internet failure
 
@@ -566,17 +566,40 @@ class fundinfo(basicinfo):
         """
         lastdate = self.price.iloc[-1].date
         diffdays = (yesterdayobj() - lastdate).days
-        if diffdays == 0:
+        if (
+            diffdays == 0
+        ):  ## for some QDII, this value is 1, anyways, trying update is compatible (d+2 update)
             return None
-        self._updateurl = (
-            "http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code="
-            + self.code
-            + "&page=1&per="
-            + str(diffdays)
-        )
-        con = _download(self._updateurl)
-        soup = BeautifulSoup(con.text, "lxml")
-        items = soup.findAll("td")
+        elif diffdays <= 10:
+            self._updateurl = (
+                "http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code="
+                + self.code
+                + "&page=1&per="
+                + str(diffdays)
+            )
+            con = _download(self._updateurl)
+            soup = BeautifulSoup(con.text, "lxml")
+            items = soup.findAll("td")
+        elif (
+            diffdays > 10
+        ):  ## there is a 20 item per page limit in the API, so to be safe, we query each page by 10 items only
+            items = []
+            for pg in range(1, int(diffdays / 10) + 2):
+                self._updateurl = (
+                    "http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code="
+                    + self.code
+                    + "&page="
+                    + str(pg)
+                    + "&per=10"
+                )
+                con = _download(self._updateurl)
+                soup = BeautifulSoup(con.text, "lxml")
+                items.extend(soup.findAll("td"))
+        else:
+            raise TradeBehaviorError(
+                "Weird incremental update: the saved copy has future records"
+            )
+
         date = []
         netvalue = []
         totvalue = []
@@ -588,6 +611,8 @@ class fundinfo(basicinfo):
                 netvalue.append(float(items[7 * i + 1].string))
                 totvalue.append(float(items[7 * i + 2].string))
                 comment.append(_nfloat(items[7 * i + 6].string))
+            else:
+                break
         df = pd.DataFrame(
             {
                 "date": date,
@@ -596,7 +621,7 @@ class fundinfo(basicinfo):
                 "comment": comment,
             }
         )
-        df = df.iloc[::-1]
+        df = df.iloc[::-1]  ## reverse the time order
         df = df[df["date"].isin(opendate)]
         df = df.reset_index(drop=True)
         df = df[df["date"] <= yesterdayobj()]
@@ -911,17 +936,40 @@ class mfundinfo(basicinfo):
         lastdate = self.price.iloc[-1].date
         startvalue = self.price.iloc[-1].totvalue
         diffdays = (yesterdayobj() - lastdate).days
-        if diffdays == 0:
+        if (
+            diffdays == 0
+        ):
             return None
-        self._updateurl = (
-            "http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code="
-            + self.code
-            + "&page=1&per="
-            + str(diffdays)
-        )
-        con = _download(self._updateurl)
-        soup = BeautifulSoup(con.text, "lxml")
-        items = soup.findAll("td")
+        elif diffdays <= 10:
+            self._updateurl = (
+                "http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code="
+                + self.code
+                + "&page=1&per="
+                + str(diffdays)
+            )
+            con = _download(self._updateurl)
+            soup = BeautifulSoup(con.text, "lxml")
+            items = soup.findAll("td")
+        elif (
+            diffdays > 10
+        ):  ## there is a 20 item per page limit in the API, so to be safe, we query each page by 10 items only
+            items = []
+            for pg in range(1, int(diffdays / 10) + 2):
+                self._updateurl = (
+                    "http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code="
+                    + self.code
+                    + "&page="
+                    + str(pg)
+                    + "&per=10"
+                )
+                con = _download(self._updateurl)
+                soup = BeautifulSoup(con.text, "lxml")
+                items.extend(soup.findAll("td"))
+        else:
+            raise TradeBehaviorError(
+                "Weird incremental update: the saved copy has future records"
+            )
+
         date = []
         earnrate = []
         comment = []

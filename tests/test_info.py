@@ -78,7 +78,7 @@ def test_index():
 
 def test_fund():
     assert hs300.label == 2
-    assert hs300.name == "景顺长城沪深300增强"
+    assert hs300.name == "景顺长城沪深300指数增强"  ## "景顺长城沪深300增强", 蜜汁改名。。。
     assert hs300.fenhongdate[1] == pd.Timestamp("2017-08-15")
     assert (
         float(hs300.special[hs300.special["date"] == "2017-08-04"]["comment"]) == 0.19
@@ -123,10 +123,10 @@ def test_evaluate():
     assert round(comp2.correlation_table("2018-08-01").iloc[0, 1], 3) == 0.064
 
 
-def delete_csvlines(path, end=1):
+def delete_csvlines(path, lines=5):
     df = pd.read_csv(path)
-    for _ in range(5):
-        df = df.drop(df.index[len(df) - end])
+    for _ in range(lines):  ## delete one weeks data
+        df = df.drop(df.index[len(df) - 1])
     df.to_csv(path, index=False)
 
 
@@ -148,3 +148,21 @@ def test_csvio():
     delete_csvlines(path=ioconf["path"] + "0000827.csv")
     zzhb2 = xa.indexinfo("0000827", **ioconf)
     assert len(zzhb2.price) == len(zzhb.price)
+
+
+def test_fund_update():
+    zghl = xa.fundinfo("164906", **ioconf)
+    len1 = len(zghl.price)
+    delete_csvlines(path=ioconf["path"] + "164906.csv", lines=83)
+    zghl = xa.fundinfo("164906", **ioconf)
+    len2 = len(zghl.price)
+    assert len1 == len2
+    jxzl = xa.mfundinfo("002758", **ioconf)
+    netvalue = jxzl.price.iloc[-1]["netvalue"]
+    len3 = len(jxzl.price)
+    delete_csvlines(path=ioconf["path"] + "002758.csv", lines=9)
+    jxzl = xa.mfundinfo("002758", **ioconf)
+    netvalue2 = jxzl.price.iloc[-1]["netvalue"]
+    len4 = len(jxzl.price)
+    assert len3 == len4
+    assert round(netvalue, 4) == round(netvalue2, 4)

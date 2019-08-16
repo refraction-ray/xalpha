@@ -111,4 +111,4 @@ def test_policy_indicator_points():
 
 def test_record_list():
     tot = xa.mulfix(status=statl, totmoney=50000, **ioconf)
-    assert round(tot.combsummary("2019-05-04").iloc[0]["投资收益率"], 1) == 10.6
+    assert round(tot.combsummary("2019-05-04").iloc[0]["投资收益率"], 1) == 10.5

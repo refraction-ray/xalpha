@@ -45,7 +45,7 @@ class record:
             dfnew.fillna(0, inplace=True)
             dfnew["date"] = [pd.Timestamp.strptime(i, "%Y/%m/%d") for i in date_s]
             for i in range(len(df)):
-                dfnew.at[df.iloc[i].date, "{:06d}".format(df.iloc[i].fund)] = df.iloc[
+                dfnew.at[df.iloc[i].date, "{:06d}".format(df.iloc[i].fund)] += df.iloc[
                     i
                 ].trade
             dfnew = dfnew.sort_values(by=["date"])
