@@ -31,3 +31,5 @@
 *   基于技术指标的相关策略研究：
 
 *	ETF拯救世界投资计划的分析与可视化： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/ETFanalysis.ipynb>`_
+
+*	石油相关基金的分析和研究： `示例 <https://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/oilfund.ipynb>`_  
