@@ -17,10 +17,10 @@ from sqlalchemy import exc
 
 import xalpha.remain as rm
 from xalpha.cons import (
-    myround,
     convert_date,
-    opendate,
     droplist,
+    myround,
+    opendate,
     yesterday,
     yesterdaydash,
     yesterdayobj,

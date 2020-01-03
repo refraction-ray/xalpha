@@ -5,11 +5,11 @@ module for trade class
 import datetime as dt
 
 import pandas as pd
-from pyecharts.charts import Line, Bar
+from pyecharts.charts import Bar, Line
 from pyecharts.options import AxisOpts, DataZoomOpts
 
 import xalpha.remain as rm
-from xalpha.cons import convert_date, xirr, myround, yesterdayobj, line_opts
+from xalpha.cons import convert_date, line_opts, myround, xirr, yesterdayobj
 from xalpha.exceptions import ParserFailure, TradeBehaviorError
 
 

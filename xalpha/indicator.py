@@ -6,7 +6,7 @@ module for implementation of indicator class, which is designed as MinIn for sys
 import pandas as pd
 from pyecharts.charts import Line
 
-from xalpha.cons import yesterdayobj, opendate, line_opts
+from xalpha.cons import line_opts, opendate, yesterdayobj
 
 
 def _upcount(ls):

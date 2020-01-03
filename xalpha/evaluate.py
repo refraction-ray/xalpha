@@ -3,9 +3,9 @@
 modules for evaluation and comparison on multiple object with price dataframe
 """
 
-from pyecharts.charts import Line, HeatMap
+from pyecharts.charts import HeatMap, Line
 
-from xalpha.cons import convert_date, yesterdayobj, line_opts, heatmap_opts
+from xalpha.cons import convert_date, heatmap_opts, line_opts, yesterdayobj
 
 
 class evaluate:

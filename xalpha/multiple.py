@@ -7,12 +7,12 @@ import pandas as pd
 from pyecharts import options as opts
 from pyecharts.charts import Pie, ThemeRiver
 
-from xalpha.cons import yesterdayobj, yesterdaydash, myround, convert_date, pie_opts
+from xalpha.cons import convert_date, myround, pie_opts, yesterdaydash, yesterdayobj
 from xalpha.evaluate import evaluate
 from xalpha.exceptions import FundTypeError, TradeBehaviorError
 from xalpha.indicator import indicator
 from xalpha.info import cashinfo, fundinfo, mfundinfo
-from xalpha.trade import xirrcal, vtradevolume, bottleneck, turnoverrate, trade
+from xalpha.trade import bottleneck, trade, turnoverrate, vtradevolume, xirrcal
 
 
 class mul:

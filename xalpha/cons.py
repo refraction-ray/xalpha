@@ -4,17 +4,20 @@ basic constants and utility functions
 """
 
 import datetime as dt
+import os
 from decimal import Decimal
 
 import pandas as pd
 from pyecharts.options import (
-    DataZoomOpts,
     AxisOpts,
+    DataZoomOpts,
+    LegendOpts,
     TooltipOpts,
     VisualMapOpts,
-    LegendOpts,
 )
 from scipy import optimize
+
+from xalpha import __path__
 
 # date obj of today
 today = lambda: dt.datetime.combine(dt.date.today(), dt.time.min)
@@ -33,8 +36,8 @@ yesterdaydash = lambda: dt.datetime.strftime(
 yesterdayobj = lambda: dt.datetime.strptime(yesterdaydash(), "%Y-%m-%d")
 
 # list: all the trade date of domestic stock market in the form of string
-caldate = pd.read_csv("http://file.tushare.org/tsdata/calAll.csv")
-opendate = list(caldate[caldate["isOpen"] == 1]["calendarDate"])
+caldate = pd.read_csv(os.path.join(__path__[0], "caldate.csv"))
+opendate = list(caldate[caldate["is_open"] == 1]["cal_date"])
 # directly use the tushare API instead of import tushare package for simplicity
 # opendate = list(ts.trade_cal()[ts.trade_cal()['isOpen']==1]['calendarDate'])
 

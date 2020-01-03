@@ -8,7 +8,7 @@ as the nested list structure is very fragile and tend to induce unpredicatble be
 we strongly recommended anytime when rem data serves as function paramters, 
 only utilize functions from this module
 """
-from xalpha.cons import myround, convert_date
+from xalpha.cons import convert_date, myround
 
 _errmsg = "One cannot move share before the lastest operation"
 
