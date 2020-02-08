@@ -17,7 +17,7 @@ setuptools.setup(
         'ply==3.4',
         'lxml',
         'slimit>=0.8.1',
-        'pandas',
+        'pandas<=0.25.3',
         'scipy',
         'requests',
         'pyecharts>=1.1.0',
