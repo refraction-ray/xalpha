@@ -137,8 +137,9 @@ def vtradevolume(cftable, freq="D"):
 
     bar = Bar()
     bar.add_xaxis(datedata)
-    bar.add_yaxis(series_name="卖出", yaxis_data=selldata, category_gap="90%")
+    # buydata should before selldata, since emptylist in the first line would make the output fig empty: may be bug in pyecharts
     bar.add_yaxis(series_name="买入", yaxis_data=buydata, category_gap="90%")
+    bar.add_yaxis(series_name="卖出", yaxis_data=selldata, category_gap="90%")
 
     bar.set_global_opts(
         xaxis_opts=AxisOpts(type_="time"),
