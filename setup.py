@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/refraction-ray/xalpha",
     packages=setuptools.find_packages(),
-    package_data={"xalpha": "caldate.csv"},
+    include_package_data=True,
     install_requires=[
         "ply==3.4",
         "lxml",
