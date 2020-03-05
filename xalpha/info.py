@@ -570,7 +570,20 @@ class fundinfo(basicinfo):
             diffdays == 0
         ):  ## for some QDII, this value is 1, anyways, trying update is compatible (d+2 update)
             return None
-        elif diffdays <= 10:
+        self._updateurl = (
+            "http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code="
+            + self.code
+            + "&page=1&per=1"
+        )
+        con = _download(self._updateurl)
+        soup = BeautifulSoup(con.text, "lxml")
+        items = soup.findAll("td")
+        if (
+            dt.datetime.strptime(str(items[0].string), "%Y-%m-%d").date()
+            == dt.date.today()
+        ):
+            diffdays += 1
+        if diffdays <= 10:
             self._updateurl = (
                 "http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code="
                 + self.code
@@ -605,7 +618,7 @@ class fundinfo(basicinfo):
         totvalue = []
         comment = []
         for i in range(int(len(items) / 7)):
-            ts = pd.Timestamp(items[7 * i].string)
+            ts = pd.Timestamp(str(items[7 * i].string))
             if (ts - lastdate).days > 0:
                 date.append(ts)
                 netvalue.append(float(items[7 * i + 1].string))
@@ -938,7 +951,21 @@ class mfundinfo(basicinfo):
         diffdays = (yesterdayobj() - lastdate).days
         if diffdays == 0:
             return None
-        elif diffdays <= 10:
+        self._updateurl = (
+            "http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code="
+            + self.code
+            + "&page=1&per=1"
+        )
+        con = _download(self._updateurl)
+        soup = BeautifulSoup(con.text, "lxml")
+        items = soup.findAll("td")
+        if (
+            dt.datetime.strptime(str(items[0].string), "%Y-%m-%d").date()
+            == dt.date.today()
+        ):
+            diffdays += 1
+        if diffdays <= 10:
+            # caution: there may be today data!! then a day gap will be in table
             self._updateurl = (
                 "http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code="
                 + self.code
@@ -972,7 +999,7 @@ class mfundinfo(basicinfo):
         earnrate = []
         comment = []
         for i in range(int(len(items) / 6)):
-            ts = pd.Timestamp(items[6 * i].string)
+            ts = pd.Timestamp(str(items[6 * i].string))
             if (ts - lastdate).days > 0:
                 date.append(ts)
                 earnrate.append(float(items[6 * i + 1].string) * 1e-4)
