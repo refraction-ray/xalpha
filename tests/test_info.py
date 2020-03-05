@@ -151,10 +151,12 @@ def test_csvio():
 
 
 def test_fund_update():
-    zghl = xa.fundinfo("164906", **ioconf)
+    zghl = xa.fundinfo(
+        "501029", **ioconf
+    )  # 164906 maybe possible remainning issue for qdii?
     len1 = len(zghl.price)
-    delete_csvlines(path=ioconf["path"] + "164906.csv", lines=83)
-    zghl = xa.fundinfo("164906", **ioconf)
+    delete_csvlines(path=ioconf["path"] + "501029.csv", lines=83)
+    zghl = xa.fundinfo("501029", **ioconf)
     len2 = len(zghl.price)
     assert len1 == len2
     jxzl = xa.mfundinfo("002758", **ioconf)
