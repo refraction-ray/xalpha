@@ -1,0 +1,38 @@
+import sys
+
+sys.path.insert(0, "../")
+import xalpha as xa
+
+
+def test_get_xueqiu():
+    df = xa.get_daily(start="20200302", end="2020-03-07", code="HK01810")
+    assert round(df.iloc[-1]["close"], 2) == 12.98
+    df = xa.get_daily(start="2020/03/02", end="20200307", code="PDD")
+    assert round(df.iloc[0]["close"], 2) == 35.79
+    df = xa.get_daily(start="20200301", end="20200307", code="SZ112517")
+    # note how this test would fail when the bond is matured
+    assert round(df.iloc[0]["close"], 2) == 98
+    df = xa.get_daily(start="20200222", end="20200301", code="SH501018")
+    assert round(df.iloc[-1]["close"], 3) == 0.965
+
+
+def test_get_rmb():
+    df = xa.get_daily(start="20180101", end="2020-03-07", code="USD/CNY")
+    assert len(df) == 528
+    df = xa.get_daily(code="EUR/CNY", end="20200306")
+    assert round(df.iloc[-1]["close"], 4) == 7.7747
+
+
+def test_get_fund():
+    df = xa.get_daily(code="F100032")
+    assert round(df[df["date"] == "2020-03-06"].iloc[0]["close"], 3) == 1.036
+    df = xa.get_daily(code="M002758", start="20200201")
+    assert round(df.iloc[1]["close"], 3) == 1.134
+
+
+def test_get_investing():
+    df1 = xa.get_daily(code="indices/germany-30")
+    df2 = xa.get_daily(code="172")
+    assert df1.iloc[-1]["close"] == df2.iloc[-1]["close"]
+    df = xa.get_daily(code="/currencies/usd-cny", end="20200307")
+    assert round(df.iloc[-1]["close"], 4) == 6.9321

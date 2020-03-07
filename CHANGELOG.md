@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+### added
+* 重磅增加几乎万能的日线数据获取器 ``get_daily``
 ### fixed
 * pandas 1.0+ 的 `pandas.Timestamp` API 要求更严，bs 的 NavigableString 不被接受，需要先用 `str` 转回 python str
 * day gap when incremental update: if today's data is published, add logic to avoid this
