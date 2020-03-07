@@ -6,6 +6,8 @@
 ### fixed
 * pandas 1.0+ 的 `pandas.Timestamp` API 要求更严，bs 的 NavigableString 不被接受，需要先用 `str` 转回 python str
 * day gap when incremental update: if today's data is published, add logic to avoid this
+### changed
+* `fundinfo` 解析网页逻辑重构，直接按字符串解析，不再引入 js parser，更加简洁。
 
 ## v0.2.0 - 2020.02.19
 ### fixed

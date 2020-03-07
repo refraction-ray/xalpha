@@ -105,6 +105,8 @@ def test_fund():
         xa.mfundinfo("000311")
     assert str(excinfo.value) == "This code seems to be a fund, use fundinfo instead"
     hs300.info()
+    dax = xa.fundinfo("510030")  # test empty shuhuifei and shengoufei case
+    assert dax.feeinfo == ["小于7天", "1.50%", "大于等于7天", "0.00%"]
 
 
 def test_mfundinfo():

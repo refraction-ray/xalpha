@@ -10,9 +10,6 @@ import re
 import pandas as pd
 import requests as rq
 from bs4 import BeautifulSoup
-from slimit import ast
-from slimit.parser import Parser
-from slimit.visitors import nodevisitor
 from sqlalchemy import exc
 
 import xalpha.remain as rm
@@ -76,7 +73,7 @@ def _nfloat(string):
     :returns: make fenhong and songpei as float number
     """
     result = 0
-    if string != '""' and string is not None:
+    if string:
         try:
             result = float(string)
         except ValueError:
@@ -300,66 +297,41 @@ class fundinfo(basicinfo):
         if self._page.text[:800].find("Data_millionCopiesIncome") >= 0:
             raise FundTypeError("This code seems to be a mfund, use mfundinfo instead")
 
-        parser = Parser()  # parse the js text of API page using slimit module
-        tree = parser.parse(self._page.text)
-        nodenet = [
-            node.children()[0].children()[1]
-            for node in nodevisitor.visit(tree)
-            if isinstance(node, ast.VarStatement)
-            and node.children()[0].children()[0].value == "Data_netWorthTrend"
-        ][0]
-        nodetot = [
-            node.children()[0].children()[1]
-            for node in nodevisitor.visit(tree)
-            if isinstance(node, ast.VarStatement)
-            and node.children()[0].children()[0].value == "Data_ACWorthTrend"
-        ][0]
+        l = eval(
+            re.match(r".*Data_netWorthTrend = ([^;]*);.*", self._page.text).groups()[0]
+        )
+        ltot = eval(
+            re.match(r".*Data_ACWorthTrend = ([^;]*);.*", self._page.text).groups()[0]
+        )
         ## timestamp transform tzinfo must be taken into consideration
         tz_bj = dt.timezone(dt.timedelta(hours=8))
-
         infodict = {
             "date": [
-                dt.datetime.fromtimestamp(
-                    int(nodenet.children()[i].children()[0].right.value) / 1e3, tz=tz_bj
-                ).replace(tzinfo=None)
-                for i in range(len(nodenet.children()))
+                dt.datetime.fromtimestamp(int(d["x"]) / 1e3, tz=tz_bj).replace(
+                    tzinfo=None
+                )
+                for d in l
             ],
-            "netvalue": [
-                float(nodenet.children()[i].children()[1].right.value)
-                for i in range(len(nodenet.children()))
-            ],
-            "comment": [
-                _nfloat(nodenet.children()[i].children()[3].right.value)
-                for i in range(len(nodenet.children()))
-            ],
+            "netvalue": [float(d["y"]) for d in l],
+            "comment": [_nfloat(d["unitMoney"]) for d in l],
         }
 
-        if len(nodenet.children()) == len(
-            nodetot.children()
-        ):  # 防止总值和净值数据量不匹配，已知有该问题的基金：502010
-            infodict["totvalue"] = [
-                float(nodetot.children()[i].children()[1].value)
-                for i in range(len(nodenet.children()))
-            ]
+        if len(l) == len(ltot):  # 防止总值和净值数据量不匹配，已知有该问题的基金：502010
+            infodict["totvalue"] = [d[1] for d in ltot]
 
-        rate = [
-            node.children()[0].children()[1]
-            for node in nodevisitor.visit(tree)
-            if isinstance(node, ast.VarStatement)
-            and (node.children()[0].children()[0].value == "fund_Rate")
-        ][0]
+        try:
+            rate = float(
+                eval(re.match(r".*fund_Rate=([^;]*);.*", self._page.text).groups()[0])
+            )
+        except ValueError:
+            rate = 0
+            print("warning: this fund has no data for rate")  # know cases: 510030
 
-        name = [
-            node.children()[0].children()[1]
-            for node in nodevisitor.visit(tree)
-            if isinstance(node, ast.VarStatement)
-            and (node.children()[0].children()[0].value == "fS_name")
-        ][0]
+        name = eval(re.match(r".*fS_name = ([^;]*);.*", self._page.text).groups()[0])
 
-        self.rate = float(
-            rate.value.strip('"')
-        )  # shengou rate in tiantianjijin, daeshengou rate discount is not considered
-        self.name = name.value.strip('"')  # the name of the fund
+        self.rate = rate
+        # shengou rate in tiantianjijin, daeshengou rate discount is not considered
+        self.name = name  # the name of the fund
         df = pd.DataFrame(data=infodict)
         df = df[df["date"].isin(opendate)]
         df = df.reset_index(drop=True)
@@ -382,6 +354,9 @@ class fundinfo(basicinfo):
             ].parent.parent.next_sibling.next_sibling.find_all("td")
             if item.string != "---"
         ]
+        # this could be [], known case 510030
+        if not self.feeinfo:
+            self.feeinfo = ["小于7天", "1.50%", "大于等于7天", "0.00%"]
         self.segment = fundinfo._piecewise(self.feeinfo)
 
     @staticmethod
@@ -829,32 +804,18 @@ class mfundinfo(basicinfo):
         if self._page.text[:800].find("Data_fundSharesPositions") >= 0:
             raise FundTypeError("This code seems to be a fund, use fundinfo instead")
 
-        parser = Parser()
-        tree = parser.parse(self._page.text)
-        nodenet = [
-            node.children()[0].children()[1]
-            for node in nodevisitor.visit(tree)
-            if isinstance(node, ast.VarStatement)
-            and node.children()[0].children()[0].value == "Data_millionCopiesIncome"
-        ][0]
-        name = [
-            node.children()[0].children()[1]
-            for node in nodevisitor.visit(tree)
-            if isinstance(node, ast.VarStatement)
-            and (node.children()[0].children()[0].value == "fS_name")
-        ][0]
-        self.name = name.value.strip('"')
+        l = eval(
+            re.match(
+                r".*Data_millionCopiesIncome = ([^;]*);.*", self._page.text
+            ).groups()[0]
+        )
+        self.name = re.match(r".*fS_name = \"([^;]*)\";.*", self._page.text).groups()[0]
         tz_bj = dt.timezone(dt.timedelta(hours=8))
         datel = [
-            dt.datetime.fromtimestamp(
-                int(nodenet.children()[i].children()[0].value) / 1e3, tz=tz_bj
-            ).replace(tzinfo=None)
-            for i in range(len(nodenet.children()))
+            dt.datetime.fromtimestamp(int(d[0]) / 1e3, tz=tz_bj).replace(tzinfo=None)
+            for d in l
         ]
-        ratel = [
-            float(nodenet.children()[i].children()[1].value)
-            for i in range(len(nodenet.children()))
-        ]
+        ratel = [float(d[1]) for d in l]
         netvalue = [1]
         for dailyrate in ratel:
             netvalue.append(netvalue[-1] * (1 + dailyrate * 1e-4))
