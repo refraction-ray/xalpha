@@ -41,8 +41,11 @@ def get_history(
 
 
 def ts2pdts(ts):
-    dto = dt.datetime.fromtimestamp(ts / 1000)
-    return dto.replace(hour=0, minute=0, second=0, microsecond=0)
+    tz_bj = dt.timezone(dt.timedelta(hours=8))
+    dto = dt.datetime.fromtimestamp(ts / 1000, tz=tz_bj).replace(tzinfo=None)
+    return dto.replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )  # 雪球美股数据时间戳是美国0点，按北京时区换回时间后，把时分秒扔掉就重合了
 
 
 def get_xueqiu(code, count):
@@ -203,14 +206,19 @@ def get_daily(code, start=None, end=None, prev=365, _from=None):
     数据来源包括天天基金，雪球，英为财情，外汇局官网
 
     :param code: str.
+
             1. 对于沪深市场的股票，指数，ETF，LOF 基金，可转债和债券，直接使用其代码，主要开头需要包括 SH 或者 SZ。
+
             2. 对于香港市场的股票，指数，使用其数字代码，同时开头要添加 HK。
+
             3. 对于美国市场的股票，指数，ETF 等，直接使用其字母缩写代码即可。
+
             4. 对于人民币中间价数据，使用 "USD/CNY" 的形式，具体可能的值可在 http://www.chinamoney.com.cn/chinese/bkccpr/ 历史数据的横栏查询
-            5. 对于所有可以在 cn.investing.com 网站查到的金融产品，其代码可以是该网站对应的统一代码，或者是网址部分，比如 DAX 30 的概览页面为
-                https://cn.investing.com/indices/germany-30，那么对应代码即为 "indices/germany-30"。也可去网页 inspect 手动查找其内部代码
-                （一般不需要自己做，推荐直接使用网页url作为 code 变量值），手动 inspect 加粗的实时价格，其对应的网页 span class 中的 pid 的数值即为内部代码。
+
+            5. 对于所有可以在 cn.investing.com 网站查到的金融产品，其代码可以是该网站对应的统一代码，或者是网址部分，比如 DAX 30 的概览页面为 https://cn.investing.com/indices/germany-30，那么对应代码即为 "indices/germany-30"。也可去网页 inspect 手动查找其内部代码（一般不需要自己做，推荐直接使用网页url作为 code 变量值），手动 inspect 加粗的实时价格，其对应的网页 span class 中的 pid 的数值即为内部代码。
+
             6. 对于国内发行的基金，使用基金代码，同时开头添加 F。
+
             7. 对于国内发行的货币基金，使用基金代码，同时开头添加 M。（全部按照净值数据处理）
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.

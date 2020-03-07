@@ -42,6 +42,7 @@ release = ""
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.mathjax",
+    "sphinx.ext.viewcode",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -84,6 +85,15 @@ html_theme = "alabaster"
 # documentation.
 #
 # html_theme_options = {}
+html_theme_options = {
+    "github_user": "refraction-ray",
+    "github_repo": "xalpha",
+    "github_button": "true",
+    "github_type": "star",
+    "github_banner": "true",
+    "show_powered_by": "false",
+}
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

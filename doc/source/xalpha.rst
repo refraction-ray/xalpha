@@ -81,4 +81,11 @@ xalpha.trade module
     :undoc-members:
     :show-inheritance:
 
+xalpha.universal module
+------------------------
+
+.. automodule:: xalpha.universal
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
