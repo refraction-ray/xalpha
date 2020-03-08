@@ -36,3 +36,15 @@ def test_get_investing():
     assert df1.iloc[-1]["close"] == df2.iloc[-1]["close"]
     df = xa.get_daily(code="/currencies/usd-cny", end="20200307")
     assert round(df.iloc[-1]["close"], 4) == 6.9321
+
+
+def test_get_xueqiu_rt():
+    assert xa.get_rt("PDD")["currency"] == "USD"
+    assert xa.get_rt("03333")["name"] == xa.get_rt("HK03333")["name"]
+    assert isinstance(xa.get_rt("SH501018")["percent"], float)
+
+
+def test_get_investing_rt():
+    assert xa.get_rt("currencies/usd-cny")["currency"] == None
+    assert xa.get_rt("/indices/germany-30")["name"] == "德国DAX30指数 (GDAXI)"
+    assert isinstance(xa.get_rt("equities/pinduoduo")["current_ext"], float)

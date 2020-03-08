@@ -109,10 +109,13 @@ xalpha 可以用来对场外基金和指数进行方便的追踪和研究，
 使用 :class:`xalpha.realtime.review` 可以实现策略的监测和邮件的发送，具体使用可以查看 `示例 <https://github.com/refraction-ray/xalpha/blob/master/doc/samples/notification.py>`_
 
 
-通用日线数据获取器
--------------------
+通用日线和实时数据获取器
+-------------------------
 使用 :func:`xalpha.universal.get_daily`，给定一个代码，直接返回日线数据的 DataFrame。覆盖范围包括沪深市场的股票，基金，ETF，LOF，可转债
 债券；香港市场的股票，指数；美国市场的股票，指数，ETF；人民币兑外币的中间价数据；和其他在 investing.com 上可以访问的金融产品的日线数据。
+
+使用 :func:`xalpha.universal.get_rt`，给定一个代码，直接返回实时数据 json。覆盖范围包括沪深市场的股票，场内基金，ETF，LOF，可转债
+债券；香港市场的股票，指数；美国市场的股票，指数，ETF；和其他在 investing.com 上可以访问的金融产品的日线数据。
 
 
 功能综述

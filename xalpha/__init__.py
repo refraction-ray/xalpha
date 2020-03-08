@@ -10,4 +10,4 @@ from xalpha.multiple import mul, mulfix
 from xalpha.realtime import rfundinfo, review
 from xalpha.record import record
 from xalpha.trade import trade
-from xalpha.universal import get_daily
+from xalpha.universal import get_daily, get_rt
