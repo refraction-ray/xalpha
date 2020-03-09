@@ -8,6 +8,7 @@ import requests
 import datetime as dt
 import pandas as pd
 from bs4 import BeautifulSoup
+from functools import wraps
 
 from xalpha.info import fundinfo, mfundinfo
 
@@ -140,6 +141,15 @@ def get_investing_id(suburl):
 
 
 def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
+    """
+    获取人民币汇率中间价
+
+    :param start:
+    :param end:
+    :param prev:
+    :param currency:
+    :return: pd.DataFrame
+    """
     url = "http://www.chinamoney.com.cn/ags/ms/cm-u-bk-ccpr/CcprHisNew?startDate={start_str}&endDate={end_str}&currency={currency}&pageNum=1&pageSize=300"
     if not end:
         end_obj = today_obj()
@@ -374,3 +384,74 @@ def get_rt(code, _from=None):
 
 
 get_realtime = get_rt
+
+
+_cached_data = {}
+
+
+def reset_cache():
+    """
+    clear all cache of daily data
+
+    :return: None.
+    """
+    global _cached_data
+    _cached_data = {}
+
+
+def cached(s):
+    """
+    Usage as follows:
+    .. code:: python
+
+        @cached("20170101")
+        def get_daily(*args, **kws):
+            return xa.get_daily(*args, **kws)
+
+    Automatically cache the result in memory and avoid refetching
+    :param s: str. eg. "20160101", the starting date of cached table.
+    :return: wrapped function.
+    """
+
+    def cached_start(f):
+        @wraps(f)
+        def wrapper(*args, **kws):
+            if args:
+                code = args[0]
+            else:
+                code = kws.get("code")
+            start = kws.get("start", None)
+            end = kws.get("end", None)
+            prev = kws.get("prev", None)
+            if not prev:
+                prev = 365
+            if not end:
+                end_obj = today_obj()
+            else:
+                end_obj = dstr2dobj(end)
+            if not start:
+                start_obj = end_obj - dt.timedelta(prev)
+            else:
+                start_obj = dstr2dobj(start)
+            start_str = start_obj.strftime("%Y%m%d")
+            end_str = end_obj.strftime("%Y%m%d")
+            kws["start"] = s
+            kws["end"] = dt.datetime.now().strftime("%Y%m%d")
+            global _cached_data
+            _cached_data.setdefault(s, {})
+            if code not in _cached_data[s]:
+                df = f(*args, **kws)
+                # print("cached %s" % code)
+                _cached_data[s][code] = df
+            else:
+                pass
+                # print("directly call cache")
+            df = _cached_data[s][code]
+            df = df[df["date"] <= end_str]
+            df = df[df["date"] >= start_str]
+
+            return df
+
+        return wrapper
+
+    return cached_start

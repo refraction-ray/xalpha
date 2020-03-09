@@ -1,6 +1,7 @@
 # Changelog
 ## Unreleased
-
+### added
+* 增加了 ``get_daily`` 的缓存装饰器，可以轻松无缝的缓存所有日线数据，防止反复下载
 
 ## v0.3.0 - 2020.03.08
 ### added
