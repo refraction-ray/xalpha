@@ -48,3 +48,11 @@ def test_get_investing_rt():
     assert xa.get_rt("currencies/usd-cny")["currency"] == None
     assert xa.get_rt("/indices/germany-30")["name"] == "德国DAX30指数 (GDAXI)"
     assert isinstance(xa.get_rt("equities/pinduoduo")["current_ext"], float)
+
+
+def test_cache():
+    get_daily_cache = xa.universal.cached("20190101")(xa.get_daily)
+    l1 = get_daily_cache("EUR/CNY", start="20200101")
+    l2 = get_daily_cache("EUR/CNY", start="20190101")
+    l3 = get_daily_cache("EUR/CNY", start="20180101")
+    assert l2.iloc[0]["date"] == l3.iloc[0]["date"]
