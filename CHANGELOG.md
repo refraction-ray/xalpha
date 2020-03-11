@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.3.2 - 2020.03.11
 ### Fixed
 * 通过 get_daily 获取的基金和雪球数据日线，不包括 end 和 start 两天，已修正为包括。
 ### changed
