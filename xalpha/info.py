@@ -22,6 +22,7 @@ from xalpha.cons import (
     yesterdaydash,
     yesterdayobj,
     today,
+    connection_errors,
 )
 from xalpha.exceptions import FundTypeError, TradeBehaviorError
 from xalpha.indicator import indicator
@@ -41,7 +42,7 @@ def _download(url, tries=5):
         try:
             page = rq.get(url)
             break
-        except (ConnectionResetError, rq.exceptions.RequestException) as e:
+        except connection_errors as e:
             if count == tries - 1:
                 raise e
     return page

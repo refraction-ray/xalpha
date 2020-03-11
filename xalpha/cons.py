@@ -6,6 +6,7 @@ basic constants and utility functions
 import datetime as dt
 import os
 from decimal import Decimal
+import requests
 
 import pandas as pd
 from pyecharts.options import (
@@ -43,6 +44,12 @@ opendate = list(caldate[caldate["is_open"] == 1]["cal_date"])
 
 # fund code list which always round down for the purchase share approximation
 droplist = ["003318", "000311"]
+
+connection_errors = (
+    ConnectionResetError,
+    requests.exceptions.RequestException,
+    requests.exceptions.ConnectionError,
+)
 
 line_opts = {
     "datazoom_opts": [

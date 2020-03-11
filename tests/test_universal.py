@@ -11,7 +11,7 @@ def test_get_xueqiu():
     assert round(df.iloc[0]["close"], 2) == 35.79
     df = xa.get_daily(start="20200301", end="20200307", code="SZ112517")
     # note how this test would fail when the bond is matured
-    assert round(df.iloc[0]["close"], 2) == 98
+    assert round(df.iloc[0]["close"], 2) == 97.99
     df = xa.get_daily(start="20200222", end="20200301", code="SH501018")
     assert round(df.iloc[-1]["close"], 3) == 0.965
 
@@ -33,7 +33,9 @@ def test_get_fund():
 def test_get_investing():
     df1 = xa.get_daily(code="indices/germany-30")
     df2 = xa.get_daily(code="172")
-    assert df1.iloc[-1]["close"] == df2.iloc[-1]["close"]
+    assert (
+        df1.iloc[-2]["close"] == df2.iloc[-2]["close"]
+    )  ## never try -1, today's data is unpredictable
     df = xa.get_daily(code="/currencies/usd-cny", end="20200307")
     assert round(df.iloc[-1]["close"], 4) == 6.9321
 

@@ -1,4 +1,10 @@
 # Changelog
+## Unreleased
+### Fixed
+* 通过 get_daily 获取的基金和雪球数据日线，不包括 end 和 start 两天，已修正为包括。
+### changed
+* 增加 rget 和 rpost 容错，使得 universal 部分的下载更稳定。
+
 ## v0.3.1 - 2020.03.09
 ### added
 * 增加了 ``get_daily`` 的缓存装饰器，可以轻松无缝的缓存所有日线数据，防止反复下载

@@ -5,12 +5,40 @@ for almost everything in the market
 """
 
 import requests
+import time
 import datetime as dt
 import pandas as pd
 from bs4 import BeautifulSoup
 from functools import wraps
 
 from xalpha.info import fundinfo, mfundinfo
+from xalpha.cons import connection_errors
+
+
+def rget(*args, **kws):
+    tries = 5
+    for count in range(tries):
+        try:
+            r = requests.get(*args, **kws)
+            return r
+        except connection_errors as e:
+            if count == tries - 1:
+                print(*args, sep="\n")
+                raise e
+            time.sleep(1)
+
+
+def rpost(*args, **kws):
+    tries = 5
+    for count in range(tries):
+        try:
+            r = requests.post(*args, **kws)
+            return r
+        except connection_errors as e:
+            if count == tries - 1:
+                print(*args, sep="\n")
+                raise e
+            time.sleep(1)
 
 
 def today_obj():
@@ -24,7 +52,7 @@ def tomorrow_ts():
 
 
 def get_token():
-    r = requests.get("https://xueqiu.com", headers={"user-agent": "Mozilla"})
+    r = rget("https://xueqiu.com", headers={"user-agent": "Mozilla"})
     return r.cookies["xq_a_token"]
 
 
@@ -32,7 +60,7 @@ def get_history(
     code, prefix="SH", count=365, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"
 ):
     url = "https://stock.xueqiu.com/v5/stock/chart/kline.json?symbol={prefix}{code}&begin={tomorrow}&period=day&type=before&count=-{count}"
-    data = requests.get(
+    data = rget(
         url.format(
             code=code, prefix=prefix, tomorrow=int(tomorrow_ts() * 1000), count=count
         ),
@@ -58,7 +86,7 @@ def get_xueqiu(code, count):
 
 
 def get_cninvesting(curr_id, st_date, end_date):
-    rpost = requests.post(
+    r = rpost(
         "https://cn.investing.com/instruments/HistoricalDataAjax",
         data={
             "curr_id": curr_id,
@@ -77,7 +105,7 @@ def get_cninvesting(curr_id, st_date, end_date):
             "X-Requested-With": "XMLHttpRequest",
         },
     )
-    s = BeautifulSoup(rpost.text, "lxml")
+    s = BeautifulSoup(r.text, "lxml")
     dfdict = {}
     cols = []
     for col in s.find_all("th"):
@@ -129,7 +157,7 @@ def get_investing_id(suburl):
     if not suburl.startswith("/"):
         url += "/"
     url += suburl
-    r = requests.get(
+    r = rget(
         url,
         headers={
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36"
@@ -164,16 +192,14 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
     count = (end_obj - start_obj).days + 1
     rl = []
     if count <= 360:
-        r = requests.post(
-            url.format(start_str=start_str, end_str=end_str, currency=currency)
-        )
+        r = rpost(url.format(start_str=start_str, end_str=end_str, currency=currency))
         rl.extend(r.json()["records"])
     else:  # data more than 1 year cannot be fetched once due to API limitation
         sepo_obj = end_obj
         sepn_obj = sepo_obj - dt.timedelta(360)
         #         sep0_obj = end_obj - dt.timedelta(361)
         while sepn_obj > start_obj:  # [sepn sepo]
-            r = requests.post(
+            r = rpost(
                 url.format(
                     start_str=sepn_obj.strftime("%Y-%m-%d"),
                     end_str=sepo_obj.strftime("%Y-%m-%d"),
@@ -184,7 +210,7 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
 
             sepo_obj = sepn_obj - dt.timedelta(1)
             sepn_obj = sepo_obj - dt.timedelta(360)
-        r = requests.post(
+        r = rpost(
             url.format(
                 start_str=start_obj.strftime("%Y-%m-%d"),
                 end_str=sepo_obj.strftime("%Y-%m-%d"),
@@ -250,7 +276,7 @@ def get_daily(code, start=None, end=None, prev=365, _from=None):
     if not _from:
         if code.startswith("SH") or code.startswith("SZ"):
             _from = "xueqiu"
-        elif code.endswith("/CNY"):
+        elif code.endswith("/CNY") or code.startswith("CNY/"):
             _from = "zjj"
         elif len(code.split("/")) > 1:
             _from = "cninvesting"
@@ -274,16 +300,16 @@ def get_daily(code, start=None, end=None, prev=365, _from=None):
         return prettify(df)
     elif _from in ["xueqiu", "xq", "snowball"]:
         df = get_xueqiu(code, count)
-        df = df[df.date < end_str]
-        df = df[df.date > start_str]
+        df = df[df.date <= end_str]
+        df = df[df.date >= start_str]
         return prettify(df)
     elif _from in ["zhongjianjia", "zjj", "chinamoney"]:
         df = get_rmb(start, end, prev, currency=code)
         return df
     elif _from in ["ttjj", "tiantianjijin", "xalpha", "eastmoney"]:
         df = get_fund(code)
-        df = df[df.date < end_str]
-        df = df[df.date > start_str]
+        df = df[df.date <= end_str]
+        df = df[df.date >= start_str]
         return df
 
 
@@ -297,7 +323,7 @@ def _float(n):
 
 def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
     url = "https://stock.xueqiu.com/v5/stock/quote.json?symbol={code}&extend=detail"
-    r = requests.get(
+    r = rget(
         url.format(code=code),
         cookies={"xq_a_token": token},
         headers={"user-agent": "Mozilla/5.0"},
@@ -322,7 +348,7 @@ def get_cninvesting_rt(suburl):
     if not suburl.startswith("/"):
         url += "/"
     url += suburl
-    r = requests.get(
+    r = rget(
         url,
         headers={
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36"
