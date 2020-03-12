@@ -103,14 +103,28 @@ class basicinfo(indicator):
     :param save: boolean, when open the save option, automatically save the class to files
     :param path: string, the file path prefix of IO. Or in sql case, path is the engine from sqlalchemy.
     :param form: string, the format of IO, options including: 'csv','sql'
-    :param label: int, 1 or 2, label to the different round scheme of shares, reserved for fundinfo class
+    :param round_label: int, default 0 or 1, label to the different round scheme of shares, reserved for fundinfo class. 1 代表全舍而非四舍五入。
+    :param dividend_label: int, default 0 or 1. 0 代表默认现金分红，1代表红利再投。两者均可通过记账单上的 0.05 来改变单次的默认。
+    :param value_label: int, default 0 or 1. 1 代表记账单上的赎回数目是按金额而非份额的，只能完美支持货币基金。其他净值型基金本质上无法精确到分支持这一选项，因此不开放支持。
     """
 
-    def __init__(self, code, fetch=False, save=False, path="", form="csv", label=1):
+    def __init__(
+        self,
+        code,
+        fetch=False,
+        save=False,
+        path="",
+        form="csv",
+        round_label=1,
+        dividend_label=0,
+        value_label=0,
+    ):
         # 增量 IO 的逻辑都由 basicinfo 类来处理，对于具体的子类，只需实现_save_form 和 _fetch_form 以及 update 函数即可
         self.code = code
         self.format = form
-        self.label = label
+        self.round_label = round_label
+        self.dividend_label = dividend_label
+        self.value_label = value_label
         self.specialdate = []
         self.fenhongdate = []
         self.zhesuandate = []
@@ -154,7 +168,9 @@ class basicinfo(indicator):
             the third is a positive float for share increase
         """
         row = self.price[self.price["date"] >= date].iloc[0]
-        share = _shengoucal(value, self.rate, row.netvalue, label=self.label)[1]
+        share = _shengoucal(value, self.rate, row.netvalue, label=self.round_label + 1)[
+            1
+        ]
         return (row.date, -myround(value), share)
 
     def shuhui(self, share, date, rem):
@@ -163,12 +179,24 @@ class basicinfo(indicator):
         if the date is not a trade date, then the purchase would happen on the next trade day, if the date is
         in the furture, then the trade date is taken as yesterday.
 
-        :param share: float or int, number of shares to be sold
+        :param share: float or int, number of shares to be sold. if value_label=1, its cash to be sold.
         :param date: string or object of date
         :returns: three elements tuple, the first is dateobj
             the second is a positive float for cashout,
             the third is a negative float for share decrease
         """
+        if self.value_label == 0:
+            return self._shuhui_by_share(share, date, rem)
+        elif self.value_label == 1:  # 按金额赎回，仅支持无赎回费的货币基金
+            partprice = self.price[self.price["date"] >= date]
+            if len(partprice) == 0:
+                row = self.price[self.price["date"] < date].iloc[-1]
+            else:
+                row = partprice.iloc[0]
+            share = share / row.netvalue
+            return self._shuhui_by_share(share, date, rem)
+
+    def _shuhui_by_share(self, share, date, rem):
         date = convert_date(date)
         tots = sum([remitem[1] for remitem in rem if remitem[0] <= date])
         if share > tots:
@@ -181,7 +209,11 @@ class basicinfo(indicator):
         else:
             row = partprice.iloc[0]
         value = myround(sh * row.netvalue)
-        return (row.date, value, -myround(sh))
+        return (
+            row.date,
+            value,
+            -myround(sh),
+        )  # TODO: 这里 myround 是否也和 round_label 有关，有待考证
 
     def info(self):
         """
@@ -259,20 +291,29 @@ class fundinfo(basicinfo):
     处理QDII基金时，需要额外注意。
 
     :param code: str, 基金六位代码字符
-    :param label: integer 1 or 2, 取2表示基金申购时份额直接舍掉小数点两位之后。当基金处于 cons.droplist 名单中时，
-        label 总会被自动设置为2。非名单内基金可以显式令 label=2.
+    :param round_label: integer 0 or 1, 取1表示基金申购时份额直接舍掉小数点两位之后。当基金处于 cons.droplist 名单中时，
+        label 总会被自动设置为1。非名单内基金可以显式令 round_label=1.
+    :param dividend_label: int, default 0 or 1. 0 代表默认现金分红，1代表红利再投。两者均可通过记账单上的 0.05 来改变单次的默认。
     :param fetch: boolean, when open the fetch option, the class will try fetching from local files first in the init
     :param save: boolean, when open the save option, automatically save the class to files
     :param path: string, the file path prefix of IO
     :param form: string, the format of IO, options including: 'csv'
     """
 
-    def __init__(self, code, label=1, fetch=False, save=False, path="", form="csv"):
-        if label == 2 or (code in droplist):
-            self.label = 2  # the scheme of round down on share purchase
+    def __init__(
+        self,
+        code,
+        round_label=0,
+        dividend_label=0,
+        fetch=False,
+        save=False,
+        path="",
+        form="csv",
+    ):
+        if round_label == 1 or (code in droplist):
+            label = 1  # the scheme of round down on share purchase
         else:
-            self.label = 1
-
+            label = 0
         self._url = (
             "http://fund.eastmoney.com/pingzhongdata/" + code + ".js"
         )  # js url api for info of certain fund
@@ -281,7 +322,13 @@ class fundinfo(basicinfo):
         )  # html url for trade fees info of certain fund
 
         super().__init__(
-            code, fetch=fetch, save=save, path=path, form=form, label=self.label
+            code,
+            fetch=fetch,
+            save=save,
+            path=path,
+            form=form,
+            round_label=label,
+            dividend_label=dividend_label,
         )
 
         self.special = self.price[self.price["comment"] != 0]
@@ -435,7 +482,7 @@ class fundinfo(basicinfo):
         for d, s in soldrem:
             value += myround(
                 s * row.netvalue * (1 - self.feedecision((row.date - d).days) * 1e-2)
-            )
+            )  # TODO: round_label whether play a role here?
         return (row.date, value, -sh)
 
     def info(self):
@@ -788,6 +835,8 @@ class mfundinfo(basicinfo):
     真实的货币基金类，可以通过货币基金六位代码，来获取真实的货币基金业绩，并进行交易回测等
 
     :param code: string of six digitals, code of real monetnary fund
+    :param round_label: int, default 0 or 1, label to the different round scheme of shares, reserved for fundinfo class. 1 代表全舍而非四舍五入。
+    :param value_label: int, default 0 or 1. 1 代表记账单上的赎回数目是按金额而非份额的，只能完美支持货币基金。
     :param fetch: boolean, when open the fetch option, the class will try fetching from local files first in the init
     :param save: boolean, when open the save option, automatically save the class to files
     :param path: string, the file path prefix of IO
@@ -795,10 +844,27 @@ class mfundinfo(basicinfo):
 
     """
 
-    def __init__(self, code, fetch=False, save=False, path="", form="csv"):
+    def __init__(
+        self,
+        code,
+        round_label=0,
+        value_label=0,
+        fetch=False,
+        save=False,
+        path="",
+        form="csv",
+    ):
         self._url = "http://fund.eastmoney.com/pingzhongdata/" + code + ".js"
         self.rate = 0
-        super().__init__(code, fetch=fetch, save=save, path=path, form=form)
+        super().__init__(
+            code,
+            fetch=fetch,
+            save=save,
+            path=path,
+            form=form,
+            round_label=round_label,
+            value_label=value_label,
+        )
 
     def _basic_init(self):
         self._page = _download(self._url)

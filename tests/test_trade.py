@@ -8,9 +8,11 @@ import pandas as pd
 
 path = "demo.csv"
 path1 = "demo1.csv"
+path2 = "demo2.csv"
 cm = xa.fundinfo("164818")
 statb = xa.record(path).status
 statl = xa.record(path1, format="list").status
+statnb = xa.record(path2)
 cm_t = xa.trade(cm, statb)
 ioconf = {"save": True, "fetch": True, "path": "pytest", "form": "csv"}
 
@@ -41,6 +43,20 @@ def test_mul():
     assert round(cm_m.benchmark_volatility("2018-07-22"), 3) == 0.192
     assert round(cm_m.max_drawdown("2018-08-01")[2], 2) == -0.24
     cm_m.v_tradevolume()
+
+
+def test_mul_properties():
+    hl_m = xa.mul(status=statnb, **ioconf)
+    assert (
+        round(
+            hl_m.totcftable[hl_m.totcftable["date"] == "2020-03-06"].iloc[0]["cash"], 2
+        )
+        == 339.89
+    )
+    assert round(hl_m.fundtradeobj[2].cftable.iloc[1]["cash"], 2) == 1000
+    hl_m2 = xa.mul(status=statnb, property={"002758": 0}, **ioconf)
+    # print(hl_m2.fundtradeobj[2].cftable)
+    assert round(hl_m2.fundtradeobj[2].cftable.iloc[1]["share"], 2) == -926.0
 
 
 def test_mulfix():

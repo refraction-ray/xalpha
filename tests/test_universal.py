@@ -8,10 +8,10 @@ def test_get_xueqiu():
     df = xa.get_daily(start="20200302", end="2020-03-07", code="HK01810")
     assert round(df.iloc[-1]["close"], 2) == 12.98
     df = xa.get_daily(start="2020/03/02", end="20200307", code="PDD")
-    assert round(df.iloc[0]["close"], 2) == 35.79
+    assert round(df.iloc[0]["close"], 2) == 37.51
     df = xa.get_daily(start="20200301", end="20200307", code="SZ112517")
     # note how this test would fail when the bond is matured
-    assert round(df.iloc[0]["close"], 2) == 97.99
+    assert round(df.iloc[0]["close"], 2) == 98
     df = xa.get_daily(start="20200222", end="20200301", code="SH501018")
     assert round(df.iloc[-1]["close"], 3) == 0.965
 

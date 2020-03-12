@@ -222,7 +222,7 @@ class trade:
                 if (lastdate - yesterdayobj()).days >= 1:
                     raise Exception("no other info to be add into cashflow table")
             date = lastdate
-            label = 0
+            label = self.aim.dividend_label  # 现金分红 0, 红利再投 1
             cash = 0
             share = 0
             rem = self.remtable.iloc[-1].rem
@@ -232,8 +232,11 @@ class trade:
                 # deal with buy and sell and label the fenhongzaitouru, namely one label a 0.05 in the original table to label fenhongzaitouru
                 value = self.status[self.status["date"] == date].iloc[0].loc[code]
                 fenhongmark = round(10 * value - int(10 * value), 1)
-                if fenhongmark == 0.5:
+                if fenhongmark == 0.5 and label == 0:
                     label = 1  # fenhong reinvest
+                    value = round(value, 1)
+                elif fenhongmark == 0.5 and label == 1:
+                    label = 0
                     value = round(value, 1)
 
                 if value > 0:  # value stands for purchase money

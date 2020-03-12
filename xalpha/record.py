@@ -16,27 +16,51 @@ class record:
     注意两者不同，恰好对应基金的金额申购份额赎回原则，记录精度均只完美支持一位小数。
     几个更具体的特殊标记：
 
-    1. 小数点后第二位如果是5，且当日恰好为对应基金分红日，标志着选择了分红再投入的方式，否则默认分红拿现金
+    1. 小数点后第二位如果是5，且当日恰好为对应基金分红日，标志着选择了分红再投入的方式，否则默认分红拿现金。（该默认行为可反转）
 
     2. 对于赎回的负数，如果是一个绝对值小于 0.005 的数，标记了赎回的份额占当时总份额的比例而非赎回的份额数目，
     其中0.005对应全部赎回，线性类推。eg. 0.001对应赎回20%。
 
+    关于基金行为的设定，基金份额是四舍五入0 还是全部舍弃 1， 基金是默认现金分红 0 还是分红再投 2， 基金是赎回数目对应份额 0 还是金额 4 （只支持货币基金），
+    将三个选项加起来得到 0-7 的数字，代表了基金的交易性质，默认全部为0。该性质即可以记录在 matrix 形式记账单紧贴基金代码行头的下一行，同时 record 读取时，
+    ``record(path, fund_property=True)`` 设定 fund_property 参数, 或直接在记账单第二行日期栏写上 property 即可。每个基金代码对应一个 0 到 7 的数字。
+    也可为空，默认为 0。
+
+    此外如不改变记账单，也可在 :class:`xalpha.multiple.mul` 类初始化时，传入 property=dict, 字典内容为 {"基金代码"：0-7 数字}。默认为0的代码可不添加。
+
     :param path: string for the csv file path
+    :param format: str. Default is "matrix". Can also be "list"。list 形式的账单更类似流水单。总共三列，每行由日期基金号和金额组成。
+                三栏标题分别为 date，fund 和 trade。其中日期的形式是 %Y/%m/%d. 该形式与默认的 matrix 不包含 "/" 不同。
+    :param fund_property: bool. Default False. If True, 基金号下第一行的数字标记对应基金参数（暂时只支持 matrix 形式账单）。
     :param readkwds: keywords options for pandas.read_csv() function. eg. skiprows=1, skipfooter=2,
         see more on `pandas doc <https://pandas.pydata.org/pandas-docs/stable/generated/pandas.read_csv.html>`_.
     """
 
-    def __init__(self, path="input.csv", format="matrix", **readkwds):
+    def __init__(
+        self, path="input.csv", format="matrix", fund_property=False, **readkwds
+    ):
         df = pd.read_csv(path, **readkwds)
+        if df.iloc[0]["date"] == "property":
+            fund_property = True
         if format == "matrix":
-            df.date = [
-                # pd.Timestamp.strptime(str(int(df.iloc[i].date)), "%Y%m%d")
-                # higher version of pandas timestamp doesn't support strptime anymore? why? what is the gain here?
-                pd.to_datetime(str(int(df.iloc[i].date)), format="%Y%m%d")
-                for i in range(len(df))
-            ]
             df.fillna(0, inplace=True)
-            self.status = df
+            if fund_property:
+                self.property = df.iloc[0]
+                df2 = df.iloc[1:]
+                df2.date = [
+                    # pd.Timestamp.strptime(str(int(df.iloc[i].date)), "%Y%m%d")
+                    # higher version of pandas timestamp doesn't support strptime anymore? why? what is the gain here?
+                    pd.to_datetime(str(int(df2.iloc[i].date)), format="%Y%m%d")
+                    for i in range(len(df2))
+                ]
+                self.status = df2
+            else:
+                df.date = [
+                    pd.to_datetime(str(int(df.iloc[i].date)), format="%Y%m%d")
+                    for i in range(len(df))
+                ]
+                self.status = df
+
         elif format == "list":
             fund = df.fund.unique()
             fund_s = ["{:06d}".format(i) for i in fund]
@@ -45,7 +69,6 @@ class record:
                 columns=["date"] + fund_s, index=date_s, dtype="float64"
             )
             dfnew.fillna(0, inplace=True)
-            # dfnew["date"] = [pd.Timestamp.strptime(i, "%Y/%m/%d") for i in date_s]
             dfnew["date"] = [pd.to_datetime(i, format="%Y/%m/%d") for i in date_s]
             for i in range(len(df)):
                 dfnew.at[df.iloc[i].date, "{:06d}".format(df.iloc[i].fund)] += df.iloc[

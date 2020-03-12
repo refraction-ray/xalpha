@@ -291,7 +291,7 @@ def get_daily(code, start=None, end=None, prev=365, _from=None):
         else:
             _from = "xueqiu"
 
-    count = (end_obj - start_obj).days + 1
+    count = (today_obj() - start_obj).days + 1
     start_str = start_obj.strftime("%Y/%m/%d")
     end_str = end_obj.strftime("%Y/%m/%d")
 
@@ -428,11 +428,12 @@ def reset_cache():
 def cached(s):
     """
     Usage as follows:
-    .. code:: python
 
-        @cached("20170101")
-        def get_daily(*args, **kws):
-            return xa.get_daily(*args, **kws)
+    .. code-block:: python
+
+       @cached("20170101")
+       def get_daily(*args, **kws):
+          return xa.get_daily(*args, **kws)
 
     Automatically cache the result in memory and avoid refetching
     :param s: str. eg. "20160101", the starting date of cached table.

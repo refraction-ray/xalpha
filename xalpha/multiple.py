@@ -10,6 +10,7 @@ from pyecharts.charts import Pie, ThemeRiver
 from xalpha.cons import convert_date, myround, pie_opts, yesterdaydash, yesterdayobj
 from xalpha.evaluate import evaluate
 from xalpha.exceptions import FundTypeError, TradeBehaviorError
+from xalpha.record import record
 from xalpha.indicator import indicator
 from xalpha.info import cashinfo, fundinfo, mfundinfo
 from xalpha.trade import bottleneck, trade, turnoverrate, vtradevolume, xirrcal
@@ -21,7 +22,9 @@ class mul:
 
     :param fundtradeobj: list of trade obj which you want to analyse together
     :param status: the status table of trade, all code in this table would be considered.
-        one must provide one of the two paramters, if both are offered, status will be overlooked
+            one must provide one of the two paramters, if both are offered, status will be overlooked
+    :param property: Dict[fundcode, property_number]. property number 的解释：
+            int. 1: 基金申购采取分位以后全舍而非四舍五入（这种基金是真实存在的==）。2：基金默认分红再投入（0 则是默认现金分红）。4：基金赎回按净值处理（暂时只支持货币基金，事实上无法精确支持按份额赎回的净值型基金）。将想要的性质数值相加即可，类似 *nix 上的 xwr 系统。
     :param fetch: boolean, when open the fetch option, info class will try fetching from local files first in the init
     :param save: boolean, when open the save option, info classes automatically save the class to files
     :param path: string, the file path prefix of IO, or object or engine from sqlalchemy to connect sql database
@@ -29,19 +32,44 @@ class mul:
     """
 
     def __init__(
-        self, *fundtradeobj, status=None, fetch=False, save=False, path="", form="csv"
+        self,
+        *fundtradeobj,
+        status=None,
+        property=None,
+        fetch=False,
+        save=False,
+        path="",
+        form="csv"
     ):
+        if isinstance(status, record):
+            if not property:
+                property = getattr(status, "property", {})
+            status = status.status
+        elif not property:
+            property = {}
+
         if not fundtradeobj:
             # warning: not a very good way to automatic generate these fund obj
             # because there might be some funds use round_down for share calculation, ie, label=2 must be given
             # unless you are sure corresponding funds are added to the droplist
             fundtradeobj = []
             for code in status.columns[1:]:
+                # r1, d2, v4 p = r+d+v
+                p = property.get(code, 0)
+                round_label = p % 2
+                dividend_label = ((p - round_label) / 2) % 2
+                value_label = ((p - round_label - dividend_label) / 4) % 2
                 try:
                     fundtradeobj.append(
                         trade(
                             fundinfo(
-                                code, fetch=fetch, save=save, path=path, form=form
+                                code,
+                                round_label=round_label,
+                                dividend_label=dividend_label,
+                                fetch=fetch,
+                                save=save,
+                                path=path,
+                                form=form,
                             ),
                             status,
                         )
@@ -50,7 +78,13 @@ class mul:
                     fundtradeobj.append(
                         trade(
                             mfundinfo(
-                                code, fetch=fetch, save=save, path=path, form=form
+                                code,
+                                round_label=round_label,
+                                value_label=value_label,
+                                fetch=fetch,
+                                save=save,
+                                path=path,
+                                form=form,
                             ),
                             status,
                         )
@@ -235,8 +269,8 @@ class mul:
         visualization on trade summary of the funds combination
 
         :param freq: one character string, frequency label, now supporting D for date,
-        W for week and M for month, namely the trade volume is shown based on the time unit
-        :returns: pyecharts.Bar()
+            W for week and M for month, namely the trade volume is shown based on the time unit
+        :returns: ``pyecharts.Bar()``
         """
         return vtradevolume(self.totcftable, freq=freq)
 
@@ -248,7 +282,9 @@ class mulfix(mul, indicator):
 
     :param fundtradeobj: trade obj to be include
     :param status: status table,  if no trade obj is provided, it will include all fund
-        based on code in status table
+            based on code in status table
+    :param property: Dict[fundcode, property_number]. property number 的解释：
+            int. 1: 基金申购采取分位以后全舍而非四舍五入（这种基金是真实存在的==）。2：基金默认分红再投入（0 则是默认现金分红）。4：基金赎回按净值
     :param fetch: boolean, when open the fetch option, info class will try fetching from local files first in the init
     :param save: boolean, when open the save option, info classes automatically save the class to files
     :param path: string, the file path prefix of IO, or object or engine from sqlalchemy to connect sql database
@@ -261,6 +297,7 @@ class mulfix(mul, indicator):
         self,
         *fundtradeobj,
         status=None,
+        property=None,
         fetch=False,
         save=False,
         path="",
@@ -269,7 +306,13 @@ class mulfix(mul, indicator):
         cashobj=None
     ):
         super().__init__(
-            *fundtradeobj, status=status, fetch=fetch, save=save, path=path, form=form
+            *fundtradeobj,
+            status=status,
+            property=property,
+            fetch=fetch,
+            save=save,
+            path=path,
+            form=form
         )
         if cashobj is None:
             cashobj = cashinfo()

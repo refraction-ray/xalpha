@@ -77,7 +77,7 @@ def test_index():
 
 
 def test_fund():
-    assert hs300.label == 2
+    assert hs300.round_label == 1
     assert hs300.name == "景顺长城沪深300指数增强"  ## "景顺长城沪深300增强", 蜜汁改名。。。
     assert hs300.fenhongdate[1] == pd.Timestamp("2017-08-15")
     assert (

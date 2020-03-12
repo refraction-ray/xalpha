@@ -93,7 +93,9 @@ class rtdata:
         )
 
 
-def rfundinfo(code, label=1, fetch=False, save=False, path="", form="csv"):
+def rfundinfo(
+    code, round_label=0, dividend_label=0, fetch=False, save=False, path="", form="csv"
+):
     """
     give a fundinfo object with todays estimate netvalue at running time
 
@@ -104,7 +106,15 @@ def rfundinfo(code, label=1, fetch=False, save=False, path="", form="csv"):
     :param form: string, the format of IO, options including: 'csv'
     :returns: the fundinfo object
     """
-    fundobj = fundinfo(code, label=label, fetch=fetch, save=save, path=path, form=form)
+    fundobj = fundinfo(
+        code,
+        round_label=round_label,
+        dividend_label=dividend_label,
+        fetch=fetch,
+        save=save,
+        path=path,
+        form=form,
+    )
     rt = rtdata(code)
     rtdate = dt.datetime.combine(rt.time, dt.time.min)
     rtvalue = rt.rtvalue

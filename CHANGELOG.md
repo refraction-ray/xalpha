@@ -1,8 +1,12 @@
 # Changelog
 ## Unreleased
+### fixed
+* 雪球数据获取，设定 end 之后的问题造成起点偏移，已解决。
+### added
+* 全新的基金特性设定接口，包括四舍五入机制，金额赎回记录，和分红默认行为切换，均可以通过记账单第一行或 mul 类传入 property 字典来设定，且完全向后兼容。
 
 ## v0.3.2 - 2020.03.11
-### Fixed
+### fixed
 * 通过 get_daily 获取的基金和雪球数据日线，不包括 end 和 start 两天，已修正为包括。
 ### changed
 * 增加 rget 和 rpost 容错，使得 universal 部分的下载更稳定。
