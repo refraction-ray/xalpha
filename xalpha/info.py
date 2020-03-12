@@ -115,7 +115,7 @@ class basicinfo(indicator):
         save=False,
         path="",
         form="csv",
-        round_label=1,
+        round_label=0,
         dividend_label=0,
         value_label=0,
     ):
