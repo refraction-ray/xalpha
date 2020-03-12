@@ -673,13 +673,16 @@ class indexinfo(basicinfo):
 
     :param code: string with seven digitals! note the code here has an extra digit at the beginning,
         0 for sh and 1 for sz.
+    :param value_label: int, default 0 or 1. If set to 1, 记账单数字按金额赎回。
     :param fetch: boolean, when open the fetch option, the class will try fetching from local files first in the init
     :param save: boolean, when open the save option, automatically save the class to files
     :param path: string, the file path prefix of IO
     :param form: string, the format of IO, options including: 'csv'
     """
 
-    def __init__(self, code, fetch=False, save=False, path="", form="csv"):
+    def __init__(
+        self, code, value_label=0, fetch=False, save=False, path="", form="csv"
+    ):
         date = yesterday()
         self.rate = 0
         self._url = (
@@ -689,7 +692,9 @@ class indexinfo(basicinfo):
             + date
             + "&fields=TCLOSE"
         )
-        super().__init__(code, fetch=fetch, save=save, path=path, form=form)
+        super().__init__(
+            code, value_label=value_label, fetch=fetch, save=save, path=path, form=form
+        )
 
     def _basic_init(self):
         raw = _download(self._url)
@@ -803,13 +808,14 @@ class cashinfo(basicinfo):
 
     :param interest: float, daily rate in the unit of 100%, note this is not a year return rate!
     :param start: str of date or dateobj, the virtual starting date of the cash fund
+    :param value_label: int, default 0 or 1. If set to 1, 记账单数字按金额赎回。
     """
 
-    def __init__(self, interest=0.0001, start="2012-01-01"):
+    def __init__(self, interest=0.0001, start="2012-01-01", value_label=0):
         self.interest = interest
         start = convert_date(start)
         self.start = start
-        super().__init__("mf")
+        super().__init__("mf", value_label=value_label)
 
     def _basic_init(self):
         self.name = "货币基金"
