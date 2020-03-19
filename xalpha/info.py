@@ -23,6 +23,7 @@ from xalpha.cons import (
     yesterdayobj,
     today,
     connection_errors,
+    rget,
 )
 from xalpha.exceptions import FundTypeError, TradeBehaviorError
 from xalpha.indicator import indicator
@@ -90,6 +91,116 @@ def _nfloat(string):
                 print("The comment col cannot be converted: %s" % string)
                 result = string
     return result
+
+
+class FundReport:
+    """
+    提供查看各种基金报告的接口
+    """
+
+    def __init__(self, code):
+        self.code = code
+        r = rget(
+            "http://api.fund.eastmoney.com/f10/JJGG?callback=&fundcode={code}&pageIndex=1&pageSize=20&type={type_}".format(
+                code=code, type_="3"
+            ),
+            headers={
+                "Referer": "http://fundf10.eastmoney.com/jjgg_{code}_3.html".format(
+                    code=code
+                )
+            },
+        )
+        self.report_list = r.json()["Data"]
+        self.report_detail = {}
+
+    def get_report(self, no=0, id_=None):
+        """
+
+        :param no: int。在type_=3 中的第no个报告。
+        :param id_: id 可由 :meth:`show_report_list` 中条目的对应 ID 得到
+        :return:
+        """
+        if id_:
+            report_url = "http://fund.eastmoney.com/gonggao/{code},{id_}.html".format(
+                code=self.code, id_=id_
+            )
+            r = rget(report_url)
+            b = BeautifulSoup(r.text, "lxml")
+            seasonr = b.find("pre")
+            sr = [s.string.strip() for s in seasonr.findAll("p") if s.string]
+            return sr
+
+        if not self.report_detail.get(no):
+            report_url = "http://fund.eastmoney.com/gonggao/{code},{id_}.html".format(
+                code=self.code, id_=self.report_list[no]["ID"]
+            )
+            r = rget(report_url)
+            b = BeautifulSoup(r.text, "lxml")
+            seasonr = b.find("pre")
+            sr = [s.string.strip() for s in seasonr.findAll("p") if s.string]
+            self.report_detail[no] = sr
+
+        return self.report_detail[no]
+
+    def show_report_list(self, type_=3):
+        """
+
+        :param type_: int。第0栏，第1栏，每栏的含义，请参照天天基金基金报告的页面。
+        :return:
+        """
+        r = rget(
+            "http://api.fund.eastmoney.com/f10/JJGG?callback=&fundcode={code}&pageIndex=1&pageSize=20&type={type_}".format(
+                code=self.code, type_=str(type_)
+            ),
+            headers={
+                "Referer": "http://fundf10.eastmoney.com/jjgg_{code}_3.html".format(
+                    code=self.code
+                )
+            },
+        )
+        return r.json()["Data"]
+
+    def analyse_report(self, no=0):
+        l = self.get_report(no)
+        d = {}
+        d["title"] = ""
+        for s in l[:5]:
+            if s.startswith("基金管理"):
+                break
+            d["title"] += s + " "
+        for i, s in enumerate(l):
+            if s.startswith("业绩比较基准"):
+                ss = [s for s in s.split("  ") if s.strip()]
+                if len(ss) == 2:
+                    if l[i + 1][0] != "本":
+                        d["benchmark"] = ss[-1] + l[i + 1]
+                    else:
+                        d["benchmark"] = ss[-1]
+            elif s.startswith("基金管理人"):
+                ss = [s for s in s.split("  ") if s.strip()]
+                if len(ss) == 2:
+                    d["company"] = ss[-1]
+            elif s.startswith("基金托管人"):
+                ss = [s for s in s.split("  ") if s.strip()]
+                if len(ss) == 2:
+                    d["bank"] = ss[-1]
+            elif s.startswith("场内简称"):
+                ss = [s for s in s.split("  ") if s.strip()]
+                if len(ss) == 2:
+                    d["shortname"] = ss[-1]
+            elif s.startswith("基金主代码"):
+                ss = [s for s in s.split("  ") if s.strip()]
+                if len(ss) == 2:
+                    d["code"] = ss[-1]
+            elif s.startswith("报告期末基金份额总额"):
+                ss = [s for s in s.split("  ") if s.strip()]
+                if len(ss) == 2:
+                    d["share"] = ss[-1]
+            elif s.startswith("基金合同生效日"):
+                ss = [s for s in s.split("  ") if s.strip()]
+                if len(ss) == 2:
+                    d["start_date"] = ss[-1]
+        return d
 
 
 class basicinfo(indicator):

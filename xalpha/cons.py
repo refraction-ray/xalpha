@@ -5,6 +5,7 @@ basic constants and utility functions
 
 import datetime as dt
 import os
+import time
 from decimal import Decimal
 import requests
 
@@ -147,3 +148,29 @@ def convert_date(date):
         return pd.Timestamp(date)
     else:
         return date
+
+
+def rget(*args, **kws):
+    tries = 5
+    for count in range(tries):
+        try:
+            r = requests.get(*args, **kws)
+            return r
+        except connection_errors as e:
+            if count == tries - 1:
+                print(*args, sep="\n")
+                raise e
+            time.sleep(1)
+
+
+def rpost(*args, **kws):
+    tries = 5
+    for count in range(tries):
+        try:
+            r = requests.post(*args, **kws)
+            return r
+        except connection_errors as e:
+            if count == tries - 1:
+                print(*args, sep="\n")
+                raise e
+            time.sleep(1)

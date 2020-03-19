@@ -13,6 +13,14 @@ hs300 = xa.fundinfo("000311")
 zogqb = xa.mfundinfo("001211", **ioconf)
 
 
+def test_fundreport():
+    r = xa.FundReport("000827")
+    assert r.get_report()[0][:2] == "广发"
+    assert r.analyse_report(1)["benchmark"][:3] == "本基金"
+    assert r.show_report_list(type_=0)[0]["FUNDCODE"] == "000827"
+    assert r.get_report(id_="AN202003171376532533")[0][:2] == "广发"
+
+
 def test_cash():
     assert (
         round(ca.price[ca.price["date"] == "2018-01-02"].iloc[0].netvalue, 4) == 1.2453

@@ -1,6 +1,8 @@
 # Changelog
 ## Unreleased
+### added
 * 增加了场内数据记账单和交易的分析处理
+* 增加了查看基金报告的类 FundReport
 
 ## v0.4.0 - 2020.03.12
 ### fixed

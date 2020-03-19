@@ -4,41 +4,13 @@ modules for universal fetcher that gives historical daily data and realtime data
 for almost everything in the market
 """
 
-import requests
-import time
 import datetime as dt
 import pandas as pd
 from bs4 import BeautifulSoup
 from functools import wraps
 
 from xalpha.info import fundinfo, mfundinfo
-from xalpha.cons import connection_errors
-
-
-def rget(*args, **kws):
-    tries = 5
-    for count in range(tries):
-        try:
-            r = requests.get(*args, **kws)
-            return r
-        except connection_errors as e:
-            if count == tries - 1:
-                print(*args, sep="\n")
-                raise e
-            time.sleep(1)
-
-
-def rpost(*args, **kws):
-    tries = 5
-    for count in range(tries):
-        try:
-            r = requests.post(*args, **kws)
-            return r
-        except connection_errors as e:
-            if count == tries - 1:
-                print(*args, sep="\n")
-                raise e
-            time.sleep(1)
+from xalpha.cons import rget, rpost
 
 
 def today_obj():
