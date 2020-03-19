@@ -6,8 +6,8 @@ import xalpha.policy
 import xalpha.remain
 from xalpha.evaluate import evaluate
 from xalpha.info import fundinfo, indexinfo, cashinfo, mfundinfo
-from xalpha.multiple import mul, mulfix
+from xalpha.multiple import mul, mulfix, imul
 from xalpha.realtime import rfundinfo, review
-from xalpha.record import record
-from xalpha.trade import trade
+from xalpha.record import record, irecord
+from xalpha.trade import trade, itrade
 from xalpha.universal import get_daily, get_rt

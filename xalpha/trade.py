@@ -11,9 +11,11 @@ from pyecharts.options import AxisOpts, DataZoomOpts
 import xalpha.remain as rm
 from xalpha.cons import convert_date, line_opts, myround, xirr, yesterdayobj
 from xalpha.exceptions import ParserFailure, TradeBehaviorError
+from xalpha.record import irecord
+from xalpha.universal import get_daily, get_rt
 
 
-def xirrcal(cftable, trades, date, guess):
+def xirrcal(cftable, trades, date, guess=0.1):
     """
     calculate the xirr rate
 
@@ -33,11 +35,16 @@ def xirrcal(cftable, trades, date, guess):
     cashflow = [(row["date"], row["cash"]) for i, row in partcftb.iterrows()]
     rede = 0
     for fund in trades:
-        rede += fund.aim.shuhui(
-            fund.briefdailyreport(date).get("currentshare", 0),
-            date,
-            fund.remtable[fund.remtable["date"] <= date].iloc[-1].rem,
-        )[1]
+        if not isinstance(fund, itrade):
+            rede += fund.aim.shuhui(
+                fund.briefdailyreport(date).get("currentshare", 0),
+                date,
+                fund.remtable[fund.remtable["date"] <= date].iloc[-1].rem,
+            )[1]
+        else:  # 场内交易
+            pricedf = get_daily(fund.code, end=date.strftime("%Y%m%d"), prev=20)
+            price = pricedf[pricedf.date <= date].iloc[-1]["close"]
+            rede += fund.cftable.share.sum() * price
     cashflow.append((date, rede))
     return xirr(cashflow, guess)
 
@@ -166,6 +173,8 @@ class trade:
     def __init__(self, infoobj, status):
         self.aim = infoobj
         code = self.aim.code
+        self.code = code
+        self.name = self.aim.name
         self.cftable = pd.DataFrame([], columns=["date", "cash", "share"])
         self.remtable = pd.DataFrame([], columns=["date", "rem"])
         self.status = status.loc[:, ["date", code]]
@@ -319,20 +328,14 @@ class trade:
         return xirrcal(self.cftable, [self], date, guess)
 
     def dailyreport(self, date=yesterdayobj()):
-        """
-        breif report dict of certain date status on the fund investment
-
-        :param date: string or obj of date, show info of the date given
-        :returns: dict of various data on the trade positions
-        """
         date = convert_date(date)
         partcftb = self.cftable[self.cftable["date"] <= date]
-        value = self.aim.price[self.aim.price["date"] <= date].iloc[-1].netvalue
+        value = self.get_netvalue(date)
 
         if len(partcftb) == 0:
             reportdict = {
-                "基金名称": [self.aim.name],
-                "基金代码": [self.aim.code],
+                "基金名称": [self.name],
+                "基金代码": [self.code],
                 "当日净值": [value],
                 "持有份额": [0],
                 "基金现值": [0],
@@ -366,8 +369,8 @@ class trade:
             returnrate = round((ereturn / btnk) * 100, 4)
 
         reportdict = {
-            "基金名称": [self.aim.name],
-            "基金代码": [self.aim.code],
+            "基金名称": [self.name],
+            "基金代码": [self.code],
             "当日净值": [value],
             "单位成本": [unitcost],
             "持有份额": [currentshare],
@@ -383,6 +386,9 @@ class trade:
         df = pd.DataFrame(reportdict, columns=reportdict.keys())
         return df
 
+    def get_netvalue(self, date=yesterdayobj()):
+        return self.aim.price[self.aim.price["date"] <= date].iloc[-1].netvalue
+
     def briefdailyreport(self, date=yesterdayobj()):
         """
         quick summary of highly used attrs for trade
@@ -395,7 +401,7 @@ class trade:
         if len(partcftb) == 0:
             return {}
 
-        unitvalue = self.aim.price[self.aim.price["date"] <= date].iloc[-1].netvalue
+        unitvalue = self.get_netvalue(date)
         currentshare = myround(sum(partcftb.loc[:, "share"]))
         currentvalue = myround(currentshare * unitvalue)
 
@@ -498,3 +504,46 @@ overlap.add(self.v_tradecost())
 overlap.add(self.v_tradevolume(bar_category_gap='95%'), yaxis_index=1,is_add_yaxis=True)
 overlap
 """
+
+
+class itrade(trade):
+    """
+    场内交易，只包含 cftable 现金流表
+    """
+
+    def __init__(self, code, status, name=None):
+        """
+
+        :param code: str. 代码格式与 :func:`xalpha.universal.get_daily` 要求相同
+        :param status: 记账单或 irecord 类。
+        :param name: Optional[str]. 可提供标的名称。
+        """
+        self.code = code
+        if isinstance(status, irecord):
+            self.status = status.filter(code)
+        else:
+            self.status = status[status.code == code]
+        # self.cftable = pd.DataFrame([], columns=["date", "cash", "share"])
+        self._arrange()
+        if not name:
+            try:
+                self.name = get_rt(code)["name"]
+            except:
+                self.name = code
+
+    def _arrange(self):
+        d = {"date": [], "cash": [], "share": []}
+        for _, r in self.status.iterrows():
+            d["date"].append(r.date)
+            d["cash"].append(-r.value * r.share - r.fee)  # 手续费总是正的，和买入同号
+            d["share"].append(r.share)
+        self.cftable = pd.DataFrame(d)
+
+    def v_totvalue(self, end=yesterdayobj(), vopts=None):
+        raise NotImplementedError()
+
+    def v_tradecost(self, start=None, end=yesterdayobj(), vopts=None):
+        raise NotImplementedError()
+
+    def get_netvalue(self, date=yesterdayobj()):
+        return get_daily(self.code, end=date.strftime("%Y%m%d"), prev=20).iloc[-1].close

@@ -110,3 +110,36 @@ class record:
             `pandas doc <https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.to_csv.html>`_.
         """
         self.status.to_csv(path, index=index, **tocsvkwds)
+
+
+class irecord(record):
+    """
+    场内记账单抽象。对于场内交易，记账单毫无疑问需要记录净值，而无法依赖自动查询（因为净值实时变化）。
+    记账单的格式为5列，分别为 date，code，value，share，fee。日期格式为%Y%m%d, 例 20200202。
+    代码格式与 :func:`xalpha.universal.get_daily` 要求相同。对于常见的 A 股标的，格式为 SH501018。
+    value 列记录买入卖出或场内申购赎回对应的成交净值单价。share 记录实际上份额的增减，正数代表买入。
+    fee 栏对应了每笔交易实际的佣金，也可不记录，则默认均为0。记账单不要求严格按时间排序。
+    该类处理的记账单可以提供给 :class:`xalpha.trade.itrade` 和 :class:`xalpha.multiple.imul` 使用，进行场内交易的整合分析。
+    """
+
+    def __init__(self, path="input.csv", **readkwds):
+        df = pd.read_csv(path, **readkwds)
+        df.fillna(0, inplace=True)
+        df.date = [
+            pd.to_datetime(df.iloc[i].date, format="%Y%m%d") for i in range(len(df))
+        ]
+        if "fee" not in df.columns:
+            df = df.assign(fee=[0] * len(df))
+        df = df.sort_values(by="date", ascending=True)
+        self.status = df
+
+    def filter(self, code, start=None, end=None):
+        df = self.status[self.status["code"] == code]
+        if start:
+            df = df[df["date"] >= start]
+        if end:
+            df = df[df["date"] <= end]
+        return df
+
+    def sellout(self, date=yesterdayobj(), ratio=1):
+        raise NotImplementedError()

@@ -10,10 +10,10 @@ from pyecharts.charts import Pie, ThemeRiver
 from xalpha.cons import convert_date, myround, pie_opts, yesterdaydash, yesterdayobj
 from xalpha.evaluate import evaluate
 from xalpha.exceptions import FundTypeError, TradeBehaviorError
-from xalpha.record import record
+from xalpha.record import record, irecord
 from xalpha.indicator import indicator
 from xalpha.info import cashinfo, fundinfo, mfundinfo
-from xalpha.trade import bottleneck, trade, turnoverrate, vtradevolume, xirrcal
+from xalpha.trade import bottleneck, trade, turnoverrate, vtradevolume, xirrcal, itrade
 
 
 class mul:
@@ -217,7 +217,7 @@ class mul:
         """
         sdata = sorted(
             [
-                (fob.aim.name, fob.briefdailyreport(date).get("currentvalue", 0))
+                (fob.name, fob.briefdailyreport(date).get("currentvalue", 0))
                 for fob in self.fundtradeobj
             ],
             key=lambda x: x[1],
@@ -242,11 +242,7 @@ class mul:
         for date in times:
             sdata = sorted(
                 [
-                    (
-                        date,
-                        fob.briefdailyreport(date).get("currentvalue", 0),
-                        fob.aim.name,
-                    )
+                    (date, fob.briefdailyreport(date).get("currentvalue", 0), fob.name,)
                     for fob in self.fundtradeobj
                 ],
                 key=lambda x: x[1],
@@ -256,7 +252,7 @@ class mul:
 
         tr = ThemeRiver()
         tr.add(
-            series_name=[foj.aim.name for foj in self.fundtradeobj],
+            series_name=[foj.name for foj in self.fundtradeobj],
             data=tdata,
             label_opts=opts.LabelOpts(is_show=False),
             singleaxis_opts=opts.SingleAxisOpts(type_="time", pos_bottom="10%"),
@@ -360,3 +356,25 @@ class mulfix(mul, indicator):
         for fund in self.fundtradeobj:
             res += fund.briefdailyreport(date).get("currentvalue", 0)
         return res / self.totmoney
+
+
+# TODO: better approach to further merge mul and imul?
+class imul(mul):
+    def __init__(self, *fundtradeobj, status=None):
+        """
+        对场内投资组合进行分析的类
+
+        :param fundtradeobj: itrade objects.
+        :param status: 场内格式记账单，或 irecord 对象。
+        """
+        if isinstance(status, irecord):
+            status = status.status
+        if not fundtradeobj:
+            fundtradeobj = []
+            for code in status.code.unique():
+                fundtradeobj.append(itrade(code, status))
+        self.fundtradeobj = tuple(fundtradeobj)
+        self.totcftable = self._mergecftb()
+
+    def evaluation(self, start=None):
+        raise NotImplementedError()
