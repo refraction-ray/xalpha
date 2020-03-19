@@ -28,6 +28,8 @@ class record:
 
     此外如不改变记账单，也可在 :class:`xalpha.multiple.mul` 类初始化时，传入 property=dict, 字典内容为 {"基金代码"：0-7 数字}。默认为0的代码可不添加。
 
+    对于不同格式的记账单的例子，可在 github repo 中 tests 文件夹内的 demo*.csv 参考。
+
     :param path: string for the csv file path
     :param format: str. Default is "matrix". Can also be "list"。list 形式的账单更类似流水单。总共三列，每行由日期基金号和金额组成。
                 三栏标题分别为 date，fund 和 trade。其中日期的形式是 %Y/%m/%d. 该形式与默认的 matrix 不包含 "/" 不同。
