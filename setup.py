@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="xalpha",
-    version="0.4.0",
+    version="0.5.0",
     author="refraction-ray",
     author_email="refraction-ray@protonmail.com",
     description="all about fund investment",
