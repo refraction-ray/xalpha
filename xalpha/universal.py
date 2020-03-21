@@ -164,7 +164,10 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
     count = (end_obj - start_obj).days + 1
     rl = []
     if count <= 360:
-        r = rpost(url.format(start_str=start_str, end_str=end_str, currency=currency))
+        r = rpost(
+            url.format(start_str=start_str, end_str=end_str, currency=currency),
+            headers={"user-agent": "Mozilla/5.0"},
+        )
         rl.extend(r.json()["records"])
     else:  # data more than 1 year cannot be fetched once due to API limitation
         sepo_obj = end_obj
@@ -176,7 +179,8 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
                     start_str=sepn_obj.strftime("%Y-%m-%d"),
                     end_str=sepo_obj.strftime("%Y-%m-%d"),
                     currency=currency,
-                )
+                ),
+                headers={"user-agent": "Mozilla/5.0"},
             )
             rl.extend(r.json()["records"])
 
@@ -187,7 +191,8 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
                 start_str=start_obj.strftime("%Y-%m-%d"),
                 end_str=sepo_obj.strftime("%Y-%m-%d"),
                 currency=currency,
-            )
+            ),
+            headers={"user-agent": "Mozilla/5.0"},
         )
         rl.extend(r.json()["records"])
     data = {"date": [], "close": []}
