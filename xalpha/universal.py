@@ -4,10 +4,12 @@ modules for universal fetcher that gives historical daily data and realtime data
 for almost everything in the market
 """
 
+import os
 import datetime as dt
 import pandas as pd
 from bs4 import BeautifulSoup
 from functools import wraps
+from sqlalchemy import exc
 
 from xalpha.info import fundinfo, mfundinfo
 from xalpha.cons import rget, rpost
@@ -63,7 +65,7 @@ def get_cninvesting(curr_id, st_date, end_date):
         data={
             "curr_id": curr_id,
             #  "smlID": smlID,  # ? but seems to be fixed with curr_id, it turns out it doesn't matter
-            "st_date": st_date,
+            "st_date": st_date,  # %Y/%m/%d
             "end_date": end_date,
             "interval_sec": "Daily",
             "sort_col": "date",
@@ -214,7 +216,7 @@ def get_fund(code):
     return df[["date", "close"]]
 
 
-def get_daily(code, start=None, end=None, prev=365, _from=None):
+def get_daily(code, start=None, end=None, prev=365, _from=None, **kws):
     """
     universal fetcher for daily historical data of literally everything has a value in market.
     数据来源包括天天基金，雪球，英为财情，外汇局官网
@@ -459,3 +461,96 @@ def cached(s):
         return wrapper
 
     return cached_start
+
+
+def cachedio(**ioconf):
+    """
+    用法类似:func:`cached`，只不过是硬盘级别的缓存
+
+    :param **ioconf: 可选关键字参数 backend: csv or sql, path: csv 文件夹或 sql engine， refresh True 会刷新结果，重新爬取， prefix 是 key 前统一部分
+    :return:
+    """
+
+    def cached(f):
+        @wraps(f)
+        def wrapper(*args, **kws):
+            if args:
+                code = args[0]
+            else:
+                code = kws.get("code")
+            date = ioconf.get("date", "date")
+            key = kws.get("key", code)
+            start = kws.get("start", None)
+            end = kws.get("end", None)
+            prefix = ioconf.get("prefix", "")
+            key = prefix + key
+            if not end:
+                end_obj = today_obj()
+            else:
+                end_obj = dt.datetime.strptime(
+                    end.replace("/", "").replace("-", ""), "%Y%m%d"
+                )
+            if not start:
+                start_obj = end_obj - dt.timedelta(days=365)
+            else:
+                start_obj = dt.datetime.strptime(
+                    start.replace("/", "").replace("-", ""), "%Y%m%d"
+                )
+            start_str = start_obj.strftime("%Y%m%d")
+            end_str = end_obj.strftime("%Y%m%d")
+            backend = ioconf.get("backend")
+            refresh = ioconf.get("refresh", False)
+            path = ioconf.get("path")
+            if not backend:
+                return f(*args, **kws)
+            else:
+                if backend == "csv":
+                    key = key + ".csv"
+                if refresh:
+                    df0 = f(*args, **kws)
+
+                else:  # non refresh
+                    try:
+                        if backend == "csv":
+                            df0 = pd.read_csv(os.path.join(path, key))
+                        elif backend == "sql":
+                            df0 = pd.read_sql(key, path)
+                        else:
+                            raise ValueError("no %s option for backend" % backend)
+                        df0[date] = pd.to_datetime(df0[date])
+                        # 向前延拓
+                        if df0.iloc[0][date] > start_obj:
+                            kws["start"] = start_str
+                            kws["end"] = (
+                                df0.iloc[0][date] - pd.Timedelta(days=1)
+                            ).strftime("%Y%m%d")
+                            df1 = f(*args, **kws)
+                            if len(df1) > 0:
+                                df0 = df1.append(df0, ignore_index=True)
+                        # 向后延拓
+                        if df0.iloc[-1][date] < end_obj:
+                            kws["start"] = (
+                                df0.iloc[-1][date] + pd.Timedelta(days=1)
+                            ).strftime("%Y%m%d")
+                            kws["end"] = end_str
+                            df2 = f(*args, **kws)
+                            if len(df2) > 0:
+                                df0 = df0.append(df2, ignore_index=True)
+
+                    except (FileNotFoundError, exc.ProgrammingError):
+                        df0 = f(*args, **kws)
+
+                if len(df0) > 0:
+                    if backend == "csv":
+                        df0.to_csv(os.path.join(path, key), index=False)
+                    elif backend == "sql":
+                        df0.to_sql(key, con=path, if_exists="replace", index=False)
+
+            df0 = df0[df0["date"] <= end_str]
+            df0 = df0[df0["date"] >= start_str]
+
+            return df0
+
+        return wrapper
+
+    return cached

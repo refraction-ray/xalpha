@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### added
+* 增加了持久化的透明缓存装饰器，用于保存平时的数据 `cachedio`。
 
 ## v0.5.0 - 2020.03.21
 ### added

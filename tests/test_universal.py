@@ -58,3 +58,19 @@ def test_cache():
     l2 = get_daily_cache("EUR/CNY", start="20190101")
     l3 = get_daily_cache("EUR/CNY", start="20180101")
     assert l2.iloc[0]["date"] == l3.iloc[0]["date"]
+
+
+def test_cache_io():
+    get_daily_csv = xa.universal.cachedio(path="./", prefix="pytest", backend="csv")(
+        xa.get_daily
+    )
+    df = get_daily_csv("SH501018", start="2020-01-24", end="2020/02/02")
+    assert len(df) == 0
+    df = get_daily_csv("SH501018", start="2020-01-23", end="20200203")
+    assert len(df) == 2
+    df = get_daily_csv("SH501018", start="2020-01-24", end="20200205")
+    assert len(df) == 3
+    df = get_daily_csv("SH501018", start="2020-01-23")
+    df = get_daily_csv("SH501018")
+    df = get_daily_csv("SH501018", end="2020-02-01")
+    assert df.iloc[0]["date"].strftime("%Y%m%d") == "20190201"
