@@ -1,7 +1,9 @@
 # Changelog
 ## Unreleased
 ### added
-* 增加了持久化的透明缓存装饰器，用于保存平时的数据 `cachedio`。
+* 增加了持久化的透明缓存装饰器，用于保存平时的数据 `cachedio`，同时支持 csv，数据库或内存缓存。
+* 增加了数据源提供商抽象层，并加入 jqdata 支持。
+* 提供了基于 jqdata 的指数历史估值系统，和估值总结类 `PEBHistory`。
 
 ## v0.5.0 - 2020.03.21
 ### added

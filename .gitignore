@@ -1,4 +1,5 @@
 htmlcov/
+*auth.txt
 pytest*.csv
 .idea/
 notification_my.py

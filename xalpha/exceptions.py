@@ -38,3 +38,11 @@ class ParserFailure(XalphaException):
     """
 
     pass
+
+
+class DataSourceNotFound(XalphaException):
+    """
+    Used when authentication required data source is not ready to use
+    """
+
+    pass

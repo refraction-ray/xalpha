@@ -3,6 +3,8 @@ import sys
 sys.path.insert(0, "../")
 import xalpha as xa
 
+xa.set_backend(backend="memory", prefix="pytest-")
+
 
 def test_get_xueqiu():
     df = xa.get_daily(start="20200302", end="2020-03-07", code="HK01810")
@@ -49,11 +51,12 @@ def test_get_xueqiu_rt():
 def test_get_investing_rt():
     assert xa.get_rt("currencies/usd-cny")["currency"] == None
     assert xa.get_rt("/indices/germany-30")["name"] == "德国DAX30指数 (GDAXI)"
-    assert isinstance(xa.get_rt("equities/pinduoduo")["current_ext"], float)
+    ext = xa.get_rt("equities/pinduoduo")["current_ext"]
+    assert isinstance(ext, float) or (ext is None)
 
 
 def test_cache():
-    get_daily_cache = xa.universal.cached("20190101")(xa.get_daily)
+    get_daily_cache = xa.universal.cached("20190101")(xa.universal._get_daily)
     l1 = get_daily_cache("EUR/CNY", start="20200101")
     l2 = get_daily_cache("EUR/CNY", start="20190101")
     l3 = get_daily_cache("EUR/CNY", start="20180101")
@@ -61,8 +64,8 @@ def test_cache():
 
 
 def test_cache_io():
-    get_daily_csv = xa.universal.cachedio(path="./", prefix="pytest", backend="csv")(
-        xa.get_daily
+    get_daily_csv = xa.universal.cachedio(path="./", prefix="pytest-", backend="csv")(
+        xa.universal._get_daily
     )
     df = get_daily_csv("SH501018", start="2020-01-24", end="2020/02/02")
     assert len(df) == 0
@@ -74,3 +77,13 @@ def test_cache_io():
     df = get_daily_csv("SH501018")
     df = get_daily_csv("SH501018", end="2020-02-01")
     assert df.iloc[0]["date"].strftime("%Y%m%d") == "20190201"
+
+
+def test_cache_mm():
+    df = xa.get_daily("SH501018", prev=100)
+    l1 = len(df)
+    xa.set_backend(backend="memory")
+    xa.get_daily("SH501018", prev=50)
+    df = xa.get_daily("SH501018", prev=100)
+    l2 = len(df)
+    assert l1 == l2

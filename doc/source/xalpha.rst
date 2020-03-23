@@ -49,6 +49,14 @@ xalpha.policy module
     :undoc-members:
     :show-inheritance:
 
+xalpha.provider module
+------------------------
+
+.. automodule:: xalpha.provider
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 xalpha.realtime module
 -------------------------
 

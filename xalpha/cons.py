@@ -8,6 +8,7 @@ import os
 import time
 from decimal import Decimal
 import requests
+from simplejson.errors import JSONDecodeError
 
 import pandas as pd
 from pyecharts.options import (
@@ -50,6 +51,7 @@ connection_errors = (
     ConnectionResetError,
     requests.exceptions.RequestException,
     requests.exceptions.ConnectionError,
+    JSONDecodeError,
 )
 
 line_opts = {
@@ -159,6 +161,21 @@ def rget(*args, **kws):
         except connection_errors as e:
             if count == tries - 1:
                 print(*args, sep="\n")
+                print("still wrong after several tries")
+                raise e
+            time.sleep(1)
+
+
+def rget_json(*args, **kws):
+    tries = 5
+    for count in range(tries):
+        try:
+            r = requests.get(*args, **kws)
+            return r.json()
+        except connection_errors as e:
+            if count == tries - 1:
+                print(*args, sep="\n")
+                print("still wrong after several tries")
                 raise e
             time.sleep(1)
 
@@ -172,5 +189,20 @@ def rpost(*args, **kws):
         except connection_errors as e:
             if count == tries - 1:
                 print(*args, sep="\n")
+                print("still wrong after several tries")
+                raise e
+            time.sleep(1)
+
+
+def rpost_json(*args, **kws):
+    tries = 5
+    for count in range(tries):
+        try:
+            r = requests.post(*args, **kws)
+            return r.json()
+        except connection_errors as e:
+            if count == tries - 1:
+                print(*args, sep="\n")
+                print("still wrong after several tries")
                 raise e
             time.sleep(1)

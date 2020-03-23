@@ -17,6 +17,7 @@ setuptools.setup(
     install_requires=[
         "lxml",
         "pandas",
+        "numpy",
         "scipy",
         "requests",
         "pyecharts>=1.1.0",
