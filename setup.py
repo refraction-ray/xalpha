@@ -19,6 +19,7 @@ setuptools.setup(
         "pandas",
         "numpy",
         "scipy",
+        "matplotlib",
         "requests",
         "pyecharts>=1.1.0",
         "beautifulsoup4",

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 codebase related to data API provider which require further authetications
 """

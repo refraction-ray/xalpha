@@ -14,7 +14,7 @@ def test_peb_history():
     xa.set_backend(backend="csv", path="./")
     h = xa.universal.PEBHistory("SH000807", end="20200223")
     h.summary()
-    h.v()
+    h.v()  # matplotlib is required for this
     assert round(h.df.iloc[0]["pe"], 2) == 19.67
 
 

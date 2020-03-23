@@ -8,6 +8,7 @@ import os
 import time
 from decimal import Decimal
 import requests
+from functools import wraps
 from simplejson.errors import JSONDecodeError
 
 import pandas as pd
@@ -152,57 +153,93 @@ def convert_date(date):
         return date
 
 
-def rget(*args, **kws):
-    tries = 5
-    for count in range(tries):
-        try:
-            r = requests.get(*args, **kws)
-            return r
-        except connection_errors as e:
-            if count == tries - 1:
-                print(*args, sep="\n")
-                print("still wrong after several tries")
-                raise e
-            time.sleep(1)
+def reconnect(tries=5):
+    def robustify(f):
+        @wraps(f)
+        def wrapper(*args, **kws):
+            for count in range(tries):
+                try:
+                    r = f(*args, **kws)
+                    return r
+                except connection_errors as e:
+                    if count == tries - 1:
+                        print(*args, sep="\n")
+                        print("still wrong after several tries")
+                        raise e
+                    time.sleep(0.5 * count)
+
+        return wrapper
+
+    return robustify
 
 
+rget = reconnect()(requests.get)
+rpost = reconnect()(requests.post)
+
+
+@reconnect()
 def rget_json(*args, **kws):
-    tries = 5
-    for count in range(tries):
-        try:
-            r = requests.get(*args, **kws)
-            return r.json()
-        except connection_errors as e:
-            if count == tries - 1:
-                print(*args, sep="\n")
-                print("still wrong after several tries")
-                raise e
-            time.sleep(1)
+    r = requests.get(*args, **kws)
+    return r.json()
 
 
-def rpost(*args, **kws):
-    tries = 5
-    for count in range(tries):
-        try:
-            r = requests.post(*args, **kws)
-            return r
-        except connection_errors as e:
-            if count == tries - 1:
-                print(*args, sep="\n")
-                print("still wrong after several tries")
-                raise e
-            time.sleep(1)
-
-
+@reconnect()
 def rpost_json(*args, **kws):
-    tries = 5
-    for count in range(tries):
-        try:
-            r = requests.post(*args, **kws)
-            return r.json()
-        except connection_errors as e:
-            if count == tries - 1:
-                print(*args, sep="\n")
-                print("still wrong after several tries")
-                raise e
-            time.sleep(1)
+    r = requests.post(*args, **kws)
+    return r.json()
+
+
+# def rget(*args, **kws):
+#     tries = 5
+#     for count in range(tries):
+#         try:
+#             r = requests.get(*args, **kws)
+#             return r
+#         except connection_errors as e:
+#             if count == tries - 1:
+#                 print(*args, sep="\n")
+#                 print("still wrong after several tries")
+#                 raise e
+#             time.sleep(0.5*count)
+#
+#
+# def rget_json(*args, **kws):
+#     tries = 5
+#     for count in range(tries):
+#         try:
+#             r = requests.get(*args, **kws)
+#             return r.json()
+#         except connection_errors as e:
+#             if count == tries - 1:
+#                 print(*args, sep="\n")
+#                 print("still wrong after several tries")
+#                 raise e
+#             time.sleep(0.5*count)
+#
+#
+# def rpost(*args, **kws):
+#     tries = 5
+#     for count in range(tries):
+#         try:
+#             r = requests.post(*args, **kws)
+#             return r
+#         except connection_errors as e:
+#             if count == tries - 1:
+#                 print(*args, sep="\n")
+#                 print("still wrong after several tries")
+#                 raise e
+#             time.sleep(0.5*count)
+#
+#
+# def rpost_json(*args, **kws):
+#     tries = 5
+#     for count in range(tries):
+#         try:
+#             r = requests.post(*args, **kws)
+#             return r.json()
+#         except connection_errors as e:
+#             if count == tries - 1:
+#                 print(*args, sep="\n")
+#                 print("still wrong after several tries")
+#                 raise e
+#             time.sleep(0.5*count)

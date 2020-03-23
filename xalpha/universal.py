@@ -27,7 +27,7 @@ except ImportError:
     pass
 
 from xalpha.info import fundinfo, mfundinfo
-from xalpha.cons import rget, rpost, rget_json, rpost_json
+from xalpha.cons import rget, rpost, rget_json, rpost_json, yesterday, opendate
 from xalpha.provider import data_source
 
 
@@ -54,14 +54,14 @@ def get_history(
     code, prefix="SH", count=365, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"
 ):
     url = "https://stock.xueqiu.com/v5/stock/chart/kline.json?symbol={prefix}{code}&begin={tomorrow}&period=day&type=before&count=-{count}"
-    data = rget(
+    data = rget_json(
         url.format(
             code=code, prefix=prefix, tomorrow=int(tomorrow_ts() * 1000), count=count
         ),
         cookies={"xq_a_token": token},
         headers={"user-agent": "Mozilla/5.0"},
     )
-    return data.json()
+    return data
 
 
 def ts2pdts(ts):
@@ -177,7 +177,7 @@ def _variate_ua():
 
 def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
     """
-    获取人民币汇率中间价
+    获取人民币汇率中间价, 该 API 官网数据源，稳定性很差
 
     :param start:
     :param end:
@@ -370,12 +370,11 @@ def _float(n):
 
 def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
     url = "https://stock.xueqiu.com/v5/stock/quote.json?symbol={code}&extend=detail"
-    r = rget(
+    r = rget_json(
         url.format(code=code),
         cookies={"xq_a_token": token},
         headers={"user-agent": "Mozilla/5.0"},
     )
-    r = r.json()
     n = r["data"]["quote"]["name"]
     q = r["data"]["quote"]["current"]
     q_ext = r["data"]["quote"].get("current_ext", None)
@@ -614,13 +613,12 @@ def cachedio(**ioconf):
                                 df0 = df1.append(df0, ignore_index=True)
                         # 向后延拓
                         if df0.iloc[-1][date] < end_obj:
-                            kws["start"] = (
-                                df0.iloc[-1][date] + pd.Timedelta(days=1)
-                            ).strftime("%Y%m%d")
+                            kws["start"] = (df0.iloc[-1][date]).strftime("%Y%m%d")
                             kws["end"] = end_str
                             df2 = f(*args, **kws)
                             if len(df2) > 0:
-                                df0 = df0.append(df2, ignore_index=True)
+                                df0 = df0.iloc[:-1].append(df2, ignore_index=True)
+                            # 注意这里抹去更新了原有最后一天的缓存，这是因为日线最新一天可能有实时数据污染
 
                     except (FileNotFoundError, exc.ProgrammingError, KeyError):
                         df0 = f(*args, **kws)
@@ -643,6 +641,17 @@ def cachedio(**ioconf):
         return wrapper
 
     return cached
+
+
+def check_cache(*args, debug=False, **kws):
+    if not debug:
+        assert (
+            _get_daily(*args, **kws)
+            .reset_index()
+            .equals(get_daily(*args, **kws).reset_index())
+        )
+    else:
+        return _get_daily(*args, **kws), get_daily(*args, **kws)
 
 
 @data_source("jq")
