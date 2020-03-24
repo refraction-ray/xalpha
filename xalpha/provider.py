@@ -38,7 +38,7 @@ def set_jq_data(user=None, pswd=None, persistent=False, debug=False):
             以后再使用 xalpha 则无须在输入密码调用该函数。请注意，如果这样做，你的聚宽账户和密码将保存在你的本地电脑，
             仅有简单编码，无加密保护。请谨慎权衡本地保存的使用便利性和聚宽账户的安全性。
             （如果你能保证使用 xalpha 的电脑不被黑，那么就没啥其他安全问题）
-    :param debug: Optional[bool]. Default False, if True, 那么不去真实验证聚宽数据源，而直接视为注册，非 debug 慎用。
+    :param debug: Optional[bool]. Default False, if True, 那么不去真实验证聚宽数据源，而直接视为注册，用于测试或者直接在聚宽研究环境运行时。
     :return:
     """
     if debug:

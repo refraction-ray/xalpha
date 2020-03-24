@@ -12,7 +12,7 @@ def test_jq_provider():
 
 def test_peb_history():
     xa.set_backend(backend="csv", path="./")
-    h = xa.universal.PEBHistory("SH000807", end="20200223")
+    h = xa.universal.PEBHistory("SH000807", end="20200302")
     h.summary()
     h.v()  # matplotlib is required for this
     assert round(h.df.iloc[0]["pe"], 2) == 19.67
