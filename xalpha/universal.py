@@ -647,8 +647,8 @@ def check_cache(*args, debug=False, **kws):
     if not debug:
         assert (
             _get_daily(*args, **kws)
-            .reset_index()
-            .equals(get_daily(*args, **kws).reset_index())
+            .reset_index(drop=True)
+            .equals(get_daily(*args, **kws).reset_index(drop=True))
         )
     else:
         return _get_daily(*args, **kws), get_daily(*args, **kws)

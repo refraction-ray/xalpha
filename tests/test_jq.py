@@ -20,7 +20,7 @@ def test_peb_history():
 
 def test_iw():
     xa.set_backend(backend="csv", path="./")
-    df = xa.get_daily("iw-399006.XSHE", end="20200303")
+    df = xa.get_daily("iw-399006.XSHE", end="20200226")
     assert (
         df[(df["date"] == "2019-04-01") & (df["code"] == "300271.XSHE")].iloc[0].weight
         == 0.9835
