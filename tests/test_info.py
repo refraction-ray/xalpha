@@ -153,9 +153,10 @@ def test_csvio():
     assert (len1 == len3) or (len1 - len3 == -1)
     delete_csvlines(path=ioconf["path"] + "001211.csv")
     zogqb2 = xa.mfundinfo("001211", **ioconf)
-    assert round(zogqb.price.iloc[-1].netvalue, 5) == round(
-        zogqb2.price.iloc[-1].netvalue, 5
-    )
+    assert round(zogqb.price.iloc[-1].netvalue, 5) in [
+        round(zogqb2.price.iloc[-1].netvalue, 5),
+        round(zogqb2.price.iloc[-2].netvalue, 5),
+    ]
     delete_csvlines(path=ioconf["path"] + "0000827.csv")
     zzhb2 = xa.indexinfo("0000827", **ioconf)
     assert (len(zzhb2.price) == len(zzhb.price)) or (
@@ -177,7 +178,10 @@ def test_fund_update():
     len3 = len(jxzl.price)
     delete_csvlines(path=ioconf["path"] + "002758.csv", lines=9)
     jxzl = xa.mfundinfo("002758", **ioconf)
-    netvalue2 = jxzl.price.iloc[-1]["netvalue"]
+    netvaluel = [
+        round(jxzl.price.iloc[-1]["netvalue"], 4),
+        round(jxzl.price.iloc[-2]["netvalue"], 4),
+    ]
     len4 = len(jxzl.price)
     assert (len3 == len4) or (len3 - len4 == -1)
-    assert round(netvalue, 4) == round(netvalue2, 4)
+    assert round(netvalue, 4) in netvaluel ##天天基金的总量 API 更新越来越慢了。。。
