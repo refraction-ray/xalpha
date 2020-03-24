@@ -150,7 +150,7 @@ def test_csvio():
     len3 = len(hs300.price)
     assert (len1 == len2) or (len1 - len2 == -1)  # temp fixup
     # there may be time lag for update of .js API, i.e. 天天基金的该 API 不一定能保证更新昨天的净值，即使不是 QDII
-    assert len1 == len3
+    assert (len1 == len3) or (len1 - len3 == -1)
     delete_csvlines(path=ioconf["path"] + "001211.csv")
     zogqb2 = xa.mfundinfo("001211", **ioconf)
     assert round(zogqb.price.iloc[-1].netvalue, 5) == round(
@@ -158,7 +158,9 @@ def test_csvio():
     )
     delete_csvlines(path=ioconf["path"] + "0000827.csv")
     zzhb2 = xa.indexinfo("0000827", **ioconf)
-    assert len(zzhb2.price) == len(zzhb.price)
+    assert (len(zzhb2.price) == len(zzhb.price)) or (
+        (len(zzhb2.price) - len(zzhb.price)) == 1
+    )
 
 
 def test_fund_update():
@@ -177,5 +179,5 @@ def test_fund_update():
     jxzl = xa.mfundinfo("002758", **ioconf)
     netvalue2 = jxzl.price.iloc[-1]["netvalue"]
     len4 = len(jxzl.price)
-    assert len3 == len4
+    assert (len3 == len4) or (len3 - len4 == -1)
     assert round(netvalue, 4) == round(netvalue2, 4)
