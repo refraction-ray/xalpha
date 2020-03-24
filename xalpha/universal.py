@@ -21,6 +21,7 @@ try:
         get_fundamentals,
         valuation,
         get_query_count,
+        finance,
     )
 
 except ImportError:
@@ -261,7 +262,22 @@ def get_fund(code):
     return df[["date", "close"]]
 
 
-def _get_daily(code, start=None, end=None, prev=365, _from=None, **kws):
+# this is the most elegant approach to dispatch get_daily, the definition can be such simple
+# you actually don't need to bother on start end blah, it is all taken care of by ``cahcedio``
+@data_source("jq")
+def get_fundshare_byjq(code, **kws):
+    code = _inverse_convert_code(code)
+    df = finance.run_query(
+        query(finance.FUND_SHARE_DAILY)
+        .filter(finance.FUND_SHARE_DAILY.code == code)
+        .order_by(finance.FUND_SHARE_DAILY.date)
+    )
+    df["date"] = pd.to_datetime(df["date"])
+    df = df[["date", "shares"]]
+    return df
+
+
+def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, **kws):
     """
     universal fetcher for daily historical data of literally everything has a value in market.
     数据来源包括天天基金，雪球，英为财情，外汇局官网
@@ -321,6 +337,7 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, **kws):
         elif len(code.split("-")) == 2 and len(code.split("-")[0]) <= 3:
             # peb-000807.XSHG
             _from = code.split("-")[0]
+            code = code.split("-")[1]
         else:
             _from = "xueqiu"
 
@@ -330,33 +347,29 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, **kws):
 
     if _from in ["cninvesting", "investing", "default"]:
         df = get_cninvesting(code, start_str, end_str)
-        return prettify(df)
+        df = prettify(df)
     elif _from in ["xueqiu", "xq", "snowball"]:
         df = get_xueqiu(code, count)
-        df = df[df.date <= end_str]
-        df = df[df.date >= start_str]
-        return prettify(df)
+        df = prettify(df)
     elif _from in ["zhongjianjia", "zjj", "chinamoney"]:
         df = get_rmb(start, end, prev, currency=code)
-        return df
     elif _from in ["ttjj", "tiantianjijin", "xalpha", "eastmoney"]:
         df = get_fund(code)
+
+    elif _from == "peb":
+        df = _get_peb_range(code=code, start=start_str, end=end_str)
+
+    elif _from == "iw":
+        df = _get_index_weight_range(code=code, start=start_str, end=end_str)
+
+    elif _from == "fs":
+        df = get_fundshare_byjq(code)
+
+    if wrapper or len(df) == 0:
+        return df
+    else:
         df = df[df.date <= end_str]
         df = df[df.date >= start_str]
-        return df
-    elif _from == "peb":
-        df = _get_peb_range(code=code.split("-")[1], start=start_str, end=end_str)
-        if len(df) > 0:
-            df = df[df.date <= end_str]
-            df = df[df.date >= start_str]
-        return df
-    elif _from == "iw":
-        df = _get_index_weight_range(
-            code=code.split("-")[1], start=start_str, end=end_str
-        )
-        if len(df) > 0:
-            df = df[df.date <= end_str]
-            df = df[df.date >= start_str]
         return df
 
 
@@ -580,8 +593,13 @@ def cachedio(**ioconf):
             backend = ioconf.get("backend")
             refresh = ioconf.get("refresh", False)
             path = ioconf.get("path")
+            kws["start"] = start_str
+            kws["end"] = end_str
             if not backend:
-                return f(*args, **kws)
+                df = f(*args, **kws)
+                df = df[df["date"] <= kws["end"]]
+                df = df[df["date"] >= kws["start"]]
+                return df
             else:
                 if backend == "csv":
                     key = key + ".csv"
@@ -610,6 +628,8 @@ def cachedio(**ioconf):
                             ).strftime("%Y%m%d")
                             df1 = f(*args, **kws)
                             if len(df1) > 0:
+                                df1 = df1[df1["date"] <= kws["end"]]
+                            if len(df1) > 0:
                                 df0 = df1.append(df0, ignore_index=True)
                         # 向后延拓
                         if df0.iloc[-1][date] < end_obj:
@@ -621,6 +641,8 @@ def cachedio(**ioconf):
                                 ).strftime("%Y%m%d")
                             kws["end"] = end_str
                             df2 = f(*args, **kws)
+                            if len(df2) > 0:
+                                df2 = df2[df2["date"] >= kws["start"]]
                             if len(df2) > 0:
                                 if len(df0[df0["date"] == df0.iloc[-1]["date"]]) == 1:
                                     df0 = df0.iloc[:-1]
@@ -650,19 +672,18 @@ def cachedio(**ioconf):
     return cached
 
 
-def check_cache(*args, debug=False, **kws):
-    if not debug:
-        assert (
-            _get_daily(*args, **kws)
-            .reset_index(drop=True)
-            .equals(get_daily(*args, **kws).reset_index(drop=True))
-        )
-    else:
-        return _get_daily(*args, **kws), get_daily(*args, **kws)
+def check_cache(*args, **kws):
+    assert (
+        _get_daily(*args, wrapper=False, **kws)
+        .reset_index(drop=True)
+        .equals(get_daily(*args, **kws).reset_index(drop=True))
+    )
 
 
 @data_source("jq")
 def _get_index_weight_range(code, start, end):
+    if len(code.split(".")) != 2:
+        code = _inverse_convert_code(code)
     start_obj = dt.datetime.strptime(start.replace("-", "").replace("/", ""), "%Y%m%d")
     end_obj = dt.datetime.strptime(end.replace("-", "").replace("/", ""), "%Y%m%d")
     start_m = start_obj.replace(day=1)
@@ -696,6 +717,8 @@ def _get_peb_range(code, start, end):  # 盈利，净资产，总市值
     :param end:
     :return: pd.DataFrame
     """
+    if len(code.split(".")) != 2:
+        code = _inverse_convert_code(code)
     data = {"date": [], "pe": [], "pb": []}
     for d in pd.date_range(start=start, end=end, freq="W-FRI"):
         data["date"].append(d)
@@ -742,6 +765,8 @@ def get_peb(index, date=None, table=False):
     :param table: Optioanl[bool], default False. True 时返回整个计算的 DataFrame，用于 debug。
     :return: Dict[str, float]. 包含 pe 和 pb 值的字典。
     """
+    if len(index.split(".")) != 2:
+        index = _inverse_convert_code(index)
     middle = dt.datetime.strptime(
         date.replace("/", "").replace("-", ""), "%Y%m%d"
     ).replace(day=1)
@@ -761,7 +786,7 @@ def get_peb(index, date=None, table=False):
     totb = df.b.sum()
     if table:
         return df
-    return {"pe": 100.0 / tote, "pb": 100.0 / totb}
+    return {"pe": round(100.0 / tote, 3), "pb": round(100.0 / totb, 3)}
 
 
 def _convert_code(code):
@@ -816,6 +841,8 @@ class PEBHistory:
         "399812.XSHE": ("养老产业", "2016-01-01"),
     }
 
+    # 聚宽数据源支持的指数列表： https://www.joinquant.com/indexData
+
     def __init__(self, code, start=None, end=None):
         """
 
@@ -844,7 +871,7 @@ class PEBHistory:
         self.start = start
         if not end:
             end = yesterday_str
-        self.df = get_peb_range(self.code, start=self.start, end=end)
+        self.df = get_daily("peb-" + self.scode, start=self.start, end=end)
         self.ratio = None
         self.pep = [
             round(i, 3) for i in np.percentile(self.df.pe, np.arange(0, 110, 10))
@@ -919,7 +946,12 @@ class PEBHistory:
             % (
                 self.current("pe"),
                 self.current_percentile("pe"),
-                round((self.current("pe") - self.pep[0]) / self.current("pe") * 100, 1),
+                max(
+                    round(
+                        (self.current("pe") - self.pep[0]) / self.current("pe") * 100, 1
+                    ),
+                    0,
+                ),
             )
         )
         print(
@@ -927,6 +959,11 @@ class PEBHistory:
             % (
                 self.current("pb"),
                 self.current_percentile("pb"),
-                round((self.current("pb") - self.pbp[0]) / self.current("pb") * 100, 1),
+                max(
+                    round(
+                        (self.current("pb") - self.pbp[0]) / self.current("pb") * 100, 1
+                    ),
+                    0,
+                ),
             )
         )

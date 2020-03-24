@@ -2,31 +2,49 @@ import sys
 
 sys.path.insert(0, "../")
 import xalpha as xa
+import pandas as pd
+import pytest
 
 xa.provider.set_jq_data(debug=True)
+
+
+@pytest.fixture
+def csv_cache():
+    xa.set_backend(backend="csv", path="./")
+    yield
+    xa.set_backend()
+
+
+# 防止peb csv 数字位长反复变化
+@pytest.fixture
+def reset_table():
+    yield
+    for f in ["./peb-SH000807.csv"]:
+        df = pd.read_csv(f)
+        df["pe"] = df["pe"].apply(lambda x: round(x, 3))
+        df["pb"] = df["pb"].apply(lambda x: round(x, 3))
+        df.to_csv(f, index=False)
 
 
 def test_jq_provider():
     assert xa.show_providers() == ["jq"]
 
 
-def test_peb_history():
-    xa.set_backend(backend="csv", path="./")
+def test_peb_history(csv_cache, reset_table):
     h = xa.universal.PEBHistory("SH000807", end="20200302")
     h.summary()
     h.v()  # matplotlib is required for this
     assert round(h.df.iloc[0]["pe"], 2) == 19.67
 
 
-def test_iw():
-    xa.set_backend(backend="csv", path="./")
-    df = xa.get_daily("iw-399006.XSHE", end="20200226")
+def test_iw(csv_cache):
+    df = xa.get_daily("iw-SZ399006", end="20200226")
     assert (
         df[(df["date"] == "2019-04-01") & (df["code"] == "300271.XSHE")].iloc[0].weight
         == 0.9835
     )
     df = xa.universal.get_index_weight_range(
-        "399006.XSHE", start="2018-01-01", end="2020-02-01"
+        "SZ399006", start="2018-01-01", end="2020-02-01"
     )
     assert (
         df[(df["date"] == "2019-04-01") & (df["code"] == "300271.XSHE")].iloc[0].weight
@@ -34,7 +52,13 @@ def test_iw():
     )
 
 
-def test_peb_range():
-    xa.set_backend(backend="csv", path="./")
-    df = xa.get_daily("peb-000807.XSHG", prev=100, end="20200202")
+def test_peb_range(csv_cache, reset_table):
+    df = xa.get_daily("peb-SH000807", prev=100, end="20200202")
     assert round(df[df["date"] == "2020-01-03"].iloc[0]["pe"], 2) == 30.09
+
+
+def test_fund_share(csv_cache):
+    df = xa.get_daily("fs-SZ161129", start="20200303", end="20200305")
+    assert len(df) == 3
+    df = xa.get_daily("fs-SZ161129", start="20200303", end="20200305")
+    assert len(df) == 3
