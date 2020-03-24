@@ -27,12 +27,17 @@ shipan = xa.mul(jiaoyidan) # Let's rock
 shipan.combsummary() # 看所有基金总结效果
 ```
 
-一行获取历史日线数据或实时数据
+一行获取各种金融产品的历史日线数据或实时数据
 
 ```python
 xa.get_daily("SH518880") # 沪深市场历史数据
 xa.get_daily("USD/CNY") # 人民币中间价历史数据
 xa.get_rt("commodities/crude-oil") # 原油期货实时数据
+```
+
+一行拿到指数的历史估值和即时估值分析（需要聚宽数据，本地试用申请或直接在聚宽云平台运行）
+```python
+xa.universal.PEBHistory("SH000990").summary()
 ```
 
 xalpha 不止如此，更多特性，欢迎探索。
@@ -61,4 +66,31 @@ pip install xalpha
 
 ## Usage
 
+### 本地使用
+
 由于丰富的可视化支持，建议配合 Jupyter Notebook 使用。可以参照[这里](https://xalpha.readthedocs.io/en/latest/demo.html)给出的示例连接，快速掌握大部分功能。
+
+### 在量化平台使用
+
+这里以聚宽为例，打开聚宽研究环境的 jupyter notebook，运行以下命令：
+
+```
+>>> !pip3 install xalpha --user
+>>> import sys
+>>> sys.path.insert(0, "/home/jquser/.local/lib/python3.6/site-packages")
+>>> import xalpha as xa
+```
+
+即可在量化云平台正常使用 xalpha，并和云平台提供数据无缝结合。
+
+如果想在云平台研究环境尝试最新开发版 xalpha，所需配置如下。
+
+```
+>>> !git clone https://github.com/refraction-ray/xalpha.git
+>>> !cd xalpha && python3 setup.py develop --user
+>>> import sys
+>>> sys.path.insert(0, "/home/jquser/.local/lib/python3.6/site-packages")
+>>> import xalpha as xa
+```
+
+由于 xalpha 整合了部分聚宽数据源的 API，在云端直接 ``xa.provider.set_jq_data(debug=True)`` 即可激活聚宽数据源。

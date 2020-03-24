@@ -613,11 +613,18 @@ def cachedio(**ioconf):
                                 df0 = df1.append(df0, ignore_index=True)
                         # 向后延拓
                         if df0.iloc[-1][date] < end_obj:
-                            kws["start"] = (df0.iloc[-1][date]).strftime("%Y%m%d")
+                            if len(df0[df0["date"] == df0.iloc[-1]["date"]]) == 1:
+                                kws["start"] = (df0.iloc[-1][date]).strftime("%Y%m%d")
+                            else:
+                                kws["start"] = (
+                                    df0.iloc[-1][date] + dt.timedelta(days=1)
+                                ).strftime("%Y%m%d")
                             kws["end"] = end_str
                             df2 = f(*args, **kws)
                             if len(df2) > 0:
-                                df0 = df0.iloc[:-1].append(df2, ignore_index=True)
+                                if len(df0[df0["date"] == df0.iloc[-1]["date"]]) == 1:
+                                    df0 = df0.iloc[:-1]
+                                df0 = df0.append(df2, ignore_index=True)
                             # 注意这里抹去更新了原有最后一天的缓存，这是因为日线最新一天可能有实时数据污染
 
                     except (FileNotFoundError, exc.ProgrammingError, KeyError):

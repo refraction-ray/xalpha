@@ -184,4 +184,4 @@ def test_fund_update():
     ]
     len4 = len(jxzl.price)
     assert (len3 == len4) or (len3 - len4 == -1)
-    assert round(netvalue, 4) in netvaluel ##天天基金的总量 API 更新越来越慢了。。。
+    assert round(netvalue, 4) in netvaluel  ##天天基金的总量 API 更新越来越慢了。。。
