@@ -1019,7 +1019,7 @@ class Compare:
     def __init__(self, *codes, start="20200101", end=yesterday()):
         """
 
-        :param codes:
+        :param codes: Union[str, tuple], 格式与 :func:`_get_daily` 相同，若需要汇率转换，需要用 tuple，第二个元素形如 "USD"
         :param start: %Y%m%d
         :param end: %Y%m%d, default yesterday
         """

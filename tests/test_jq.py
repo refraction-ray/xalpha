@@ -12,7 +12,7 @@ xa.provider.set_jq_data(debug=True)
 def csv_cache():
     xa.set_backend(backend="csv", path="./")
     yield
-    xa.set_backend()
+    xa.set_backend(backend="memory", path="pytest-")
 
 
 # 防止peb csv 数字位长反复变化

@@ -100,5 +100,5 @@ def test_cache_mm():
 
 def test_compare():
     c = xa.universal.Compare(("37450", "USD"), "SH501018", start="20200101")
-    print(c.corr())
+    c.corr()
     c.v()
