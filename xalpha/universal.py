@@ -695,7 +695,9 @@ def cachedio(**ioconf):
                     except (FileNotFoundError, exc.ProgrammingError, KeyError):
                         if precached:
                             kws["start"] = precached.replace("/", "").replace("-", "")
-                            kws["end"] = today_obj().strftime("%Y-%m-%d")
+                            kws["end"] = (today_obj() - dt.timedelta(days=1)).strftime(
+                                "%Y-%m-%d"
+                            )
                         df0 = f(*args, **kws)
 
                 if df0 is not None and len(df0) > 0:
