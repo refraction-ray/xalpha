@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="xalpha",
-    version="0.6.0",
+    version="0.6.1",
     author="refraction-ray",
     author_email="refraction-ray@protonmail.com",
     description="all about fund investment",
@@ -17,11 +17,12 @@ setuptools.setup(
     install_requires=[
         "lxml",
         "pandas",
+        "xlrd >= 1.0.0",  #  read excel support
         "numpy",
         "scipy",
         "matplotlib",
         "requests",
-        "pyecharts>=1.1.0",
+        "pyecharts>=1.1.0",  # broken api between 0.x and 1.x
         "beautifulsoup4",
         "sqlalchemy",
     ],

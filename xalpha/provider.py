@@ -31,6 +31,7 @@ b64decode_s = lambda s: b64decode(s.encode("utf-8")).decode("utf-8")
 def set_proxy(proxy):
     """
     设置代理，部分数据源可能国内网络环境不稳定。比如标普指数官网。
+    还有一些数据源很快就会封 IP，需要设置代理，比如人民币中间价官网，建议直接把中间价数据缓存到本地，防止反复爬取。
 
     :param proxy: str. format as "http://user:passwd@host:port" user passwd part can be omitted if not set.
     :return:
