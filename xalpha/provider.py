@@ -28,6 +28,17 @@ b64decode_s = lambda s: b64decode(s.encode("utf-8")).decode("utf-8")
 # 注意 base64 毫无加密功能，因此请自己考虑将密码本地化后的便捷性与安全性的平衡
 
 
+def set_proxy(proxy):
+    """
+    设置代理，部分数据源可能国内网络环境不稳定。比如标普指数官网。
+
+    :param proxy: str. format as "http://user:passwd@host:port" user passwd part can be omitted if not set.
+    :return:
+    """
+    os.environ["http_proxy"] = proxy
+    os.environ["https_proxy"] = proxy
+
+
 def set_jq_data(user=None, pswd=None, persistent=False, debug=False):
     """
     设置聚宽数据源，需申请聚宽的 jqdata 试用权限。

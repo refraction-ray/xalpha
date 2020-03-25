@@ -55,6 +55,13 @@ def test_get_investing_rt():
     assert isinstance(ext, float) or (ext is None)
 
 
+def test_get_sp_daily():
+    df = xa.get_daily("SP5475707.2", start="20200202", end="20200303")
+    assert round(df.iloc[-1]["close"], 3) == 1349.31
+    df = xa.get_daily("SP5475707.2", prev=100, end="20200303")
+    assert round(df.iloc[-1]["close"], 3) == 1349.31
+
+
 def test_cache():
     get_daily_cache = xa.universal.cached("20190101")(xa.universal._get_daily)
     l1 = get_daily_cache("EUR/CNY", start="20200101")

@@ -270,10 +270,43 @@ def get_fundshare_byjq(code, **kws):
     df = finance.run_query(
         query(finance.FUND_SHARE_DAILY)
         .filter(finance.FUND_SHARE_DAILY.code == code)
+        .filter(finance.FUND_SHARE_DAILY.date >= kws["start"])
+        .filter(finance.FUND_SHARE_DAILY.date <= kws["end"])
         .order_by(finance.FUND_SHARE_DAILY.date)
     )
     df["date"] = pd.to_datetime(df["date"])
     df = df[["date", "shares"]]
+    return df
+
+
+def get_historical_fromsp(code, start=None, end=None, **kws):
+    if code.startswith("SP"):
+        code = code[2:]
+    if len(code.split(".")) > 1:
+        col = code.split(".")[1]
+        code = code.split(".")[0]
+    else:
+        col = "1"
+    start_obj = dt.datetime.strptime(start, "%Y%m%d")
+    today_obj = dt.datetime.now()
+    fromnow = (today_obj - start_obj).days
+    if fromnow < 300:
+        flag = "one"
+    elif fromnow < 1000:
+        flag = "three"
+    else:
+        flag = "ten"
+    url = "https://us.spindices.com/idsexport/file.xls?\
+selectedModule=PerformanceGraphView&selectedSubModule=Graph\
+&yearFlag={flag}YearFlag&indexId={code}".format(
+        flag=flag, code=code
+    )
+    df = pd.read_excel(url)
+    # print(df.iloc[:10])
+    df = df.iloc[6:]
+    df["close"] = df["Unnamed: " + col]
+    df["date"] = pd.to_datetime(df["Unnamed: 0"])
+    df = df[["date", "close"]]
     return df
 
 
@@ -284,7 +317,7 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
 
     :param code: str.
 
-            1. 对于沪深市场的股票，指数，ETF，LOF 基金，可转债和债券，直接使用其代码，主要开头需要包括 SH 或者 SZ。
+            1. 对于沪深市场的股票，指数，ETF，LOF 场内基金，可转债和债券，直接使用其代码，主要开头需要包括 SH 或者 SZ。
 
             2. 对于香港市场的股票，指数，使用其数字代码，同时开头要添加 HK。
 
@@ -298,9 +331,13 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
 
             7. 对于国内发行的货币基金，使用基金代码，同时开头添加 M。（全部按照净值数据处理）
 
-            8. 形如 peb-000807.XSHG 格式的数据，可以返回每周的指数估值情况，需要 enable 聚宽数据源方可查看。
+            8. 形如 peb-000807.XSHG 或 peb-SH000807 格式的数据，可以返回每周的指数估值情况，需要 enable 聚宽数据源方可查看。
 
-            9. 形如 iw-000807.XSHG 格式的数据，可以返回每月的指数成分股和实时权重，需要 enable 聚宽数据源方可查看。
+            9. 形如 iw-000807.XSHG 或 peb-SH000807 格式的数据，可以返回每月的指数成分股和实时权重，需要 enable 聚宽数据源方可查看。
+
+            10. 形如 fs-SH501018 格式的数据，可以返回指定场内基金每日份额，需要 enable 聚宽数据源方可查看。
+
+            11. 形如 SP5475707.2 格式的数据，可以返回标普官网相关指数的日线数据，id 5475707 部分可以从相关指数 export 按钮获取的链接中得到，小数点后的部分代表保存的列数。参考链接：https://us.spindices.com/indices/equity/sp-global-oil-index
 
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
@@ -334,6 +371,8 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
         elif code.startswith("HK") and code[2:].isdigit() and len(code) == 7:
             _from = "xueqiu"
             code = code[2:]
+        elif code.startswith("SP") and code[2:].split(".")[0].isdigit():
+            _from = "sp"
         elif len(code.split("-")) == 2 and len(code.split("-")[0]) <= 3:
             # peb-000807.XSHG
             _from = code.split("-")[0]
@@ -363,7 +402,10 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
         df = _get_index_weight_range(code=code, start=start_str, end=end_str)
 
     elif _from == "fs":
-        df = get_fundshare_byjq(code)
+        df = get_fundshare_byjq(code, start=start, end=end)
+
+    elif _from == "sp":
+        df = get_historical_fromsp(code, start=start, end=end)
 
     if wrapper or len(df) == 0:
         return df
