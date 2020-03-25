@@ -606,6 +606,7 @@ def cachedio(**ioconf):
             else:
                 code = kws.get("code")
             date = ioconf.get("date", "date")
+            precached = ioconf.get("precached", None)
             key = kws.get("key", code)
             key = key.replace("/", " ")
             start = kws.get("start", None)
@@ -692,6 +693,9 @@ def cachedio(**ioconf):
                             # 注意这里抹去更新了原有最后一天的缓存，这是因为日线最新一天可能有实时数据污染
 
                     except (FileNotFoundError, exc.ProgrammingError, KeyError):
+                        if precached:
+                            kws["start"] = precached.replace("/", "").replace("-", "")
+                            kws["end"] = today_obj().strftime("%Y-%m-%d")
                         df0 = f(*args, **kws)
 
                 if df0 is not None and len(df0) > 0:
@@ -1009,3 +1013,45 @@ class PEBHistory:
                 ),
             )
         )
+
+
+class Compare:
+    def __init__(self, *codes, start="20200101", end=yesterday()):
+        """
+
+        :param codes:
+        :param start: %Y%m%d
+        :param end: %Y%m%d, default yesterday
+        """
+        totdf = pd.DataFrame()
+        codelist = []
+        for c in codes:
+            if isinstance(c, tuple):
+                code = c[0]
+                currency = c[1]
+            else:
+                code = c
+                currency = "CNY"  # 标的不做汇率调整
+            codelist.append(code)
+            df = get_daily(code, start=start, end=end)
+            df = df[df.date.isin(opendate)]
+            if currency != "CNY":
+                cdf = get_daily(currency + "/CNY", start=start, end=end)
+                cdf = cdf[cdf["date"].isin(opendate)]
+                df = df.merge(right=cdf, on="date", suffixes=("_x", "_y"))
+                df["close"] = df["close_x"] * df["close_y"]
+            df[code] = df["close"] / df.iloc[0].close
+            df = df.reset_index()
+            df = df[["date", code]]
+            if "date" not in totdf.columns:
+                totdf = df
+            else:
+                totdf = totdf.merge(on="date", right=df)
+        self.totdf = totdf
+        self.codes = codelist
+
+    def v(self):
+        return self.totdf.plot(x="date", y=self.codes)
+
+    def corr(self):
+        return self.totdf.iloc[:, 1:].pct_change().corr()

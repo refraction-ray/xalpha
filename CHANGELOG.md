@@ -1,5 +1,8 @@
 # Changelog
 ## Unreleased
+### added
+* ``set_backend`` 增加 ``precached`` 预热选项，可以一次性缓存数据备用。
+* 增加 ``Compare`` 类进行不同日线的比较。
 
 ## v0.6.1 - 2020.03.25
 ### added
