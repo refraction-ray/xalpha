@@ -62,6 +62,10 @@ def test_get_sp_daily():
     assert round(df.iloc[-1]["close"], 3) == 1349.31
 
 
+def test_get_bb_daily():
+    df = xa.get_daily("BB-FGERBIU:ID", prev=10)
+
+
 def test_cache():
     get_daily_cache = xa.universal.cached("20190101")(xa.universal._get_daily)
     l1 = get_daily_cache("EUR/CNY", start="20200101")

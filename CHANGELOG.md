@@ -1,5 +1,9 @@
 # Changelog
 ## Unreleased
+### added
+* 增加内存缓存作为 IO 缓存的双重缓存层，提高数据读写速度
+* ``get_daily``增加彭博的日线数据获取。
+
 ## v0.6.2 - 2020.03.25
 ### added
 * ``set_backend`` 增加 ``precached`` 预热选项，可以一次性缓存数据备用。

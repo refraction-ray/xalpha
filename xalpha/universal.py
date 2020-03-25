@@ -280,6 +280,16 @@ def get_fundshare_byjq(code, **kws):
 
 
 def get_historical_fromsp(code, start=None, end=None, **kws):
+    """
+    标普官网数据源
+
+    :param code:
+    :param start:
+    :param end:
+    :param kws:
+    :return:
+    """
+
     if code.startswith("SP"):
         code = code[2:]
     if len(code.split(".")) > 1:
@@ -310,10 +320,55 @@ selectedModule=PerformanceGraphView&selectedSubModule=Graph\
     return df
 
 
+def get_historical_frombb(code, start=None, end=None, **kws):
+    """
+    https://www.bloomberg.com/ 数据源, 试验性支持。
+    似乎有很严格的 IP 封禁措施, 且最新数据更新滞后，似乎难以支持 T-1 净值预测
+
+    :param code:
+    :param start:
+    :param end:
+    :param kws:
+    :return:
+    """
+    if code.startswith("BB-"):
+        code = code[3:]
+    # end_obj = dt.datetime.strptime(end, "%Y%m%d")
+    start_obj = dt.datetime.strptime(start, "%Y%m%d")
+    today_obj = dt.datetime.now()
+    fromnow = (today_obj - start_obj).days
+    if fromnow < 20:
+        years = "1_MONTH"
+    elif fromnow < 300:
+        years = "1_YEAR"
+    else:
+        years = "5_YEAR"
+    url = "https://www.bloomberg.com/markets2/api/history/{code}/PX_LAST?\
+timeframe={years}&period=daily&volumePeriod=daily".format(
+        years=years, code=code
+    )
+    r = rget_json(
+        url,
+        headers={
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko)",
+            "referer": "https://www.bloomberg.com/quote/{code}".format(code=code),
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "accept": "*/*",
+        },
+    )
+    df = pd.DataFrame(r[0]["price"])
+    df["close"] = df["value"]
+    df["date"] = pd.to_datetime(df["dateTime"])
+    df = df[["date", "close"]]
+    return df
+
+
 def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, **kws):
     """
     universal fetcher for daily historical data of literally everything has a value in market.
-    数据来源包括天天基金，雪球，英为财情，外汇局官网
+    数据来源包括天天基金，雪球，英为财情，外汇局官网，聚宽，标普官网，bllomberg 等。
 
     :param code: str.
 
@@ -337,7 +392,9 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
 
             10. 形如 fs-SH501018 格式的数据，可以返回指定场内基金每日份额，需要 enable 聚宽数据源方可查看。
 
-            11. 形如 SP5475707.2 格式的数据，可以返回标普官网相关指数的日线数据，id 5475707 部分可以从相关指数 export 按钮获取的链接中得到，小数点后的部分代表保存的列数。参考链接：https://us.spindices.com/indices/equity/sp-global-oil-index
+            11. 形如 SP5475707.2 格式的数据，可以返回标普官网相关指数的日线数据（最近十年），id 5475707 部分可以从相关指数 export 按钮获取的链接中得到，小数点后的部分代表保存的列数。参考链接：https://us.spindices.com/indices/equity/sp-global-oil-index
+
+            12. 形如 BB-FGERBIU:ID 格式的数据，对应网页 https://www.bloomberg.com/quote/FGERBIU:ID，可以返回彭博的数据（最近五年）
 
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
@@ -372,7 +429,7 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
             _from = "xueqiu"
             code = code[2:]
         elif code.startswith("SP") and code[2:].split(".")[0].isdigit():
-            _from = "sp"
+            _from = "SP"
         elif len(code.split("-")) == 2 and len(code.split("-")[0]) <= 3:
             # peb-000807.XSHG
             _from = code.split("-")[0]
@@ -404,8 +461,11 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
     elif _from == "fs":
         df = get_fundshare_byjq(code, start=start, end=end)
 
-    elif _from == "sp":
+    elif _from == "SP":
         df = get_historical_fromsp(code, start=start, end=end)
+
+    elif _from == "BB":
+        df = get_historical_frombb(code, start=start, end=end)
 
     if wrapper or len(df) == 0:
         return df
@@ -646,24 +706,32 @@ def cachedio(**ioconf):
             else:
                 if backend == "csv":
                     key = key + ".csv"
-                elif backend == "memory":
-                    if not getattr(thismodule, "cached_dict", None):
-                        setattr(thismodule, "cached_dict", {})
+                if not getattr(thismodule, "cached_dict", None):
+                    setattr(thismodule, "cached_dict", {})
                 if refresh:
+                    is_changed = True
                     df0 = f(*args, **kws)
 
                 else:  # non refresh
                     try:
                         if backend == "csv":
-                            df0 = pd.read_csv(os.path.join(path, key))
+                            if key in getattr(thismodule, "cached_dict"):
+                                # 即使硬盘级别的缓存，也有内存层，加快读写速度
+                                df0 = getattr(thismodule, "cached_dict")[key]
+                            else:
+                                df0 = pd.read_csv(os.path.join(path, key))
                         elif backend == "sql":
-                            df0 = pd.read_sql(key, path)
+                            if key in getattr(thismodule, "cached_dict"):
+                                df0 = getattr(thismodule, "cached_dict")[key]
+                            else:
+                                df0 = pd.read_sql(key, path)
                         elif backend == "memory":
                             df0 = getattr(thismodule, "cached_dict")[key]
                         else:
                             raise ValueError("no %s option for backend" % backend)
                         df0[date] = pd.to_datetime(df0[date])
                         # 向前延拓
+                        is_changed = False
                         if df0.iloc[0][date] > start_obj:
                             kws["start"] = start_str
                             kws["end"] = (
@@ -673,6 +741,7 @@ def cachedio(**ioconf):
                             if len(df1) > 0:
                                 df1 = df1[df1["date"] <= kws["end"]]
                             if len(df1) > 0:
+                                is_changed = True
                                 df0 = df1.append(df0, ignore_index=True)
                         # 向后延拓
                         if df0.iloc[-1][date] < end_obj:
@@ -687,6 +756,7 @@ def cachedio(**ioconf):
                             if len(df2) > 0:
                                 df2 = df2[df2["date"] >= kws["start"]]
                             if len(df2) > 0:
+                                is_changed = True
                                 if len(df0[df0["date"] == df0.iloc[-1]["date"]]) == 1:
                                     df0 = df0.iloc[:-1]
                                 df0 = df0.append(df2, ignore_index=True)
@@ -698,16 +768,18 @@ def cachedio(**ioconf):
                             kws["end"] = (today_obj() - dt.timedelta(days=1)).strftime(
                                 "%Y-%m-%d"
                             )
+                        is_changed = True
                         df0 = f(*args, **kws)
 
-                if df0 is not None and len(df0) > 0:
+                if df0 is not None and len(df0) > 0 and is_changed:
                     if backend == "csv":
                         df0.to_csv(os.path.join(path, key), index=False)
                     elif backend == "sql":
                         df0.to_sql(key, con=path, if_exists="replace", index=False)
-                    elif backend == "memory":
-                        d = getattr(thismodule, "cached_dict")
-                        d[key] = df0
+                    # elif backend == "memory":
+                    # 总是刷新内存层，即使是硬盘缓存
+                    d = getattr(thismodule, "cached_dict")
+                    d[key] = df0
 
             if df0 is not None:
                 df0 = df0[df0["date"] <= end_str]
@@ -887,6 +959,7 @@ class PEBHistory:
         "000807.XSHG": ("食品饮料", "2013-01-01"),
         "000931.XSHG": ("中证可选", "2012-01-01"),
         "399812.XSHE": ("养老产业", "2016-01-01"),
+        "000852.XSHG": ("中证1000", "2015-01-01"),
     }
 
     # 聚宽数据源支持的指数列表： https://www.joinquant.com/indexData
