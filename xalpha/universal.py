@@ -24,8 +24,12 @@ try:
         finance,
     )
 
+    # 本地导入
 except ImportError:
-    pass
+    try:
+        from jqdata import finance  # 云平台导入
+    except ImportError:
+        pass
 
 from xalpha.info import fundinfo, mfundinfo
 from xalpha.cons import rget, rpost, rget_json, rpost_json, yesterday, opendate
@@ -368,7 +372,7 @@ timeframe={years}&period=daily&volumePeriod=daily".format(
 def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, **kws):
     """
     universal fetcher for daily historical data of literally everything has a value in market.
-    数据来源包括天天基金，雪球，英为财情，外汇局官网，聚宽，标普官网，bllomberg 等。
+    数据来源包括天天基金，雪球，英为财情，外汇局官网，聚宽，标普官网，bloomberg 等。
 
     :param code: str.
 
@@ -399,10 +403,11 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
     :param prev: Optional[int], default 365. If start is not specified, start = end-prev.
-    :param _from: Optional[str]. can be one of "xueqiu", "zjj", "investing", "tiantianjijin". Only used for debug to
+    :param _from: Optional[str]. 一般用户不需设定该选项。can be one of "xueqiu", "zjj", "investing", "tiantianjijin". Only used for debug to
         enfore data source. For common use, _from can be chosed automatically based on code in the run time.
+    :param wrapper: bool. 一般用户不需设定该选项。
     :return: pd.Dataframe.
-        must include cols: date[pd.Timestampe]，close[float64]。
+        must include cols: date[pd.Timestamp]，close[float64]。
     """
     if not end:
         end_obj = today_obj()
@@ -578,12 +583,13 @@ _cached_data = {}
 
 def reset_cache():
     """
-    clear all cache of daily data, used for :func:`cached`, deprecated.
+    clear all cache of daily data in memory.
 
     :return: None.
     """
     global _cached_data
     _cached_data = {}
+    setattr(thismodule, "cached_dict", {})
 
 
 def cached(s):

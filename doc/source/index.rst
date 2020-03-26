@@ -12,6 +12,7 @@ Welcome to xalpha's documentation!
    quickstart.rst
    demo.rst
    advance.rst
+   develop.rst
    modules.rst
 
 
