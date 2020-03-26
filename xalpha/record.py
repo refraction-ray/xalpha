@@ -143,3 +143,11 @@ class irecord(record):
 
     def sellout(self, date=yesterdayobj(), ratio=1):
         raise NotImplementedError()
+
+    def totfee(self):
+        """
+        累计交给券商的过路费总额
+
+        :return:
+        """
+        return self.status["fee"].sum()

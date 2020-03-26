@@ -9,7 +9,10 @@ import xalpha as xa
 import pandas as pd
 
 path3 = "demo3.csv"
+path = "demo.csv"
+ioconf = {"save": True, "fetch": True, "path": "pytest", "form": "csv"}
 ir = xa.irecord(path3)
+orc = xa.record(path)
 
 
 def test_irecord():
@@ -26,3 +29,5 @@ def test_imul():
     c = xa.imul(status=ir)
     assert round(c.combsummary("20200309").iloc[0]["投资收益率"], 2) == -1.39
     c.v_positions()
+    c = xa.mul(status=orc, istatus=ir, **ioconf)
+    assert round(c.combsummary("20200309").iloc[0]["投资收益率"], 2) == 0.49

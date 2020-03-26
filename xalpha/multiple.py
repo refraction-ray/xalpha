@@ -23,6 +23,7 @@ class mul:
     :param fundtradeobj: list of trade obj which you want to analyse together
     :param status: the status table of trade, all code in this table would be considered.
             one must provide one of the two paramters, if both are offered, status will be overlooked
+    :param istatus: 场内交易账单，若提供，则场内外交易联合统计展示。该选项只保证 ``combsummary`` 方法可正常使用，不保证 ``mul`` 类的其他方法可用。
     :param property: Dict[fundcode, property_number]. property number 的解释：
             int. 1: 基金申购采取分位以后全舍而非四舍五入（这种基金是真实存在的==）。2：基金默认分红再投入（0 则是默认现金分红）。4：基金赎回按净值处理（暂时只支持货币基金，事实上无法精确支持按份额赎回的净值型基金）。将想要的性质数值相加即可，类似 *nix 上的 xwr 系统。
     :param fetch: boolean, when open the fetch option, info class will try fetching from local files first in the init
@@ -35,6 +36,7 @@ class mul:
         self,
         *fundtradeobj,
         status=None,
+        istatus=None,
         property=None,
         fetch=False,
         save=False,
@@ -47,8 +49,13 @@ class mul:
             status = status.status
         elif not property:
             property = {}
-
-        if not fundtradeobj:
+        self.is_in = False
+        if fundtradeobj:
+            for t in fundtradeobj:
+                if isinstance(t, itrade):
+                    self.is_in = True
+                break
+        else:
             # warning: not a very good way to automatic generate these fund obj
             # because there might be some funds use round_down for share calculation, ie, label=2 must be given
             # unless you are sure corresponding funds are added to the droplist
@@ -89,6 +96,12 @@ class mul:
                             status,
                         )
                     )
+            if istatus:
+                self.is_in = True
+                if isinstance(istatus, irecord):
+                    istatus = istatus.status
+                for code in istatus.code.unique():
+                    fundtradeobj.append(itrade(code, istatus))
         self.fundtradeobj = tuple(fundtradeobj)
         self.totcftable = self._mergecftb()
 
@@ -206,6 +219,8 @@ class mul:
         :returns: :class:`xalpha.evaluate.evaluate` object, with referenced funds the same as funds
             we invested
         """
+        if self.is_in:
+            raise NotImplementedError()
         case = evaluate(
             *[fundtrade.aim for fundtrade in self.fundtradeobj], start=start
         )
@@ -358,7 +373,6 @@ class mulfix(mul, indicator):
         return res / self.totmoney
 
 
-# TODO: better approach to further merge mul and imul?
 class imul(mul):
     def __init__(self, *fundtradeobj, status=None):
         """
@@ -375,6 +389,4 @@ class imul(mul):
                 fundtradeobj.append(itrade(code, status))
         self.fundtradeobj = tuple(fundtradeobj)
         self.totcftable = self._mergecftb()
-
-    def evaluation(self, start=None):
-        raise NotImplementedError()
+        self.is_in = True
