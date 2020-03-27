@@ -34,6 +34,7 @@ except ImportError:
 from xalpha.info import fundinfo, mfundinfo
 from xalpha.cons import rget, rpost, rget_json, rpost_json, yesterday, opendate
 from xalpha.provider import data_source
+from xalpha.exceptions import DataPossiblyWrong
 
 
 thismodule = sys.modules[__name__]
@@ -489,6 +490,8 @@ def _float(n):
 
 
 def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
+    if code.startswith("HK"):
+        code = code[2:]
     url = "https://stock.xueqiu.com/v5/stock/quote.json?symbol={code}&extend=detail"
     r = rget_json(
         url.format(code=code),
@@ -551,28 +554,69 @@ def get_cninvesting_rt(suburl):
     }
 
 
-def get_rt(code, _from=None):
+def get_rt_from_sina(code):
+    if (
+        code.startswith("SH") or code.startswith("SZ") or code.startswith("HK")
+    ) and code[2:].isdigit():
+        tinycode = code[:2].lower() + code[2:]
+    else:  # 美股
+        tinycode = "gb_"
+        if code.startswith("."):
+            code = code[1:]
+        tinycode += code.lower()
+    r = rget("https://hq.sinajs.cn/list={tinycode}".format(tinycode=tinycode))
+    l = r.text.split("=")[1].split(",")
+    d = {}
+    d["name"] = l[0].strip('"')
+    if (
+        code.startswith("SH") or code.startswith("SZ") or code.startswith("HK")
+    ) and code[2:].isdigit():
+        d["current"] = float(l[3])
+        d["percent"] = round((float(l[3]) / float(l[2]) - 1) * 100, 2)
+        d["current_ext"] = None
+        if code.startswith("HK"):
+            d["currency"] = "HKD"
+        else:
+            d["currency"] = "CNY"
+    else:
+        d["currency"] = "USD"
+        d["current"] = float(l[1])
+        d["percent"] = float(l[2])
+        d["current_ext"] = None
+    return d
+
+
+def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
     """
     universal fetcher for realtime price of literally everything.
 
     :param code: str. 规则同 :func:`get_daily`. 需要注意场外基金和外汇中间价是不支持实时行情的，因为其每日只有一个报价。对于 investing 的数据源，只支持网址格式代码。
     :param _from: Optional[str]. can be one of "xueqiu", "investing". Only used for debug to
         enfore data source. For common use, _from can be chosed automatically based on code in the run time.
+    :param double_check: Optional[bool], default False. 如果设为 True，只适用于 A 股，美股，港股实时行情，会通过至少两个不同的数据源交叉验证，确保正确。
+            适用于需要自动交易等情形，防止实时数据异常。
     :return: Dict[str, Any].
         包括 "name", "current", "percent" 三个必有项和 "current_ext"（盘后价格）, "currency" （计价货币）两个值可能为 ``None`` 的选项。
     """
     if not _from:
         if len(code.split("/")) > 1:
             _from = "investing"
-        elif code.startswith("HK") and code[2:].isdigit():
-            _from = "xueqiu"
-            code = code[2:]
-        else:
+        # elif code.startswith("HK") and code[2:].isdigit():
+        #     _from = "xueqiu"
+        else:  # 默认不启用新浪实时，只做双重验证
             _from = "xueqiu"
     if _from in ["cninvesting", "investing"]:
         return get_cninvesting_rt(code)
+    elif double_check:
+        r1 = get_xueqiu_rt(code, token=get_token())
+        r2 = get_rt_from_sina(code)
+        if abs(r1["current"] / r2["current"] - 1) > double_check_threhold:
+            raise DataPossiblyWrong("realtime data unmatch for %s" % code)
+        return r1
     elif _from in ["xueqiu", "xq", "snowball"]:
         return get_xueqiu_rt(code, token=get_token())
+    elif _from in ["sina", "sn", "xinlang"]:
+        return get_rt_from_sina(code)
 
 
 get_realtime = get_rt

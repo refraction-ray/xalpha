@@ -46,3 +46,11 @@ class DataSourceNotFound(XalphaException):
     """
 
     pass
+
+
+class DataPossiblyWrong(XalphaException):
+    """
+    Used for data failed to verify
+    """
+
+    pass

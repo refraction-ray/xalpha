@@ -48,6 +48,11 @@ def test_get_xueqiu_rt():
     assert isinstance(xa.get_rt("SH501018")["percent"], float)
 
 
+def test_get_sina_rt():
+    assert xa.get_rt("PDD", _from="sina")["currency"] == "USD"
+    xa.get_rt("HK00700", double_check=True)
+
+
 def test_get_investing_rt():
     assert xa.get_rt("currencies/usd-cny")["currency"] == None
     assert xa.get_rt("/indices/germany-30")["name"] == "德国DAX30指数 (GDAXI)"

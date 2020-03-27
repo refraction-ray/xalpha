@@ -165,6 +165,10 @@ class PEBHistory:
 
 
 class Compare:
+    """
+    将不同金融产品同起点归一化比较
+    """
+
     def __init__(self, *codes, start="20200101", end=yesterday()):
         """
 
@@ -200,7 +204,17 @@ class Compare:
         self.codes = codelist
 
     def v(self):
+        """
+        显示日线可视化
+
+        :return:
+        """
         return self.totdf.plot(x="date", y=self.codes)
 
     def corr(self):
+        """
+        打印相关系数矩阵
+
+        :return: pd.DataFrame
+        """
         return self.totdf.iloc[:, 1:].pct_change().corr()

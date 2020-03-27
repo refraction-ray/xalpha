@@ -81,6 +81,14 @@ xalpha.remain module
     :undoc-members:
     :show-inheritance:
 
+xalpha.toolbox module
+---------------------------
+
+.. automodule:: xalpha.toolbox
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 xalpha.trade module
 -------------------
 

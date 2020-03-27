@@ -1,11 +1,14 @@
 # Changelog
 ## Unreleased
+
+## v0.7.0 - 2020.03.27
 ### changed
 * 将面向对象封装的工具箱从 universal 模块移到单独的 toolbox 模块。
 ### added
 * 增加内存缓存作为 IO 缓存的双重缓存层，提高数据读写速度。
-* ``get_daily``增加彭博的日线数据获取。
+* ``get_daily`` 增加彭博的日线数据获取。
 * ``mul`` 增加 istatus 选项，可以场内外账单同时统计。
+* ``get_rt`` 增加新浪实时数据源，同时增加 double_check 选项确保实时数据稳定无误。
 ### fixed
 * 完善聚宽云平台使用的导入。
 
