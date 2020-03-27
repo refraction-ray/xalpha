@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### changed
+* 将面向对象封装的工具箱从 universal 模块移到单独的 toolbox 模块。
 ### added
 * 增加内存缓存作为 IO 缓存的双重缓存层，提高数据读写速度。
 * ``get_daily``增加彭博的日线数据获取。

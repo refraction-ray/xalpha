@@ -37,7 +37,7 @@ xa.get_rt("commodities/crude-oil") # 原油期货实时数据
 
 一行拿到指数的历史估值和即时估值分析（需要聚宽数据，本地试用申请或直接在聚宽云平台运行）
 ```python
-xa.universal.PEBHistory("SH000990").summary()
+xa.PEBHistory("SH000990").summary()
 ```
 
 xalpha 不止如此，更多特性，欢迎探索。

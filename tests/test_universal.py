@@ -101,9 +101,3 @@ def test_cache_mm():
     l2 = len(df)
     assert l1 == l2
     xa.universal.check_cache("SH501018", start="2018/09/01")
-
-
-def test_compare():
-    c = xa.universal.Compare(("37450", "USD"), "SH501018", start="20200101")
-    c.corr()
-    c.v()
