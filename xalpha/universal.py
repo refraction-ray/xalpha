@@ -34,7 +34,7 @@ except ImportError:
 from xalpha.info import fundinfo, mfundinfo
 from xalpha.cons import rget, rpost, rget_json, rpost_json, yesterday, opendate
 from xalpha.provider import data_source
-from xalpha.exceptions import DataPossiblyWrong
+from xalpha.exceptions import DataPossiblyWrong, ParserFailure
 
 
 thismodule = sys.modules[__name__]
@@ -472,6 +472,12 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
 
     elif _from == "BB":
         df = get_historical_frombb(code, start=start, end=end)
+
+    elif _from == "sw":
+        df = get_sw_from_jq(code, start=start, end=end)
+
+    else:
+        raise ParserFailure("no such data source: %s" % _from)
 
     if wrapper or len(df) == 0:
         return df
@@ -957,6 +963,27 @@ def get_peb(index, date=None, table=False):
     if table:
         return df
     return {"pe": round(100.0 / tote, 3), "pb": round(100.0 / totb, 3)}
+
+
+@data_source("jq")
+def get_sw_from_jq(code, start=None, end=None, **kws):
+    """
+
+    :param code: str. eg. 801180 申万行业指数
+    :param start:
+    :param end:
+    :param kws:
+    :return:
+    """
+    df = finance.run_query(
+        query(finance.SW1_DAILY_VALUATION)
+        .filter(finance.SW1_DAILY_VALUATION.date >= start)
+        .filter(finance.SW1_DAILY_VALUATION.date <= end)
+        .filter(finance.SW1_DAILY_VALUATION.code == code)
+        .order_by(finance.SW1_DAILY_VALUATION.date.asc())
+    )
+    df["date"] = pd.to_datetime(df["date"])
+    return df
 
 
 def _convert_code(code):

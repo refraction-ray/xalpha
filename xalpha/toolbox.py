@@ -68,6 +68,10 @@ class PEBHistory:
             end = yesterday_str
         self.df = xu.get_daily("peb-" + self.scode, start=self.start, end=end)
         self.ratio = None
+        self.title = "指数"
+        self._gen_percentile()
+
+    def _gen_percentile(self):
         self.pep = [
             round(i, 3) for i in np.percentile(self.df.pe, np.arange(0, 110, 10))
         ]
@@ -132,7 +136,7 @@ class PEBHistory:
 
         :return:
         """
-        print("指数%s估值情况\n" % self.name)
+        print("%s%s估值情况\n" % (self.title, self.name))
         if dt.datetime.strptime(self.start, "%Y-%m-%d") > dt.datetime(2015, 1, 1):
             print("(历史数据较少，仅供参考)\n")
         #         self.percentile()
@@ -162,6 +166,65 @@ class PEBHistory:
                 ),
             )
         )
+
+
+class SWPEBHistory(PEBHistory):
+    """
+    申万一级行业指数列表：
+    https://www.hysec.com/hyzq/hy/detail/detail.jsp?menu=4&classid=00000003001200130002&firClassid=000300120013&twoClassid=0003001200130002&threeClassid=0003001200130002&infoId=3046547
+    二三级行业指数也支持
+    """
+
+    index1 = [
+        "801740",
+        "801020",
+        "801110",
+        "801200",
+        "801160",
+        "801010",
+        "801120",
+        "801230",
+        "801750",
+        "801050",
+        "801890",
+        "801170",
+        "801710",
+        "801130",
+        "801180",
+        "801760",
+        "801040",
+        "801780",
+        "801880",
+        "801140",
+        "801720",
+        "801080",
+        "801790",
+        "801030",
+        "801730",
+        "801210",
+        "801770",
+        "801150",
+    ]
+
+    def __init__(self, code, start=None, end=None):
+        """
+
+        :param code: 801180 申万行业指数
+        :param start:
+        :param end:
+        """
+        self.code = code
+        self.scode = code
+        if not end:
+            end = (dt.datetime.now() - dt.timedelta(days=1)).strftime("%Y-%m-%d")
+        if not start:
+            start = "2012-01-01"
+        self.start = start
+        self.df = xu.get_daily("sw-" + code, start=start, end=end)
+        self.name = self.df.iloc[0]["name"]
+        self.ratio = 1
+        self.title = "申万行业指数"
+        self._gen_percentile()
 
 
 class Compare:

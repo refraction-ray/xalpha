@@ -33,6 +33,7 @@ shipan.combsummary() # 看所有基金总结效果
 xa.get_daily("SH518880") # 沪深市场历史数据
 xa.get_daily("USD/CNY") # 人民币中间价历史数据
 xa.get_rt("commodities/crude-oil") # 原油期货实时数据
+xa.get_rt("PDD", double_check=True) # 双重验证高稳定性支持的美股实时数据
 ```
 
 一行拿到指数的历史估值和即时估值分析（需要聚宽数据，本地试用申请或直接在聚宽云平台运行）
@@ -63,6 +64,13 @@ pip install xalpha
 ```
 
 目前仅支持 python 3 。
+
+若想要尝试最新版，
+
+```bash
+$ git clone https://github.com/refraction-ray/xalpha.git
+$ cd xalpha && python3 setup.py install
+```
 
 ## Usage
 
