@@ -232,7 +232,7 @@ class Compare:
     将不同金融产品同起点归一化比较
     """
 
-    def __init__(self, *codes, start="20200101", end=yesterday()):
+    def __init__(self, *codes, start="20200101", end=yesterday(), col="close"):
         """
 
         :param codes: Union[str, tuple], 格式与 :func:`xalpha.universal.get_daily` 相同，若需要汇率转换，需要用 tuple，第二个元素形如 "USD"
@@ -255,8 +255,8 @@ class Compare:
                 cdf = xu.get_daily(currency + "/CNY", start=start, end=end)
                 cdf = cdf[cdf["date"].isin(opendate)]
                 df = df.merge(right=cdf, on="date", suffixes=("_x", "_y"))
-                df["close"] = df["close_x"] * df["close_y"]
-            df[code] = df["close"] / df.iloc[0].close
+                df[col] = df[col + "_x"] * df[col + "_y"]
+            df[code] = df[col] / df.iloc[0][col]
             df = df.reset_index()
             df = df[["date", code]]
             if "date" not in totdf.columns:

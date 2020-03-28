@@ -19,7 +19,7 @@ def csv_cache():
 # 防止peb csv 数字位长反复变化
 @pytest.fixture
 def reset_table():
-    l = ["./peb-SH000807.csv", "./sw-801180.csv"]
+    l = ["./peb-SH000807.csv", "./sw-801180.csv", "./teb-SH000300.csv"]
     for f in l:
         shutil.copyfile(f, f + ".backup")
     yield
@@ -71,3 +71,8 @@ def test_fund_share(csv_cache):
     assert len(df) == 3
     df = xa.get_daily("fs-SZ161129", start="20200303", end="20200305")
     assert len(df) == 3
+
+
+def test_teb_range(csv_cache, reset_table):
+    df = xa.get_daily("teb-SH000300", start="20070101", end="20200212")
+    assert round(df[df["date"] == "20200207"].iloc[0]["e"], 1) == 31168.6

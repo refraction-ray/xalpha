@@ -72,6 +72,11 @@ def test_get_bb_daily():
     print("skip")  # travis 服务器ip 可能被彭博 block 了
 
 
+def test_get_yahoo_daily():
+    df = xa.get_daily("YH-CSGOLD.SW", end="20200323")
+    assert round(df.iloc[-1]["close"], 1) == 149.4
+
+
 def test_cache():
     get_daily_cache = xa.universal.cached("20190101")(xa.universal._get_daily)
     l1 = get_daily_cache("EUR/CNY", start="20200101")

@@ -22,6 +22,7 @@ try:
         valuation,
         get_query_count,
         finance,
+        get_index_stocks,
     )
 
     # 本地导入
@@ -377,6 +378,57 @@ timeframe={years}&period=daily&volumePeriod=daily".format(
     return df
 
 
+def get_historical_fromyh(code, start=None, end=None):
+    """
+    雅虎财经数据源，支持数据丰富，不限于美股
+
+    :param code:
+    :param start:
+    :param end:
+    :return:
+    """
+    if code.startswith("YH-"):
+        code = code[3:]
+    start_obj = dt.datetime.strptime(start, "%Y%m%d")
+    today_obj = dt.datetime.now()
+    fromnow = (today_obj - start_obj).days
+    if fromnow < 20:
+        range_ = "1mo"
+    elif fromnow < 50:
+        range_ = "3mo"
+    elif fromnow < 150:
+        range_ = "6mo"
+    elif fromnow < 300:
+        range_ = "1y"
+    elif fromnow < 600:
+        range_ = "2y"
+    elif fromnow < 1500:
+        range_ = "5y"
+    else:
+        range_ = "10y"
+    url = "https://query1.finance.yahoo.com/v8\
+/finance/chart/{code}?region=US&lang=en-US&includePrePost=false\
+&interval=1d&range={range_}&corsDomain=finance.yahoo.com&.tsrc=finance".format(
+        code=code, range_=range_
+    )
+    # 该 API 似乎也支持起止时间选择参数，period1=1427500800&period2=1585353600
+    # 也可直接从历史数据页面爬取： https://finance.yahoo.com/quote/CSGOLD.SW/history?period1=1427500800&period2=1585353600&interval=1d&filter=history&frequency=1d
+    r = rget_json(url)
+    data = {}
+    datel = []
+    for t in r["chart"]["result"][0]["timestamp"]:
+        t = dt.datetime.fromtimestamp(t)
+        if t.second != 0:
+            t -= dt.timedelta(hours=8)
+        datel.append(t.replace(tzinfo=None, hour=0, minute=0, second=0, microsecond=0))
+
+    data["date"] = datel
+    for k in ["close", "open", "high", "low"]:
+        data[k] = r["chart"]["result"][0]["indicators"]["quote"][0][k]
+    df = pd.DataFrame(data)
+    return df
+
+
 def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, **kws):
     """
     universal fetcher for daily historical data of literally everything has a value in market.
@@ -409,6 +461,10 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
             12. 形如 BB-FGERBIU:ID 格式的数据，对应网页 https://www.bloomberg.com/quote/FGERBIU:ID，可以返回彭博的数据（最近五年）
 
             13. 形如 sw-801720 格式的数据，可以返回对应申万行业的历史数据情况，需要 enable 聚宽数据源方可查看。
+
+            14. 形如 teb-SH000300 格式的数据，返回每周指数盈利和净资产总值数据(单位：亿人民币元)，需要 enbale 聚宽数据方可查看。
+
+            15. 形如 YH-CSGOLD.SW 格式的数据，返回雅虎财经标的日线数据（最近十年）。代码来自标的网页 url：https://finance.yahoo.com/quote/CSGOLD.SW。
 
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
@@ -484,6 +540,12 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
 
     elif _from == "sw":
         df = get_sw_from_jq(code, start=start, end=end)
+
+    elif _from == "teb":
+        df = get_teb_range(code, start=start, end=end)
+
+    elif _from == "YH":
+        df = get_historical_fromyh(code, start=start, end=end)
 
     else:
         raise ParserFailure("no such data source: %s" % _from)
@@ -671,6 +733,7 @@ def cached(s):
     def cached_start(f):
         @wraps(f)
         def wrapper(*args, **kws):
+            print("cached function is deprecated, please instead use cachedio")
             if args:
                 code = args[0]
             else:
@@ -998,6 +1061,29 @@ def get_sw_from_jq(code, start=None, end=None, **kws):
         .order_by(finance.SW1_DAILY_VALUATION.date.asc())
     )
     df["date"] = pd.to_datetime(df["date"])
+    return df
+
+
+def get_teb(code, date):
+    if len(code.split(".")) != 2:
+        code = _inverse_convert_code(code)
+    sl = get_index_stocks(code, date=date)
+    df = get_fundamentals(query(valuation).filter(valuation.code.in_(sl)), date=date)
+    df["e"] = df["market_cap"] / df["pe_ratio"]
+    df["b"] = df["market_cap"] / df["pb_ratio"]
+    return {"e": df["e"].sum(), "b": df["b"].sum()}  # 亿人民币
+
+
+def get_teb_range(code, start, end):
+    if len(code.split(".")) != 2:
+        code = _inverse_convert_code(code)
+    data = {"date": [], "e": [], "b": []}
+    for d in pd.date_range(start, end, freq="W-FRI"):
+        data["date"].append(d)
+        r = get_teb(code, d.strftime("%Y-%m-%d"))
+        data["e"].append(r["e"])
+        data["b"].append(r["b"])
+    df = pd.DataFrame(data)
     return df
 
 
