@@ -401,6 +401,8 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
 
             12. 形如 BB-FGERBIU:ID 格式的数据，对应网页 https://www.bloomberg.com/quote/FGERBIU:ID，可以返回彭博的数据（最近五年）
 
+            13. 形如 sw-801720 格式的数据，可以返回对应申万行业的历史数据情况，需要 enable 聚宽数据源方可查看。
+
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
     :param prev: Optional[int], default 365. If start is not specified, start = end-prev.

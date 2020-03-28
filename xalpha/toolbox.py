@@ -73,10 +73,10 @@ class PEBHistory:
 
     def _gen_percentile(self):
         self.pep = [
-            round(i, 3) for i in np.percentile(self.df.pe, np.arange(0, 110, 10))
+            round(i, 3) for i in np.nanpercentile(self.df.pe, np.arange(0, 110, 10))
         ]
         self.pbp = [
-            round(i, 3) for i in np.percentile(self.df.pb, np.arange(0, 110, 10))
+            round(i, 3) for i in np.nanpercentile(self.df.pb, np.arange(0, 110, 10))
         ]
 
     def percentile(self):

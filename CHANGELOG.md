@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### added
+* 申万行业指数历史估值情况
 
 ## v0.7.0 - 2020.03.27
 ### changed
