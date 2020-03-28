@@ -51,6 +51,13 @@ def tomorrow_ts():
     return dto.timestamp()
 
 
+def has_weekday(start, end):
+    for d in pd.date_range(start, end):
+        if d.weekday() < 5:
+            return True
+    return False
+
+
 def get_token():
     r = rget("https://xueqiu.com", headers={"user-agent": "Mozilla"})
     return r.cookies["xq_a_token"]
@@ -795,12 +802,14 @@ def cachedio(**ioconf):
                             kws["end"] = (
                                 df0.iloc[0][date] - pd.Timedelta(days=1)
                             ).strftime("%Y%m%d")
-                            df1 = f(*args, **kws)
-                            if len(df1) > 0:
-                                df1 = df1[df1["date"] <= kws["end"]]
-                            if len(df1) > 0:
-                                is_changed = True
-                                df0 = df1.append(df0, ignore_index=True)
+                            if has_weekday(kws["start"], kws["end"]):
+                                # 考虑到海外市场的不同情况，不用 opendate 判断，采取保守型判别
+                                df1 = f(*args, **kws)
+                                if len(df1) > 0:
+                                    df1 = df1[df1["date"] <= kws["end"]]
+                                if len(df1) > 0:
+                                    is_changed = True
+                                    df0 = df1.append(df0, ignore_index=True)
                         # 向后延拓
                         if df0.iloc[-1][date] < end_obj:
                             if len(df0[df0["date"] == df0.iloc[-1]["date"]]) == 1:
@@ -810,14 +819,18 @@ def cachedio(**ioconf):
                                     df0.iloc[-1][date] + dt.timedelta(days=1)
                                 ).strftime("%Y%m%d")
                             kws["end"] = end_str
-                            df2 = f(*args, **kws)
-                            if len(df2) > 0:
-                                df2 = df2[df2["date"] >= kws["start"]]
-                            if len(df2) > 0:
-                                is_changed = True
-                                if len(df0[df0["date"] == df0.iloc[-1]["date"]]) == 1:
-                                    df0 = df0.iloc[:-1]
-                                df0 = df0.append(df2, ignore_index=True)
+                            if has_weekday(kws["start"], kws["end"]):
+                                df2 = f(*args, **kws)
+                                if len(df2) > 0:
+                                    df2 = df2[df2["date"] >= kws["start"]]
+                                if len(df2) > 0:
+                                    is_changed = True
+                                    if (
+                                        len(df0[df0["date"] == df0.iloc[-1]["date"]])
+                                        == 1
+                                    ):
+                                        df0 = df0.iloc[:-1]
+                                    df0 = df0.append(df2, ignore_index=True)
                             # 注意这里抹去更新了原有最后一天的缓存，这是因为日线最新一天可能有实时数据污染
 
                     except (FileNotFoundError, exc.ProgrammingError, KeyError):

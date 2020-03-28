@@ -35,3 +35,5 @@
 *	石油相关基金的分析和研究： `示例 <https://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/oilfund.ipynb>`_
 
 *   QDII 基金T-1日净值预估研究： `示例 <https://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/netvalueestimation.ipynb>`_
+
+*   和基金净值预测与折溢价套利相关的独立项目 `LOF-BOT <https://re-ra.xyz/lof-bot/>`_

@@ -23,7 +23,9 @@ class mul:
     :param fundtradeobj: list of trade obj which you want to analyse together
     :param status: the status table of trade, all code in this table would be considered.
             one must provide one of the two paramters, if both are offered, status will be overlooked
-    :param istatus: 场内交易账单，若提供，则场内外交易联合统计展示。该选项只保证 ``combsummary`` 方法可正常使用，不保证 ``mul`` 类的其他方法可用。
+            可以是场内记账单 DataFrame，也可以是 record 对象。
+    :param istatus: 场内交易账单，也可以是 irecord 对象。
+            若提供，则场内外交易联合统计展示。该选项只保证 ``combsummary`` 方法可正常使用，不保证 ``mul`` 类的其他方法可用。
     :param property: Dict[fundcode, property_number]. property number 的解释：
             int. 1: 基金申购采取分位以后全舍而非四舍五入（这种基金是真实存在的==）。2：基金默认分红再投入（0 则是默认现金分红）。4：基金赎回按净值处理（暂时只支持货币基金，事实上无法精确支持按份额赎回的净值型基金）。将想要的性质数值相加即可，类似 *nix 上的 xwr 系统。
     :param fetch: boolean, when open the fetch option, info class will try fetching from local files first in the init
