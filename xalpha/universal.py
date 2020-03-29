@@ -60,6 +60,11 @@ def has_weekday(start, end):
 
 
 def get_token():
+    """
+    获取雪球的验权 token，匿名也可获取，而且似乎永远恒定
+
+    :return:
+    """
     r = rget("https://xueqiu.com", headers={"user-agent": "Mozilla"})
     return r.cookies["xq_a_token"]
 
@@ -86,7 +91,7 @@ def ts2pdts(ts):
     )  # 雪球美股数据时间戳是美国0点，按北京时区换回时间后，把时分秒扔掉就重合了
 
 
-def get_xueqiu(code, count):
+def get_historical_fromxq(code, count):
     r = get_history(code=code, prefix="", count=count, token=get_token())
     df = pd.DataFrame(data=r["data"]["item"], columns=r["data"]["column"])
     df["date"] = (df["timestamp"]).apply(ts2pdts)  # reset hours to zero
@@ -276,7 +281,7 @@ def get_fund(code):
 
 
 # this is the most elegant approach to dispatch get_daily, the definition can be such simple
-# you actually don't need to bother on start end blah, it is all taken care of by ``cahcedio``
+# you actually don't need to bother on start end blah, everything is taken care of by ``cahcedio``
 @data_source("jq")
 def get_fundshare_byjq(code, **kws):
     code = _inverse_convert_code(code)
@@ -336,7 +341,7 @@ selectedModule=PerformanceGraphView&selectedSubModule=Graph\
 def get_historical_frombb(code, start=None, end=None, **kws):
     """
     https://www.bloomberg.com/ 数据源, 试验性支持。
-    似乎有很严格的 IP 封禁措施, 且最新数据更新滞后，似乎难以支持 T-1 净值预测
+    似乎有很严格的 IP 封禁措施, 且最新数据更新滞后，似乎难以支持 T-1 净值预测。强烈建议从英为或雅虎能找到的标的，不要用彭博源，该 API 只能作为 last resort。
 
     :param code:
     :param start:
@@ -380,7 +385,7 @@ timeframe={years}&period=daily&volumePeriod=daily".format(
 
 def get_historical_fromyh(code, start=None, end=None):
     """
-    雅虎财经数据源，支持数据丰富，不限于美股
+    雅虎财经数据源，支持数据丰富，不限于美股。但存在部分历史数据确实 NAN 或者周末进入交易日的现象，可能数据需要进一步清洗和处理。
 
     :param code:
     :param start:
@@ -432,7 +437,7 @@ def get_historical_fromyh(code, start=None, end=None):
 def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, **kws):
     """
     universal fetcher for daily historical data of literally everything has a value in market.
-    数据来源包括天天基金，雪球，英为财情，外汇局官网，聚宽，标普官网，bloomberg 等。
+    数据来源包括天天基金，雪球，英为财情，外汇局官网，聚宽，标普官网，bloomberg，雅虎财经等。
 
     :param code: str.
 
@@ -452,7 +457,7 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
 
             8. 形如 peb-000807.XSHG 或 peb-SH000807 格式的数据，可以返回每周的指数估值情况，需要 enable 聚宽数据源方可查看。
 
-            9. 形如 iw-000807.XSHG 或 peb-SH000807 格式的数据，可以返回每月的指数成分股和实时权重，需要 enable 聚宽数据源方可查看。
+            9. 形如 iw-000807.XSHG 或 iw-SH000807 格式的数据，可以返回每月的指数成分股和实时权重，需要 enable 聚宽数据源方可查看。
 
             10. 形如 fs-SH501018 格式的数据，可以返回指定场内基金每日份额，需要 enable 聚宽数据源方可查看。
 
@@ -512,13 +517,13 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
     start_str = start_obj.strftime("%Y/%m/%d")
     end_str = end_obj.strftime("%Y/%m/%d")
 
-    if _from in ["cninvesting", "investing", "default"]:
+    if _from in ["cninvesting", "investing", "default", "IN"]:
         df = get_cninvesting(code, start_str, end_str)
         df = prettify(df)
-    elif _from in ["xueqiu", "xq", "snowball"]:
-        df = get_xueqiu(code, count)
+    elif _from in ["xueqiu", "xq", "snowball", "XQ"]:
+        df = get_historical_fromxq(code, count)
         df = prettify(df)
-    elif _from in ["zhongjianjia", "zjj", "chinamoney"]:
+    elif _from in ["zhongjianjia", "zjj", "chinamoney", "ZJJ"]:
         df = get_rmb(start, end, prev, currency=code)
     elif _from in ["ttjj", "tiantianjijin", "xalpha", "eastmoney"]:
         df = get_fund(code)
