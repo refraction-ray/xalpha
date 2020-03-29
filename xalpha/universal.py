@@ -98,7 +98,7 @@ def get_historical_fromxq(code, count):
     return df
 
 
-def get_cninvesting(curr_id, st_date, end_date):
+def get_historical_fromcninvesting(curr_id, st_date, end_date):
     r = rpost(
         "https://cn.investing.com/instruments/HistoricalDataAjax",
         data={
@@ -341,7 +341,7 @@ selectedModule=PerformanceGraphView&selectedSubModule=Graph\
 def get_historical_frombb(code, start=None, end=None, **kws):
     """
     https://www.bloomberg.com/ 数据源, 试验性支持。
-    似乎有很严格的 IP 封禁措施, 且最新数据更新滞后，似乎难以支持 T-1 净值预测。强烈建议从英为或雅虎能找到的标的，不要用彭博源，该 API 只能作为 last resort。
+    似乎有很严格的 IP 封禁措施, 且最新数据更新滞后，且国内会被 reset，似乎难以支持 T-1 净值预测。强烈建议从英为或雅虎能找到的标的，不要用彭博源，该 API 只能作为 last resort。
 
     :param code:
     :param start:
@@ -380,6 +380,46 @@ timeframe={years}&period=daily&volumePeriod=daily".format(
     df["close"] = df["value"]
     df["date"] = pd.to_datetime(df["dateTime"])
     df = df[["date", "close"]]
+    return df
+
+
+def get_historical_fromft(code, start, end):
+    """
+    finance times 数据
+
+    :param code:
+    :param start:
+    :param end:
+    :return:
+    """
+    if not code.isdigit():
+        code = get_ft_id(code)
+    start = start.replace("/", "").replace("-", "")
+    end = end.replace("/", "").replace("-", "")
+    start = start[:4] + "/" + start[4:6] + "/" + start[6:]
+    end = end[:4] + "/" + end[4:6] + "/" + end[6:]
+    url = "https://markets.ft.com/data/equities/ajax/\
+get-historical-prices?startDate={start}&endDate={end}&symbol={code}".format(
+        code=code, start=start, end=end
+    )
+    r = rget_json(url, headers={"user-agent": "Mozilla/5.0"})
+    b = BeautifulSoup(r["html"], "lxml")
+    data = {"date": [], "open": [], "close": [], "high": [], "low": []}
+    for i, td in enumerate(b.findAll("td")):
+        if i % 6 == 0:
+            s = td.find("span").string.split(",")[1:]
+            s = ",".join(s)
+            data["date"].append(dt.datetime.strptime(s, " %B %d, %Y"))
+        elif i % 6 == 1:
+            data["open"].append(float(td.string))
+        elif i % 6 == 2:
+            data["high"].append(float(td.string))
+        elif i % 6 == 3:
+            data["low"].append(float(td.string))
+        elif i % 6 == 4:
+            data["close"].append(float(td.string))
+    df = pd.DataFrame(data)
+    df = df.iloc[::-1]
     return df
 
 
@@ -471,6 +511,8 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
 
             15. 形如 YH-CSGOLD.SW 格式的数据，返回雅虎财经标的日线数据（最近十年）。代码来自标的网页 url：https://finance.yahoo.com/quote/CSGOLD.SW。
 
+            16. 形如 FT-22065529 格式的数据或 FT-INX:IOM，可以返回 financial times 的数据，推荐直接用后者。前者数字代码来源，打开浏览器 network 监视，切换图标时间轴时，会新增到 https://markets.ft.com/data/chartapi/series 的 XHR 请求，其 request payload 里的 [elements][symbol] 即为该指数对应数字。
+
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
     :param prev: Optional[int], default 365. If start is not specified, start = end-prev.
@@ -518,7 +560,7 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
     end_str = end_obj.strftime("%Y/%m/%d")
 
     if _from in ["cninvesting", "investing", "default", "IN"]:
-        df = get_cninvesting(code, start_str, end_str)
+        df = get_historical_fromcninvesting(code, start_str, end_str)
         df = prettify(df)
     elif _from in ["xueqiu", "xq", "snowball", "XQ"]:
         df = get_historical_fromxq(code, count)
@@ -551,6 +593,9 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
 
     elif _from == "YH":
         df = get_historical_fromyh(code, start=start, end=end)
+
+    elif _from == "FT":
+        df = get_historical_fromft(code, start=start, end=end)
 
     else:
         raise ParserFailure("no such data source: %s" % _from)
@@ -585,16 +630,29 @@ def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
     q_ext = r["data"]["quote"].get("current_ext", None)
     percent = r["data"]["quote"]["percent"]
     currency = r["data"]["quote"]["currency"]
+    market = r["data"]["market"]["region"]
     return {
         "name": n,
         "current": _float(q),
         "percent": _float(percent),
         "current_ext": _float(q_ext) if q_ext else None,
         "currency": currency,
+        "market": market,  # HK, US, CN
     }
 
 
 def get_cninvesting_rt(suburl):
+    trans = {
+        "瑞士": "CH",
+        "日本": "JP",
+        "美国": "US",
+        "香港": "HK",
+        "德国": "DE",
+        "英国": "UK",
+        "法国": "FR",
+        "中国": "CN",
+        "墨西哥": "MX",
+    }
     url = "https://cn.investing.com"
     if not suburl.startswith("/"):
         url += "/"
@@ -627,12 +685,18 @@ def get_cninvesting_rt(suburl):
         q_ext = _float(panhou.find("span").string)
     else:
         q_ext = None
+    market = None
+    for span in s.findAll("span", class_="elp"):
+        if span.find("a") and span.find("a")["href"].startswith("/markets"):
+            market = span.string
+    market = trans.get(market, market)
     return {
         "name": name,
         "current": q,
         "current_ext": q_ext,
         "currency": currency,
         "percent": percent,
+        "market": market,
     }
 
 
@@ -668,6 +732,41 @@ def get_rt_from_sina(code):
     return d
 
 
+def get_ft_id(code):
+    url = "https://markets.ft.com/data/indices/tearsheet/summary?s={code}".format(
+        code=code
+    )
+    r = rget(url)
+    b = BeautifulSoup(r.text, "lxml")
+    return eval(
+        b.find("section", class_="mod-tearsheet-add-to-watchlist")["data-mod-config"]
+    )["xid"]
+
+
+def get_rt_from_ft(code):
+    r = rget(
+        "https://markets.ft.com/data/indices/tearsheet/summary?s={code}".format(
+            code=code
+        )
+    )
+    b = BeautifulSoup(r.text, "lxml")
+    d = {}
+    d["name"] = b.find("h1").string
+    d["current"] = _float(b.find("span", class_="mod-ui-data-list__value").string)
+    d["percent"] = _float(
+        b.findAll("span", class_="mod-ui-data-list__value")[1]
+        .find("span")
+        .contents[1]
+        .split("/")[1][:-1]
+    )
+    d["current_ext"] = None
+    d["market"] = None
+    d["currency"] = b.find("span", class_="mod-ui-data-list__label").string.split("(")[
+        1
+    ][:-1]
+    return d
+
+
 def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
     """
     universal fetcher for realtime price of literally everything.
@@ -678,14 +777,18 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
     :param double_check: Optional[bool], default False. 如果设为 True，只适用于 A 股，美股，港股实时行情，会通过至少两个不同的数据源交叉验证，确保正确。
             适用于需要自动交易等情形，防止实时数据异常。
     :return: Dict[str, Any].
-        包括 "name", "current", "percent" 三个必有项和 "current_ext"（盘后价格）, "currency" （计价货币）两个值可能为 ``None`` 的选项。
+        包括 "name", "current", "percent" 三个必有项和 "current_ext"（盘后价格）, "currency" （计价货币）， "market" (发行市场)可能为 ``None`` 的选项。
     """
+    # 对于一些标的，get_rt 的主任务可能不是 current 价格，而是去拿 market currency 这些元数据
     if not _from:
         if len(code.split("/")) > 1:
             _from = "investing"
         # elif code.startswith("HK") and code[2:].isdigit():
         #     _from = "xueqiu"
-        else:  # 默认不启用新浪实时，只做双重验证
+        elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 2:
+            _from = code.split("-")[0]
+            code = code.split("-")[1]
+        else:  # 默认不启用新浪实时，只做双重验证备份
             _from = "xueqiu"
     if _from in ["cninvesting", "investing"]:
         return get_cninvesting_rt(code)
@@ -699,6 +802,8 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
         return get_xueqiu_rt(code, token=get_token())
     elif _from in ["sina", "sn", "xinlang"]:
         return get_rt_from_sina(code)
+    elif _from in ["FT", "ft"]:
+        return get_rt_from_ft(code)
 
 
 get_realtime = get_rt
@@ -905,7 +1010,7 @@ def cachedio(**ioconf):
                         if precached:
                             kws["start"] = precached.replace("/", "").replace("-", "")
                             kws["end"] = (today_obj() - dt.timedelta(days=1)).strftime(
-                                "%Y-%m-%d"
+                                "%Y%m%d"
                             )
                         is_changed = True
                         df0 = f(*args, **kws)

@@ -14,6 +14,7 @@ zogqb = xa.mfundinfo("001211", **ioconf)
 
 
 def test_fundreport():
+    # somehow fragile, to be checked
     r = xa.FundReport("000827")
     assert r.get_report()[0][:2] == "广发"
     assert r.analyse_report(1)["bank"][:2] == "兴业"

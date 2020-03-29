@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+## added
+* 添加 ft 日线数据源和实时数据
 
 ## v0.7.1 - 2020.03.29
 ### added

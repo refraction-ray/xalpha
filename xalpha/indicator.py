@@ -68,7 +68,7 @@ class indicator:
             times = pd.date_range(self.totcftable.iloc[0].date, yesterdayobj())
             netvalue = []
             for date in times:
-                netvalue.append(self.unitvalue(date))
+                netvalue.append(self.unitvalue(date))  # may take a long time
             self.price = pd.DataFrame(data={"date": times, "netvalue": netvalue})
             self.price = self.price[self.price["date"].isin(opendate)]
             self.name = name

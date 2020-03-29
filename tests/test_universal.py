@@ -60,6 +60,10 @@ def test_get_investing_rt():
     assert isinstance(ext, float) or (ext is None)
 
 
+def test_get_ft_rt():
+    assert xa.get_rt("FT-INX:IOM")["currency"] == "USD"
+
+
 def test_get_sp_daily():
     df = xa.get_daily("SP5475707.2", start="20200202", end="20200303")
     assert round(df.iloc[-1]["close"], 3) == 1349.31
@@ -75,6 +79,13 @@ def test_get_bb_daily():
 def test_get_yahoo_daily():
     df = xa.get_daily("YH-CSGOLD.SW", end="20200323")
     assert round(df.iloc[-1]["close"], 1) == 149.4
+
+
+def test_get_ft_daily():
+    df = xa.get_daily("FT-22065529", start="20190101", end="20200323")
+    assert len(df) == 306
+    df = xa.get_daily("FT-AUCHAH:SWX:CHF", prev=10, end="20200327")
+    assert round(df.iloc[-1]["close"], 2) == 66.37
 
 
 def test_cache():

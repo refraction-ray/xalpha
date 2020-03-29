@@ -19,7 +19,7 @@ xalpha 有两部分可以提供数据缓存和本地化。
 ``save=True`` （更新的数据存回本地）, ``form="csv"/"sql"`` （本地后端是 csv 文件还是 sql 数据库） 和
 ``path="path"/engine`` （对应 csv 的本地存储路径或对应 sql 的 SQLAlchemy.engine 类.
 作为参数传入 ``fundinfo`` 等。
-如果是基金组合，也可以直接将这些参数传入 `mul` 或 `mulfix` 类。
+如果是基金组合，也可以直接将这些参数传入 ``mul`` 或 ``mulfix`` 类。
 格式为 sql 时， path 示例：
 
 .. code-block:: python
