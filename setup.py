@@ -36,6 +36,7 @@ setuptools.setup(
         "pyecharts>=1.1.0",  # broken api between 0.x and 1.x
         "beautifulsoup4",
         "sqlalchemy",
+        "pysocks",  # sock5 proxy support
     ],
     tests_require=["pytest"],
     classifiers=(

@@ -28,16 +28,22 @@ b64decode_s = lambda s: b64decode(s.encode("utf-8")).decode("utf-8")
 # 注意 base64 毫无加密功能，因此请自己考虑将密码本地化后的便捷性与安全性的平衡
 
 
-def set_proxy(proxy):
+def set_proxy(proxy=None):
     """
     设置代理，部分数据源可能国内网络环境不稳定。比如标普指数官网。
     还有一些数据源很快就会封 IP，需要设置代理，比如人民币中间价官网，建议直接把中间价数据缓存到本地，防止反复爬取。
 
-    :param proxy: str. format as "http://user:passwd@host:port" user passwd part can be omitted if not set.
+    :param proxy: str. format as "http://user:passwd@host:port" user passwd part can be omitted if not set. None 代表取消代理
     :return:
     """
-    os.environ["http_proxy"] = proxy
-    os.environ["https_proxy"] = proxy
+    if proxy:
+        os.environ["http_proxy"] = proxy
+        os.environ["https_proxy"] = proxy
+        setattr(thismodule, "proxy", proxy)
+    else:
+        os.environ["http_proxy"] = ""
+        os.environ["https_proxy"] = ""
+        setattr(thismodule, "proxy", None)
 
 
 def set_jq_data(user=None, pswd=None, persistent=False, debug=False):
@@ -118,6 +124,7 @@ def show_providers():
 
 
 def initialization():
+    set_proxy()
     for source in providers_list:
         if getattr(thismodule, source + "_source", False):
             getattr(thismodule, "set_" + source + "_data")()

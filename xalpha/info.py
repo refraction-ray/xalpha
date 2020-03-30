@@ -31,24 +31,6 @@ from xalpha.indicator import indicator
 _warnmess = "Something weird on redem fee, please adjust self.segment by hand"
 
 
-def _download(url, tries=5):
-    """
-    wrapper of requests.get(), in case of internet failure
-
-    :param url: string of the url
-    :param tries: int, attempts to reconnect the url
-    :return: request.get() object
-    """
-    for count in range(tries):
-        try:
-            page = rq.get(url)
-            break
-        except connection_errors as e:
-            if count == tries - 1:
-                raise e
-    return page
-
-
 def _shengoucal(sg, sgf, value, label):
     """
     Infer the share of buying fund by money input, the rate of fee in the unit of %,
@@ -452,7 +434,7 @@ class fundinfo(basicinfo):
             print("There are still string comments for the fund!")
 
     def _basic_init(self):
-        self._page = _download(self._url)
+        self._page = rget(self._url)
         if self._page.text[:800].find("Data_millionCopiesIncome") >= 0:
             raise FundTypeError("This code seems to be a mfund, use mfundinfo instead")
 
@@ -504,7 +486,7 @@ class fundinfo(basicinfo):
         """
         Preprocess to add self.feeinfo and self.segment attr according to redemption fee info
         """
-        feepage = _download(self._feeurl)
+        feepage = rget(self._feeurl)
         soup = BeautifulSoup(
             feepage.text, "lxml"
         )  # parse the redemption fee html page with beautiful soup
@@ -712,7 +694,7 @@ class fundinfo(basicinfo):
             + self.code
             + "&page=1&per=1"
         )
-        con = _download(self._updateurl)
+        con = rget(self._updateurl)
         soup = BeautifulSoup(con.text, "lxml")
         items = soup.findAll("td")
         if dt.datetime.strptime(str(items[0].string), "%Y-%m-%d") == today():
@@ -724,7 +706,7 @@ class fundinfo(basicinfo):
                 + "&page=1&per="
                 + str(diffdays)
             )
-            con = _download(self._updateurl)
+            con = rget(self._updateurl)
             soup = BeautifulSoup(con.text, "lxml")
             items = soup.findAll("td")
         elif (
@@ -739,7 +721,7 @@ class fundinfo(basicinfo):
                     + str(pg)
                     + "&per=10"
                 )
-                con = _download(self._updateurl)
+                con = rget(self._updateurl)
                 soup = BeautifulSoup(con.text, "lxml")
                 items.extend(soup.findAll("td"))
         else:
@@ -810,7 +792,7 @@ class indexinfo(basicinfo):
         )
 
     def _basic_init(self):
-        raw = _download(self._url)
+        raw = rget(self._url)
         cr = csv.reader(raw.text.splitlines(), delimiter=",")
         my_list = list(cr)
         factor = float(my_list[-1][3])
@@ -986,7 +968,7 @@ class mfundinfo(basicinfo):
         )
 
     def _basic_init(self):
-        self._page = _download(self._url)
+        self._page = rget(self._url)
         if self._page.text[:800].find("Data_fundSharesPositions") >= 0:
             raise FundTypeError("This code seems to be a fund, use fundinfo instead")
 
@@ -1101,7 +1083,7 @@ class mfundinfo(basicinfo):
             + self.code
             + "&page=1&per=1"
         )
-        con = _download(self._updateurl)
+        con = rget(self._updateurl)
         soup = BeautifulSoup(con.text, "lxml")
         items = soup.findAll("td")
         if dt.datetime.strptime(str(items[0].string), "%Y-%m-%d") == today():
@@ -1114,7 +1096,7 @@ class mfundinfo(basicinfo):
                 + "&page=1&per="
                 + str(diffdays)
             )
-            con = _download(self._updateurl)
+            con = rget(self._updateurl)
             soup = BeautifulSoup(con.text, "lxml")
             items = soup.findAll("td")
         elif (
@@ -1129,7 +1111,7 @@ class mfundinfo(basicinfo):
                     + str(pg)
                     + "&per=10"
                 )
-                con = _download(self._updateurl)
+                con = rget(self._updateurl)
                 soup = BeautifulSoup(con.text, "lxml")
                 items.extend(soup.findAll("td"))
         else:

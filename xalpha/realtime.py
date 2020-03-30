@@ -12,8 +12,8 @@ from re import match
 
 import pandas as pd
 
-from xalpha.cons import today
-from xalpha.info import _download, fundinfo
+from xalpha.cons import today, rget
+from xalpha.info import fundinfo
 from xalpha.trade import trade
 
 
@@ -84,7 +84,7 @@ class rtdata:
 
     def __init__(self, code):
         url = "http://fundgz.1234567.com.cn/js/" + code + ".js"
-        page = _download(url)
+        page = rget(url)
         self.code = code
         self.rtvalue = float(match(r'.*"gsz":"(\d*\.\d*)",.*', page.text)[1])
         self.name = match(r'.*"name":"([^,]*)",.*', page.text)[1]

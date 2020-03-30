@@ -187,6 +187,10 @@ def reconnect(tries=5):
         def wrapper(*args, **kws):
             for count in range(tries):
                 try:
+                    import xalpha.provider as xp
+
+                    if getattr(xp, "proxy", None):
+                        kws["proxies"] = {"http": xp.proxy, "https": xp.proxy}
                     r = f(*args, **kws)
                     return r
                 except connection_errors as e:

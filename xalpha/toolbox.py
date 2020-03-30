@@ -614,7 +614,13 @@ class QDIIPredict:
                         "no need to predict t-1 value since it has been out for %s"
                         % self.code
                     )
-                    return last_value
+                    if not return_date:
+                        return last_value
+                    else:
+                        return (
+                            last_value,
+                            datekey[:4] + "-" + datekey[4:6] + "-" + datekey[6:8],
+                        )
             else:
                 yesterday_str = datekey
                 fund_price = xu.get_daily(self.fcode)  # 获取国内基金净值

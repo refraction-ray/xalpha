@@ -454,13 +454,13 @@ get-historical-prices?startDate={start}&endDate={end}&symbol={code}".format(
             s = ",".join(s)
             data["date"].append(dt.datetime.strptime(s, " %B %d, %Y"))
         elif i % 6 == 1:
-            data["open"].append(float(td.string))
+            data["open"].append(_float(td.string))
         elif i % 6 == 2:
-            data["high"].append(float(td.string))
+            data["high"].append(_float(td.string))
         elif i % 6 == 3:
-            data["low"].append(float(td.string))
+            data["low"].append(_float(td.string))
         elif i % 6 == 4:
-            data["close"].append(float(td.string))
+            data["close"].append(_float(td.string))
     df = pd.DataFrame(data)
     df = df.iloc[::-1]
     return df
