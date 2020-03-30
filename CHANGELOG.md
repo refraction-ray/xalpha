@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.8.0 - 2020.03.30
 ## added
 * 添加 ft 日线数据源和实时数据
 * 将净值预测的基础设施迁移重构进 xalpha，并封装成面向对象

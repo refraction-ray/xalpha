@@ -1,11 +1,22 @@
 import setuptools
+import os
+import shutil
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+## super ugly but quick way to exclude .py files in the packages
+
+excludes = ["holdings.py"]
+
+for f in excludes:
+    absf = os.path.join(os.getcwd(), f)
+    if os.path.exists(absf):
+        shutil.move(absf, os.path.join(os.getcwd(), f + ".keep"))
+
 setuptools.setup(
     name="xalpha",
-    version="0.7.1",
+    version="0.8.0",
     author="refraction-ray",
     author_email="refraction-ray@protonmail.com",
     description="all about fund investment",
@@ -33,3 +44,9 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ),
 )
+
+
+for f in excludes:
+    absf = os.path.join(os.getcwd(), f + ".keep")
+    if os.path.exists(absf):
+        shutil.move(absf, os.path.join(os.getcwd(), f))
