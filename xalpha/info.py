@@ -456,12 +456,14 @@ class fundinfo(basicinfo):
         if self._page.text[:800].find("Data_millionCopiesIncome") >= 0:
             raise FundTypeError("This code seems to be a mfund, use mfundinfo instead")
 
-        l = eval(
-            re.match(r".*Data_netWorthTrend = ([^;]*);.*", self._page.text).groups()[0]
-        )
-        ltot = eval(
-            re.match(r".*Data_ACWorthTrend = ([^;]*);.*", self._page.text).groups()[0]
-        )
+        l = re.match(r".*Data_netWorthTrend = ([^;]*);.*", self._page.text).groups()[0]
+        l = l.replace("null", "None")  # 暂未发现基金净值有 null 的基金，若有，其他地方也很可能出问题！
+        l = eval(l)
+        ltot = re.match(r".*Data_ACWorthTrend = ([^;]*);.*", self._page.text).groups()[
+            0
+        ]
+        ltot = ltot.replace("null", "None")  ## 096001 总值数据中有 null！
+        ltot = eval(ltot)
         ## timestamp transform tzinfo must be taken into consideration
         tz_bj = dt.timezone(dt.timedelta(hours=8))
         infodict = {

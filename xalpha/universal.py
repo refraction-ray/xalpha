@@ -717,18 +717,24 @@ def get_rt_from_sina(code):
     if (
         code.startswith("SH") or code.startswith("SZ") or code.startswith("HK")
     ) and code[2:].isdigit():
-        d["current"] = float(l[3])
-        d["percent"] = round((float(l[3]) / float(l[2]) - 1) * 100, 2)
-        d["current_ext"] = None
         if code.startswith("HK"):
+            d["current"] = float(l[4])  # 英文股票名称占位
             d["currency"] = "HKD"
+            d["percent"] = round((float(l[4]) / float(l[3]) - 1) * 100, 2)
+            d["market"] = "HK"
         else:
+            d["current"] = float(l[3])
             d["currency"] = "CNY"
+            d["percent"] = round((float(l[3]) / float(l[2]) - 1) * 100, 2)
+            d["market"] = "CN"
+        d["current_ext"] = None
+
     else:
         d["currency"] = "USD"
         d["current"] = float(l[1])
         d["percent"] = float(l[2])
         d["current_ext"] = None
+        d["market"] = "US"
     return d
 
 
