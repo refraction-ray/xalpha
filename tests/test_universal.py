@@ -51,6 +51,7 @@ def test_get_xueqiu_rt():
 def test_get_sina_rt():
     assert xa.get_rt("PDD", _from="sina")["currency"] == "USD"
     xa.get_rt("HK00700", double_check=True)
+    xa.get_rt("SH600000", double_check=True)
 
 
 def test_get_investing_rt():
