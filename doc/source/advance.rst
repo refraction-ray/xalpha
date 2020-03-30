@@ -168,3 +168,21 @@ xalpha 的数据来自天天基金，英为财情，雪球，彭博，标普，�
 场内账单则统一采用流水形式，每一笔需要记录交易净值和交易份额，此时由于买卖都是份额，因此数字全部代表份额，正买负卖，若有分红折算等，需自己手动维护，额外添加交易记录实现。
 场内账单的例子请参考 tests/demo3.csv. 其列头分别是 date,code,value,share,fee。date 格式为20200202。code 对应场内代码，开头需包含 SH 或 SZ。value 是成交的净值单价。
 share 代表成交的份数。fee 代表手续费，也可以不计，则默认为0，建议记录以得到交易盈利的更好全景。
+
+
+
+QDII 净值预测
+---------------------------
+
+净值预测接口请参考 :class:`xalpha.toolbox.QDIIPredict`.
+
+基本使用说明，在提供了 holdings.py 的前提下（置于 xalpha 源代码文件夹，开源 xalpha 默认不提供该文件，则预测需手动提供相应基金的持仓信息和基金交易市场，计价货币，休市时间，期货现货对应等元信息）
+
+ .. code-block:: python
+
+    import xalpha as xa
+    xa.set_backend(backend="csv", path="./data") # 设置合适的本地化方案，也可不设，则数据仅会缓存在内存中
+    nfyy = xa.QDIIPredict("SH501018", position=True) # 初始化南方原油的净值预测，采取浮动仓位预测
+    print(nfyy.get_t1()) # 返回上个交易日的净值预测
+    print(nfyy.get_position()) # 返回基于前天和更早净值数据判断而得出的昨日仓位估计
+    print(nfyy.get_t0()) # 实时净值预测

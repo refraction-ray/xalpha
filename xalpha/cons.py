@@ -154,6 +154,33 @@ def convert_date(date):
         return date
 
 
+def next_onday(dtobj):
+    dtobj += dt.timedelta(1)
+    while dtobj.strftime("%Y-%m-%d") not in opendate:
+        dtobj += dt.timedelta(1)
+    return dtobj
+
+
+def last_onday(dtobj):
+    dtobj -= dt.timedelta(1)
+    while dtobj.strftime("%Y-%m-%d") not in opendate:
+        dtobj -= dt.timedelta(1)
+    return dtobj
+
+
+def scale_dict(d, scale=1, ulimit=100, dlimit=50, aim=None):
+    t = sum([v for _, v in d.items()])
+    if t * scale > ulimit:
+        scale = ulimit / t
+    elif t * scale < dlimit:
+        scale = dlimit / t
+    if aim:
+        scale = aim / t
+    for k, v in d.items():
+        d[k] = v * scale
+    return d
+
+
 def reconnect(tries=5):
     def robustify(f):
         @wraps(f)
@@ -244,3 +271,23 @@ def rpost_json(*args, **kws):
 #                 print("still wrong after several tries")
 #                 raise e
 #             time.sleep(0.5*count)
+
+
+## simple subsitution for holdings.py
+
+holdings = {}
+holdings["501018"] = {
+    "etfs/etfs-brent-1mth-uk": 17.51,
+    "etfs/etfs-brent-crude": 15.04,
+    "etfs/etfs-crude-oil": 7.34,
+    "etfs/ipath-series-b-sp-gsci-crd-oil-tr": 0.06,
+    "etfs/powershares-db-oil-fund": 11.6,
+    "etfs/ubs-cmci-oil-sf-usd": 8.68,
+    "etfs/united-states-12-month-oil": 8.14,
+    "etfs/united-states-brent-oil-fund-lp": 15.42,
+    "etfs/united-states-oil-fund": 9.63,
+}
+holdings["501018rt"] = {
+    "commodities/brent-oil": 40 * 0.9,
+    "commodities/crude-oil": 60 * 0.9,
+}

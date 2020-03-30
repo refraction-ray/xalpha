@@ -767,6 +767,26 @@ def get_rt_from_ft(code):
     return d
 
 
+def get_newest_netvalue(code):
+    """
+    防止天天基金总量 API 最新净值更新不及时，获取基金最新公布净值及对应日期
+
+    :param code: six digits string for fund.
+    :return: netvalue, %Y-%m-%d
+    """
+    code = code[1:]
+    r = rget("http://fund.eastmoney.com/{code}.html".format(code=code))
+    s = BeautifulSoup(r.text, "lxml")
+    return (
+        float(
+            s.findAll("dd", class_="dataNums")[1]
+            .find("span", class_="ui-font-large")
+            .string
+        ),
+        str(s.findAll("dt")[1]).split("(")[1].split(")")[0][7:],
+    )
+
+
 def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
     """
     universal fetcher for realtime price of literally everything.

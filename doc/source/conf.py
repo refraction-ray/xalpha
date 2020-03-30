@@ -69,6 +69,14 @@ language = "cn"
 # This pattern also affects html_static_path and html_extra_path .
 exclude_patterns = []
 
+autodoc_default_options = {
+    "members": True,
+    "special-members": "__init__",
+    "undoc-members": True,
+    "private-members": True,
+    "exclude-members": "__weakref__, _abc_cache, _abc_negative_cache, _abc_negative_cache_version,_abc_registry",
+}
+
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
 

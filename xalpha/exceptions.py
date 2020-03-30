@@ -54,3 +54,33 @@ class DataPossiblyWrong(XalphaException):
     """
 
     pass
+
+
+class DateMismatch(XalphaException):
+    """
+    Used for lof prediction
+    """
+
+    def __init__(self, code, reason=""):
+        self.code = code
+        self.reason = reason
+
+    def __repr__(self):
+        return self.reason
+
+    __str__ = __repr__
+
+
+class NonAccurate(XalphaException):
+    """
+    Used for lof prediction
+    """
+
+    def __init__(self, code, reason=""):
+        self.code = code
+        self.reason = reason
+
+    def __repr__(self):
+        return self.reason
+
+    __str__ = __repr__
