@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### added
+* 增加英为 app 源备份
 
 ## v0.8.0 - 2020.03.30
 ## added

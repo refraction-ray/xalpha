@@ -10,9 +10,9 @@ with open("README.md", "r") as fh:
 excludes = ["holdings.py"]
 
 for f in excludes:
-    absf = os.path.join(os.getcwd(), f)
+    absf = os.path.join(os.getcwd(), "xalpha", f)
     if os.path.exists(absf):
-        shutil.move(absf, os.path.join(os.getcwd(), f + ".keep"))
+        shutil.move(absf, os.path.join(os.getcwd(), "xalpha", f + ".keep"))
 
 setuptools.setup(
     name="xalpha",
@@ -47,6 +47,6 @@ setuptools.setup(
 
 
 for f in excludes:
-    absf = os.path.join(os.getcwd(), f + ".keep")
+    absf = os.path.join(os.getcwd(), "xalpha", f + ".keep")
     if os.path.exists(absf):
-        shutil.move(absf, os.path.join(os.getcwd(), f))
+        shutil.move(absf, os.path.join(os.getcwd(), "xalpha", f))

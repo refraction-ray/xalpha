@@ -26,14 +26,17 @@ try:
         currency_info,
         market_info,
         futures_info,
+        alt_info,
     )
 except ImportError:
+    print("no holdings.py is found")
     from xalpha.cons import holdings
 
     currency_info = {}
     market_info = {}
     no_trading_days = {}
     futures_info = {}
+    alt_info = {}
 
 
 class PEBHistory:
@@ -332,7 +335,10 @@ def get_currency(code):
         elif currency == "JPY":
             currency = "100JPY"
     except (TypeError, AttributeError, ValueError):
-        currency = "CNY"
+        if code.startswith("FT-") and len(code.split(":")) > 2:
+            currency = code.split(":")[-1]
+        else:
+            currency = "CNY"
     return currency
 
 
@@ -363,6 +369,22 @@ def get_market(code):
     except (TypeError, AttributeError, ValueError):
         market = "CN"
     return market
+
+
+@lru_cache(maxsize=512)
+def get_alt(code):
+    """
+    抓取失败后寻找替代对等标的
+
+    :param code:
+    :return:
+    """
+    if code in alt_info:
+        return alt_info[code]
+    elif len(code[1:].split("/")) == 2:
+        return "INA-" + code
+    else:
+        return None
 
 
 def _is_on(code, date):
@@ -408,6 +430,7 @@ def is_on(date, market="CN", no_trading_days=None):
 def daily_increment(code, date, lastday=None, _check=None):
     """
     单一标的 date 日（若 date 日无数据则取之前的最晚有数据日，但该日必须大于 _check 对应的日期）较上一日或 lastday 的倍数，
+    lastday 支持不完整，且不能离 date 太远
 
     :param code:
     :param date:
@@ -415,14 +438,21 @@ def daily_increment(code, date, lastday=None, _check=None):
     :param _check:
     :return:
     """
-    tds = xu.get_daily(code=code, end=date, prev=20)
+    try:
+        tds = xu.get_daily(code=code, end=date, prev=20)
+    except Exception as e:  # 只能笼统 catch 了，因为抓取失败的异常是什么都能遇到。。。
+        code = get_alt(code)
+        if code:
+            tds = xu.get_daily(code=code, end=date, prev=20)
+        else:
+            raise e
     tds = tds[tds["date"] <= date]
     if _check:
         _check = _check.replace("-", "").replace("/", "")
         _check_obj = dt.datetime.strptime(_check, "%Y%m%d")
         if tds.iloc[-1]["date"] <= _check_obj:  # in case data is not up to date
             # 但是存在日本市场休市时间不一致的情况，估计美股也存在
-            if is_on(date, get_market(code), no_trading_days=no_trading_days):
+            if not is_on(date, get_market(code), no_trading_days=no_trading_days):
                 # 注意有时计价货币无法和市场保持一致，暂时不处理，遇到再说
                 # TODO: get_market 函数
                 print("%s is closed that day" % code)
@@ -546,12 +576,13 @@ class QDIIPredict:
         )
 
     @error_catcher
-    def get_t1(self, date=None):
+    def get_t1(self, date=None, return_date=True):
         """
         预测 date 日的净值，基于 date-1 日的净值和 date 日的外盘数据，数据自动缓存，不会重复计算
 
         :param date: str. %Y-%m-%d. 注意若是 date 日为昨天，即今日预测昨日的净值，date 取默认值 None。
-        :return: float.
+        :param return_date: bool, default True. return tuple, the second one is date in the format %Y%m%d
+        :return: float, (str).
         :raises NonAccurate: 由于外盘数据还未及时更新，而 raise，可在调用程序中用 except 捕获再处理。
         """
         if date is None:
@@ -559,56 +590,63 @@ class QDIIPredict:
             datekey = yesterday.strftime("%Y%m%d")
         else:
             datekey = date.replace("/", "").replace("-", "")
-        if datekey in self.t1value_cache:
+        if datekey not in self.t1value_cache:
+
+            if self.positions:
+                # print("datekey", datekey)
+                current_pos = self.get_position(datekey, return_date=False)
+                hdict = scale_dict(self.t1dict.copy(), aim=current_pos * 100)
+            else:
+                hdict = self.t1dict.copy()
+
+            if date is None:  # 此时预测上个交易日净值
+                yesterday_str = datekey
+                last_value, last_date = get_newest_netvalue(self.fcode)
+                last_date_obj = dt.datetime.strptime(last_date, "%Y-%m-%d")
+                if last_date_obj < last_onday(yesterday):  # 前天净值数据还没更新
+                    raise DateMismatch(
+                        self.code,
+                        reason="%s netvalue has not been updated to the day before yesterday"
+                        % self.code,
+                    )
+                elif last_date_obj > last_onday(yesterday):  # 昨天数据已出，不需要再预测了
+                    print(
+                        "no need to predict t-1 value since it has been out for %s"
+                        % self.code
+                    )
+                    return last_value
+            else:
+                yesterday_str = datekey
+                fund_price = xu.get_daily(self.fcode)  # 获取国内基金净值
+                fund_last = fund_price[fund_price["date"] < date].iloc[-1]
+                # 注意实时更新应用 date=None 传入，否则此处无法保证此数据是前天的而不是大前天的，因为没做校验
+                # 事实上这里计算的预测是针对 date 之前的最晚数据和之前一日的预测
+                last_value = fund_last["close"]
+                last_date = fund_last["date"].strftime("%Y-%m-%d")
+            net = last_value * (
+                1 + evaluate_fluctuation(hdict, yesterday_str, _check=last_date) / 100
+            )
+            self.t1value_cache[datekey] = net
+        if not return_date:
             return self.t1value_cache[datekey]
-
-        if self.positions:
-            current_pos = self.get_position(datekey)
-            hdict = scale_dict(self.t1dict.copy(), aim=current_pos * 100)
         else:
-            hdict = self.t1dict.copy()
+            return (
+                self.t1value_cache[datekey],
+                datekey[:4] + "-" + datekey[4:6] + "-" + datekey[6:8],
+            )
 
-        if date is None:  # 此时预测上个交易日净值
-            yesterday_str = datekey
-            last_value, last_date = get_newest_netvalue(self.fcode)
-            last_date_obj = dt.datetime.strptime(last_date, "%Y-%m-%d")
-            if last_date_obj < last_onday(yesterday):  # 前天净值数据还没更新
-                raise DateMismatch(
-                    self.code,
-                    reason="%s netvalue has not been updated to the day before yesterday"
-                    % self.code,
-                )
-            elif last_date_obj > last_onday(yesterday):  # 昨天数据已出，不需要再预测了
-                print(
-                    "no need to predict t-1 value since it has been out for %s"
-                    % self.code
-                )
-                return last_value
-        else:
-            yesterday_str = datekey
-            fund_price = xu.get_daily(self.fcode)
-            fund_last = fund_price[fund_price["date"] < date].iloc[-1]
-            # 注意实时更新应用 date=None 传入，否则此处无法保证此数据是前天的而不是大前天的，因为没做校验
-            # 事实上这里计算的预测是针对 date 之前的最晚数据和之前一日的预测
-            last_value = fund_last["close"]
-            last_date = fund_last["date"].strftime("%Y-%m-%d")
-        net = last_value * (
-            1 + evaluate_fluctuation(hdict, yesterday_str, _check=last_date) / 100
-        )
-        self.t1value_cache[datekey] = net
-        return net
-
-    def get_t0(self, percent=False):
+    def get_t0(self, percent=False, return_date=True):
         """
         获取当日实时净值估计
 
         :param percent: bool， default False。现在有两种实时的预测处理逻辑。若 percent 是 True，则将 t0dict 的
             每个持仓标的的今日涨跌幅进行估算，若为 False，则将标的现价和标的对应指数昨日收盘价的比例作为涨跌幅估算。
+        :param return_date: bool, default True. return tuple, the second one is date in the format %Y%m%d
         :return: float
         """
         if not self.t0dict:
             raise ValueError("Please provide t0dict for prediction")
-        t1value = self.get_t1(date=None)
+        t1value = self.get_t1(date=None, return_date=False)
         t = 0
         n = 0
         today_str = self.today.strftime("%Y%m%d")
@@ -624,7 +662,14 @@ class QDIIPredict:
                     kf = futures_info[k]
                 else:
                     kf = k[:-8]  # k + "-futures"
-                funddf = xu.get_daily(kf)
+                try:
+                    funddf = xu.get_daily(kf)  ## 获取股指现货日线
+                except Exception as e:
+                    kf = get_alt(kf)
+                    if kf:
+                        raise e
+                    else:
+                        funddf = xu.get_daily(kf)
                 last_line = funddf[funddf["date"] < today_str].iloc[
                     -1
                 ]  # TODO: check it is indeed date of last_on(today)
@@ -633,50 +678,60 @@ class QDIIPredict:
                 c = c * daily_increment(r["currency"] + "/CNY", today_str)
             n += c
         n += (100 - t) / 100
-        return n * t1value
+        if not return_date:
+            return n * t1value
+        else:
+            return n * t1value, self.today.strftime("%Y-%m-%d")
 
     @error_catcher
-    def get_position(self, date=None, refresh=False, **kws):
+    def get_position(self, date=None, refresh=False, return_date=True, **kws):
         """
         基于 date 日之前的净值数据，对 date 预估需要的仓位进行计算。
 
         :param date: str. %Y-%m-%d
         :param refresh: bool, default False. 若为 True，则刷新缓存，重新计算仓位。
+        :param return_date: bool, default True. return tuple, the second one is date in the format %Y%m%d
         :param kws: 一些预估仓位可能的超参。包括 window，预估所需的时间窗口，decay 加权平均的权重衰减，smooth 每日仓位处理的平滑函数。以上参数均可保持默认即可获得较好效果。
         :return: float. 0-100. 100 代表满仓。
         """
         if not date:
-            date = self.today.strftime("%Y%m%d")
+            date = last_onday(self.today).strftime("%Y%m%d")
         else:
             date = date.replace("/", "").replace("-", "")
-        if date in self.position_cache and not refresh:
+        if date not in self.position_cache or refresh:
+
+            fdict = scale_dict(self.t1dict.copy(), aim=100)
+            l = kws.get("window", 4)
+            q = kws.get("decay", 0.8)
+            s = kws.get("smooth", _smooth_pos)
+            d = dt.datetime.strptime(date, "%Y%m%d")
+            posl = [sum([v for _, v in self.t1dict.items()]) / 100]
+            for _ in range(l):
+                d = last_onday(d)
+            for _ in range(l - 1):
+                d = next_onday(d)
+                pred = evaluate_fluctuation(
+                    fdict,
+                    d.strftime("%Y-%m-%d"),
+                    _check=(d - dt.timedelta(days=1)).strftime("%Y-%m-%d"),
+                )
+                real = evaluate_fluctuation(
+                    {self.fcode: 100},
+                    d.strftime("%Y-%m-%d"),
+                    _check=(d - dt.timedelta(days=1)).strftime("%Y-%m-%d"),
+                )
+                posl.append(s(real, pred, posl[-1]))
+            current_pos = sum([q ** i * posl[l - i - 1] for i in range(l)]) / sum(
+                [q ** i for i in range(l)]
+            )
+            self.position_cache[date] = current_pos
+        if not return_date:
             return self.position_cache[date]
-        fdict = scale_dict(self.t1dict.copy(), aim=100)
-        l = kws.get("window", 4)
-        q = kws.get("decay", 0.8)
-        s = kws.get("smooth", _smooth_pos)
-        d = dt.datetime.strptime(date, "%Y%m%d")
-        posl = [sum([v for _, v in self.t1dict.items()]) / 100]
-        for _ in range(l):
-            d = last_onday(d)
-        for _ in range(l - 1):
-            d = next_onday(d)
-            pred = evaluate_fluctuation(
-                fdict,
-                d.strftime("%Y-%m-%d"),
-                _check=(d - dt.timedelta(days=1)).strftime("%Y-%m-%d"),
+        else:
+            return (
+                self.position_cache[date],
+                date[:4] + "-" + date[4:6] + "-" + date[6:8],
             )
-            real = evaluate_fluctuation(
-                {self.fcode: 100},
-                d.strftime("%Y-%m-%d"),
-                _check=(d - dt.timedelta(days=1)).strftime("%Y-%m-%d"),
-            )
-            posl.append(s(real, pred, posl[-1]))
-        current_pos = sum([q ** i * posl[l - i - 1] for i in range(l)]) / sum(
-            [q ** i for i in range(l)]
-        )
-        self.position_cache[date] = current_pos
-        return current_pos
 
     def benchmark_test(self, start, end, **kws):
         """

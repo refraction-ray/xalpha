@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 from functools import wraps
+from uuid import uuid4
 from sqlalchemy import exc
 from dateutil.relativedelta import relativedelta
 
@@ -98,26 +99,49 @@ def get_historical_fromxq(code, count):
     return df
 
 
-def get_historical_fromcninvesting(curr_id, st_date, end_date):
-    r = rpost(
-        "https://cn.investing.com/instruments/HistoricalDataAjax",
-        data={
-            "curr_id": curr_id,
-            #  "smlID": smlID,  # ? but seems to be fixed with curr_id, it turns out it doesn't matter
-            "st_date": st_date,  # %Y/%m/%d
-            "end_date": end_date,
-            "interval_sec": "Daily",
-            "sort_col": "date",
-            "sort_ord": "DESC",
-            "action": "historical_data",
-        },
-        headers={
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4)\
-                AppleWebKit/537.36 (KHTML, like Gecko)",
-            "Host": "cn.investing.com",
-            "X-Requested-With": "XMLHttpRequest",
-        },
-    )
+def get_historical_fromcninvesting(curr_id, st_date, end_date, app=False):
+    data = {
+        "curr_id": curr_id,
+        #  "smlID": smlID,  # ? but seems to be fixed with curr_id, it turns out it doesn't matter
+        "st_date": st_date,  # %Y/%m/%d
+        "end_date": end_date,
+        "interval_sec": "Daily",
+        "sort_col": "date",
+        "sort_ord": "DESC",
+        "action": "historical_data",
+    }
+    if not app:  # fetch from web api
+        r = rpost(
+            "https://cn.investing.com/instruments/HistoricalDataAjax",
+            data=data,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4)\
+                    AppleWebKit/537.36 (KHTML, like Gecko)",
+                "Host": "cn.investing.com",
+                "X-Requested-With": "XMLHttpRequest",
+            },
+        )
+    else:  # fetch from app api
+        r = rpost(
+            "https://cnappapi.investing.com/instruments/HistoricalDataAjax",
+            data=data,
+            headers={
+                "Accept": "*/*",
+                "Accept-Encoding": "gzip",
+                "Accept-Language": "zh-cn",
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "User-Agent": "Investing.China/0.0.3 CFNetwork/1121.2.2 Darwin/19.3.0",
+                "ccode": "CN",
+                #'ccode_time': '1585551041.986028',
+                "x-app-ver": "117",
+                "x-meta-ver": "14",
+                "x-os": "ios",
+                "x-uuid": str(uuid4()),
+                "Host": "cn.investing.com",
+                "X-Requested-With": "XMLHttpRequest",
+            },
+        )
     s = BeautifulSoup(r.text, "lxml")
     dfdict = {}
     cols = []
@@ -165,17 +189,36 @@ def dstr2dobj(dstr):
     return d_obj
 
 
-def get_investing_id(suburl):
-    url = "https://cn.investing.com"
+def get_investing_id(suburl, app=False):
+    if not app:
+        url = "https://cn.investing.com"
+    else:
+        url = "https://cnappapi.investing.com"
     if not suburl.startswith("/"):
         url += "/"
     url += suburl
-    r = rget(
-        url,
-        headers={
+    if not app:
+        headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36"
-        },
-    )
+        }
+    else:
+        headers = {
+            "Accept": "*/*",
+            "Accept-Encoding": "gzip",
+            "Accept-Language": "zh-cn",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "User-Agent": "Investing.China/0.0.3 CFNetwork/1121.2.2 Darwin/19.3.0",
+            "ccode": "CN",
+            #'ccode_time': '1585551041.986028',
+            "x-app-ver": "117",
+            "x-meta-ver": "14",
+            "x-os": "ios",
+            "x-uuid": str(uuid4()),
+            "Host": "cn.investing.com",
+            "X-Requested-With": "XMLHttpRequest",
+        }
+    r = rget(url, headers=headers,)
     s = BeautifulSoup(r.text, "lxml")
     pid = s.find("span", id="last_last")["class"][-1].split("-")[1]
     return pid
@@ -536,9 +579,6 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
             _from = "xueqiu"
         elif code.endswith("/CNY") or code.startswith("CNY/"):
             _from = "zjj"
-        elif len(code[1:].split("/")) == 2:
-            _from = "cninvesting"
-            code = get_investing_id(code)
         elif code.isdigit():
             _from = "cninvesting"
         elif code[0] in ["F", "M"] and code[1:].isdigit():
@@ -548,17 +588,19 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
             code = code[2:]
         elif code.startswith("SP") and code[2:].split(".")[0].isdigit():
             _from = "SP"
-        elif len(code.split("-")) == 2 and len(code.split("-")[0]) <= 3:
+        elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             # peb-000807.XSHG
             _from = code.split("-")[0]
-            code = code.split("-")[1]
+            code = "-".join(code.split("-")[1:])
+        elif len(code[1:].split("/")) == 2:
+            _from = "cninvesting"
+            code = get_investing_id(code)
         else:
             _from = "xueqiu"
 
     count = (today_obj() - start_obj).days + 1
     start_str = start_obj.strftime("%Y/%m/%d")
     end_str = end_obj.strftime("%Y/%m/%d")
-
     if _from in ["cninvesting", "investing", "default", "IN"]:
         df = get_historical_fromcninvesting(code, start_str, end_str)
         df = prettify(df)
@@ -597,6 +639,10 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
     elif _from == "FT":
         df = get_historical_fromft(code, start=start, end=end)
 
+    elif _from == "INA":  # investing app
+        code = get_investing_id(code, app=True)
+        df = get_historical_fromcninvesting(code, start_str, end_str, app=True)
+        df = prettify(df)
     else:
         raise ParserFailure("no such data source: %s" % _from)
 
@@ -813,7 +859,7 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
         #     _from = "xueqiu"
         elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 2:
             _from = code.split("-")[0]
-            code = code.split("-")[1]
+            code = "-".join(code.split("-")[1:])
         else:  # 默认不启用新浪实时，只做双重验证备份
             _from = "xueqiu"
     if _from in ["cninvesting", "investing"]:

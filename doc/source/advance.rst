@@ -182,9 +182,9 @@ QDII 净值预测
 
     import xalpha as xa
     xa.set_backend(backend="csv", path="./data") # 设置合适的本地化方案，也可不设，则数据仅会缓存在内存中
-    nfyy = xa.QDIIPredict("SH501018", position=True) # 初始化南方原油的净值预测，采取浮动仓位预测
+    nfyy = xa.QDIIPredict("SH501018", positions=True) # 初始化南方原油的净值预测，采取浮动仓位预测
     print(nfyy.get_t1()) # 返回上个交易日的净值预测
     print(nfyy.get_position()) # 返回基于前天和更早净值数据判断而得出的昨日仓位估计
-    print(nfyy.get_t0()) # 实时净值预测
+    print(nfyy.get_t0(percent=True)) # 实时净值预测
     nfyy.benchmark_test("2020-01-01", "2020-03-01") # 回测一段时间内的预测效果
     nfyy.analyse() # 打印出回测的定量分析

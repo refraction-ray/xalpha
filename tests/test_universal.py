@@ -38,7 +38,9 @@ def test_get_investing():
     assert (
         df1.iloc[-2]["close"] == df2.iloc[-2]["close"]
     )  ## never try -1, today's data is unpredictable
-    df = xa.get_daily(code="/currencies/usd-cny", end="20200307")
+    df = xa.get_daily(code="/currencies/usd-cny", end="20200307", prev=20)
+    assert round(df.iloc[-1]["close"], 4) == 6.9321
+    df = xa.get_daily(code="INA-currencies/usd-cny", end="20200307", prev=30)
     assert round(df.iloc[-1]["close"], 4) == 6.9321
 
 
