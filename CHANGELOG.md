@@ -2,8 +2,8 @@
 ## Unreleased
 ### added
 * 增加英为 app 源备份
-* 增加预测的日期返回
-* ``set_proxy()`` 空时添加取消代理功能
+* 增加QDII预测的日期返回
+* ``set_proxy()`` 空时添加取消代理功能，和 socks5 代理支持
 
 ## v0.8.0 - 2020.03.30
 ## added

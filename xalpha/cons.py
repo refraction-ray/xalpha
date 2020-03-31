@@ -181,7 +181,7 @@ def scale_dict(d, scale=1, ulimit=100, dlimit=50, aim=None):
     return d
 
 
-def reconnect(tries=5):
+def reconnect(tries=5, timeout=10):
     def robustify(f):
         @wraps(f)
         def wrapper(*args, **kws):
@@ -191,6 +191,7 @@ def reconnect(tries=5):
 
                     if getattr(xp, "proxy", None):
                         kws["proxies"] = {"http": xp.proxy, "https": xp.proxy}
+                        kws["timeout"] = timeout
                     r = f(*args, **kws)
                     return r
                 except connection_errors as e:

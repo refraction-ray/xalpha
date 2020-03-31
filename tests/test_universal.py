@@ -1,9 +1,17 @@
 import sys
+import pytest
 
 sys.path.insert(0, "../")
 import xalpha as xa
 
 xa.set_backend(backend="memory", prefix="pytest-")
+
+
+@pytest.fixture
+def proxy():
+    xa.provider.set_proxy("socks5://127.0.0.1:1080")
+    yield
+    xa.provider.set_proxy()
 
 
 def test_get_xueqiu():
@@ -40,8 +48,14 @@ def test_get_investing():
     )  ## never try -1, today's data is unpredictable
     df = xa.get_daily(code="/currencies/usd-cny", end="20200307", prev=20)
     assert round(df.iloc[-1]["close"], 4) == 6.9321
-    # df = xa.get_daily(code="INA-currencies/usd-cny", end="20200307", prev=30) # 似乎外网链接有问题？
-    # assert round(df.iloc[-1]["close"], 4) == 6.9321
+
+
+@pytest.mark.local
+def test_get_investng_app():
+    df = xa.get_daily(
+        code="INA-currencies/usd-cny", end="20200307", prev=30
+    )  # 似乎外网链接有问题？
+    assert round(df.iloc[-1]["close"], 4) == 6.9321
 
 
 def test_get_xueqiu_rt():
@@ -63,6 +77,7 @@ def test_get_investing_rt():
     assert isinstance(ext, float) or (ext is None)
 
 
+@pytest.mark.local
 def test_get_ft_rt():
     assert xa.get_rt("FT-INX:IOM")["currency"] == "USD"
 
@@ -74,9 +89,9 @@ def test_get_sp_daily():
     assert round(df.iloc[-1]["close"], 3) == 1349.31
 
 
-def test_get_bb_daily():
-    # df = xa.get_daily("BB-FGERBIU:ID", prev=10)
-    print("skip")  # travis 服务器ip 可能被彭博 block 了
+@pytest.mark.local
+def test_get_bb_daily(proxy):
+    df = xa.get_daily("BB-FGERBIU:ID", prev=10)
 
 
 def test_get_yahoo_daily():
