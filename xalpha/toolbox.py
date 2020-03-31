@@ -3,6 +3,7 @@
 modules for Object oriented toolbox which wrappers get_daily and some more
 """
 
+import sys
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -19,24 +20,39 @@ from xalpha.universal import (
 import xalpha.universal as xu  ## 为了 set_backend 可以动态改变此模块的 get_daily
 from xalpha.exceptions import ParserFailure, DateMismatch, NonAccurate
 
-try:
-    from xalpha.holdings import (
-        no_trading_days,
-        holdings,
-        currency_info,
-        market_info,
-        futures_info,
-        alt_info,
-    )
-except ImportError:
-    # print("no holdings.py is found") # may cause confusing for general users
-    from xalpha.cons import holdings
+thismodule = sys.modules[__name__]
 
-    currency_info = {}
-    market_info = {}
-    no_trading_days = {}
-    futures_info = {}
-    alt_info = {}
+
+def _set_holdings(module):
+    for name in [
+        "no_trading_days",
+        "holdings",
+        "currency_info",
+        "market_info",
+        "futures_info",
+        "alt_info",
+    ]:
+        setattr(thismodule, name, getattr(module, name, {}))
+
+
+def set_holdings(module=None):
+    if not module:
+        try:
+            from xalpha import holdings
+
+            _set_holdings(holdings)
+            print("holdings.py is found and loaded within xalpha dir")
+        except ImportError:
+            # print("no holdings.py is found") # may cause confusing for general users
+            from xalpha import cons
+
+            _set_holdings(cons)
+    else:
+        _set_holdings(module)
+        print("external holdings.py is loaded")
+
+
+set_holdings()
 
 
 class PEBHistory:
@@ -576,6 +592,7 @@ class QDIIPredict:
             .replace(tzinfo=None)
             .replace(hour=0, minute=0, second=0, microsecond=0)
         )
+        self.t1_type = "未计算"
 
     @error_catcher
     def get_t1(self, date=None, return_date=True):
@@ -606,6 +623,7 @@ class QDIIPredict:
                 last_value, last_date = get_newest_netvalue(self.fcode)
                 last_date_obj = dt.datetime.strptime(last_date, "%Y-%m-%d")
                 if last_date_obj < last_onday(yesterday):  # 前天净值数据还没更新
+                    self.t1_type = "前日未出"
                     raise DateMismatch(
                         self.code,
                         reason="%s netvalue has not been updated to the day before yesterday"
@@ -616,6 +634,7 @@ class QDIIPredict:
                         "no need to predict t-1 value since it has been out for %s"
                         % self.code
                     )
+                    self.t1_type = "昨日已出"
                     if not return_date:
                         return last_value
                     else:
@@ -635,6 +654,7 @@ class QDIIPredict:
                 1 + evaluate_fluctuation(hdict, yesterday_str, _check=last_date) / 100
             )
             self.t1value_cache[datekey] = net
+        self.t1_type = "已计算"
         if not return_date:
             return self.t1value_cache[datekey]
         else:

@@ -176,17 +176,32 @@ QDII 净值预测
 
 净值预测接口请参考 :class:`xalpha.toolbox.QDIIPredict`.
 
-基本使用说明，在提供了 holdings.py 的前提下（置于 xalpha 源代码文件夹，开源 xalpha 默认不提供该文件，则预测需手动提供相应基金的持仓信息和基金交易市场，计价货币，休市时间，期货现货对应等元信息）
+基本使用说明，在提供了 holdings.py 的前提下（置于 xalpha 源代码文件夹，开源 xalpha 暂时默认不提供该文件，则预测需手动提供相应基金的持仓信息和基金交易市场，计价货币，休市时间，期货现货对应等元信息）
 
  .. code-block:: python
 
     import xalpha as xa
     xa.set_backend(backend="csv", path="./data") # 设置合适的本地化方案，也可不设，则数据仅会缓存在内存中
     nfyy = xa.QDIIPredict("SH501018", positions=True) # 初始化南方原油的净值预测，采取浮动仓位预测
+    print(nfyy.t1_type) # 未计算
     print(nfyy.get_t1()) # 返回上个交易日的净值预测
+    print(nfyy.t1_type) # 已计算
     print(nfyy.get_position()) # 返回基于前天和更早净值数据判断而得出的昨日仓位估计
     print(nfyy.get_t0(percent=True)) # 实时净值预测
     print(nfyy.get_t1_rate()) # 实时市价相对昨日净值预测的溢价率
     print(nfyy.get_t0_rate(percent=True)) # 实时市价相对实时估值的溢价率
     nfyy.benchmark_test("2020-01-01", "2020-03-01") # 回测一段时间内的预测效果
     nfyy.analyse() # 打印出回测的定量分析
+
+
+导入外部 holdings.py 数据文件
++++++++++++++++++++++++++++++++
+
+可将 holdings.py 文件与运行脚本置于同一文件夹，或任何在 PYTHONPATH 的文件夹
+
+.. code-block:: python
+
+    import holdings  # 导入外部的 holdings.py
+    import xalpha as xa
+    xa.set_holdings(holdings) # 设置 xalpha 使用该数据文件
+    # 之后的操作与之前相同

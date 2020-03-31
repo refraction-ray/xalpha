@@ -2,8 +2,9 @@
 ## Unreleased
 ### added
 * 增加英为 app 源备份
-* 增加QDII预测的日期返回
+* 增加QDII预测的日期返回, 增加溢价率估计
 * ``set_proxy()`` 空时添加取消代理功能，和 socks5 代理支持
+* ``set_holdings()`` 允许外部导入数据 py
 ### fixed
 * 改进为实时的新浪港股 API，之前 API 存在 15分延时
 
