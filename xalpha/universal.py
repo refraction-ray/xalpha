@@ -751,6 +751,8 @@ def get_rt_from_sina(code):
         code.startswith("SH") or code.startswith("SZ") or code.startswith("HK")
     ) and code[2:].isdigit():
         tinycode = code[:2].lower() + code[2:]
+        if code.startswith("HK"):  # 港股额外要求实时
+            tinycode = "rt_" + tinycode
     else:  # 美股
         tinycode = "gb_"
         if code.startswith("."):
@@ -852,6 +854,7 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
         包括 "name", "current", "percent" 三个必有项和 "current_ext"（盘后价格）, "currency" （计价货币）， "market" (发行市场)可能为 ``None`` 的选项。
     """
     # 对于一些标的，get_rt 的主任务可能不是 current 价格，而是去拿 market currency 这些元数据
+    # 现在用的新浪实时数据源延迟严重， double check 并不靠谱，港股数据似乎有15分钟延迟
     if not _from:
         if len(code.split("/")) > 1:
             _from = "investing"
@@ -871,7 +874,10 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
             raise DataPossiblyWrong("realtime data unmatch for %s" % code)
         return r1
     elif _from in ["xueqiu", "xq", "snowball"]:
-        return get_xueqiu_rt(code, token=get_token())
+        try:
+            return get_xueqiu_rt(code, token=get_token())
+        except:  # 默认雪球实时引入备份机制
+            return get_rt_from_sina(code)
     elif _from in ["sina", "sn", "xinlang"]:
         return get_rt_from_sina(code)
     elif _from in ["FT", "ft"]:

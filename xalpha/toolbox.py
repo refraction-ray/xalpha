@@ -29,7 +29,7 @@ try:
         alt_info,
     )
 except ImportError:
-    print("no holdings.py is found")
+    # print("no holdings.py is found") # may cause confusing for general users
     from xalpha.cons import holdings
 
     currency_info = {}
@@ -329,6 +329,8 @@ def get_currency(code):
     try:
         if code in currency_info:
             return currency_info[code]
+        elif (code.startswith("F") or code.startswith("M")) and code[1:].isdigit():
+            return "CNY"
         currency = get_rt(code)["currency"]
         if currency is None:
             currency = "CNY"
@@ -640,6 +642,24 @@ class QDIIPredict:
                 self.t1value_cache[datekey],
                 datekey[:4] + "-" + datekey[4:6] + "-" + datekey[6:8],
             )
+
+    def get_t1_rate(self, date=None, return_date=True):
+        t1v, d = self.get_t1(date=date, return_date=True)
+        cp = get_rt(self.code)["current"]
+        r = (cp / t1v - 1) * 100
+        if return_date:
+            return r, d
+        else:
+            return r
+
+    def get_t0_rate(self, percent=False, return_date=True):
+        t0v, d = self.get_t0(percent=percent, return_date=True)
+        cp = get_rt(self.code)["current"]
+        r = (cp / t0v - 1) * 100
+        if return_date:
+            return r, d
+        else:
+            return r
 
     def get_t0(self, percent=False, return_date=True):
         """
