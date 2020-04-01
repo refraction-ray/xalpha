@@ -10,7 +10,7 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
-from functools import wraps
+from functools import wraps, lru_cache
 from uuid import uuid4
 from sqlalchemy import exc
 from dateutil.relativedelta import relativedelta
@@ -189,6 +189,7 @@ def dstr2dobj(dstr):
     return d_obj
 
 
+@lru_cache(maxsize=512)
 def get_investing_id(suburl, app=False):
     if not app:
         url = "https://cn.investing.com"
@@ -372,7 +373,8 @@ selectedModule=PerformanceGraphView&selectedSubModule=Graph\
 &yearFlag={flag}YearFlag&indexId={code}".format(
         flag=flag, code=code
     )
-    df = pd.read_excel(url)
+    r = rget(url)
+    df = pd.read_excel(r.content)
     # print(df.iloc[:10])
     df = df.iloc[6:]
     df["close"] = df["Unnamed: " + col]
@@ -673,14 +675,23 @@ def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
     )
     n = r["data"]["quote"]["name"]
     q = r["data"]["quote"]["current"]
+    try:
+        q = _float(q)
+    except TypeError:  # 针对雪球实时在9点后开盘前可能出现其他情形的fixup， 效果待 check
+        # 现在的怀疑是在9am 到9:15 am, 雪球 API current 字段返回 Null
+        q = _float(r["data"]["quote"]["last_close"])
     q_ext = r["data"]["quote"].get("current_ext", None)
     percent = r["data"]["quote"]["percent"]
+    try:
+        percent = _float(percent)
+    except:
+        pass
     currency = r["data"]["quote"]["currency"]
     market = r["data"]["market"]["region"]
     return {
         "name": n,
-        "current": _float(q),
-        "percent": _float(percent),
+        "current": q,
+        "percent": percent,
         "current_ext": _float(q_ext) if q_ext else None,
         "currency": currency,
         "market": market,  # HK, US, CN
@@ -786,6 +797,7 @@ def get_rt_from_sina(code):
     return d
 
 
+@lru_cache(maxsize=512)
 def get_ft_id(code):
     url = "https://markets.ft.com/data/indices/tearsheet/summary?s={code}".format(
         code=code
@@ -854,7 +866,8 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
         包括 "name", "current", "percent" 三个必有项和 "current_ext"（盘后价格）, "currency" （计价货币）， "market" (发行市场)可能为 ``None`` 的选项。
     """
     # 对于一些标的，get_rt 的主任务可能不是 current 价格，而是去拿 market currency 这些元数据
-    # 现在用的新浪实时数据源延迟严重， double check 并不靠谱，港股数据似乎有15分钟延迟
+    # 现在用的新浪实时数据源延迟严重， double check 并不靠谱，港股数据似乎有15分钟延迟（已解决）
+    # 雪球实时和新浪实时在9：00之后一段时间可能都有问题
     if not _from:
         if len(code.split("/")) > 1:
             _from = "investing"
