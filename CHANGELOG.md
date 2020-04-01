@@ -1,5 +1,10 @@
 # Changelog
 ## Unreleased
+### added
+* 增加聚宽宏观数据到 get_daily
+### fixed
+* 增加 daily_increment 的过去选项，防止假期阻止严格检查。
+* get_daily 同时兼容双向人民币中间价
 
 ## v0.8.1 - 2020.04.01
 ### added

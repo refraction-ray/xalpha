@@ -295,8 +295,9 @@ class Compare:
             codelist.append(code)
             df = xu.get_daily(code, start=start, end=end)
             df = df[df.date.isin(opendate)]
-            if currency != "CNY":
-                cdf = xu.get_daily(currency + "/CNY", start=start, end=end)
+            currency_code = _get_currency_code(currency)
+            if currency_code:
+                cdf = xu.get_daily(currency_code, start=start, end=end)
                 cdf = cdf[cdf["date"].isin(opendate)]
                 df = df.merge(right=cdf, on="date", suffixes=("_x", "_y"))
                 df[col] = df[col + "_x"] * df[col + "_y"]
@@ -358,6 +359,48 @@ def get_currency(code):
         else:
             currency = "CNY"
     return currency
+
+
+def _get_currency_code(c):
+    if c == "CNY":
+        return  # None
+    if c == "JPY":
+        return "100JPY"
+    zjjl = [
+        "USD",
+        "EUR",
+        "100JPY",
+        "HKD",
+        "GBP",
+        "AUD",
+        "NZD",
+        "SGD",
+        "CHF",
+        "CAD",
+        "MYR",
+        "RUB",
+        "ZAR",
+        "KRW",
+        "AED",
+        "SAR",
+        "HUF",
+        "PLN",
+        "DKK",
+        "SEK",
+        "NOK",
+        "TRY",
+        "MXN",
+        "THB",
+    ]
+    if c in zjjl:
+        return c + "/CNY"
+    return "currencies/" + c.lower() + "-cny"
+
+
+@lru_cache(maxsize=512)
+def get_currency_code(code):
+    c = get_currency(code)
+    return _get_currency_code(c)
 
 
 @lru_cache(maxsize=512)
@@ -442,11 +485,12 @@ def is_on(date, market="CN", no_trading_days=None):
     elif market in ["HK"]:
         code = "indices/hang-sen-40"
     else:
-        raise ParserFailure("unknown oversea market %s" % market)
+        print("unknown oversea market %s" % market)
+        return True
     return _is_on(code, date)
 
 
-def daily_increment(code, date, lastday=None, _check=None):
+def daily_increment(code, date, lastday=None, _check=None, _check_prev=False):
     """
     单一标的 date 日（若 date 日无数据则取之前的最晚有数据日，但该日必须大于 _check 对应的日期）较上一日或 lastday 的倍数，
     lastday 支持不完整，且不能离 date 太远
@@ -455,6 +499,7 @@ def daily_increment(code, date, lastday=None, _check=None):
     :param date:
     :param lastday:
     :param _check:
+    :param _check_prev: bool default False. 如果 True，则是回测模式，应该忽略数据未更新的可能性，唯一可能就是假期或数据缺失。
     :return:
     """
     try:
@@ -471,10 +516,12 @@ def daily_increment(code, date, lastday=None, _check=None):
         _check_obj = dt.datetime.strptime(_check, "%Y%m%d")
         if tds.iloc[-1]["date"] <= _check_obj:  # in case data is not up to date
             # 但是存在日本市场休市时间不一致的情况，估计美股也存在
-            if not is_on(date, get_market(code), no_trading_days=no_trading_days):
+            if _check_prev or not is_on(
+                date, get_market(code), no_trading_days=no_trading_days
+            ):
                 # 注意有时计价货币无法和市场保持一致，暂时不处理，遇到再说
                 # TODO: get_market 函数
-                print("%s is closed that day" % code)
+                print("%s is closed on %s" % (code, date))
                 return 1  # 当日没有涨跌，这里暂时为考虑休市日和 lastday 并非前一日的情形
             else:
                 raise DateMismatch(
@@ -532,7 +579,7 @@ def error_catcher(f):
     return wrapper
 
 
-def evaluate_fluctuation(hdict, date, lastday=None, _check=None):
+def evaluate_fluctuation(hdict, date, lastday=None, _check=None, _check_prev=False):
     """
     分析资产组合 hdict 的涨跌幅，全部兑换成人民币考虑
 
@@ -546,11 +593,11 @@ def evaluate_fluctuation(hdict, date, lastday=None, _check=None):
     tot = 0
 
     for fundid, percent in hdict.items():
-        ratio = daily_increment(fundid, date, lastday, _check)
+        ratio = daily_increment(fundid, date, lastday, _check, _check_prev)
         exchange = 1
-        currency = get_currency(fundid)
-        if currency != "CNY":
-            exchange = daily_increment(currency + "/CNY", date, lastday, _check)
+        currency = get_currency_code(fundid)
+        if currency:
+            exchange = daily_increment(currency, date, lastday, _check, _check_prev)
         price += ratio * percent / 100 * exchange
         tot += percent
     remain = 100 - tot
@@ -721,8 +768,9 @@ class QDIIPredict:
                     -1
                 ]  # TODO: check it is indeed date of last_on(today)
                 c = v / 100 * r["current"] / last_line["close"]
-            if r.get("currency") and r.get("currency") != "CNY":
-                c = c * daily_increment(r["currency"] + "/CNY", today_str)
+            currency_code = get_currency_code(k)
+            if currency_code:
+                c = c * daily_increment(currency_code, today_str)
             n += c
         n += (100 - t) / 100
         if not return_date:
@@ -761,11 +809,13 @@ class QDIIPredict:
                     fdict,
                     d.strftime("%Y-%m-%d"),
                     _check=(d - dt.timedelta(days=1)).strftime("%Y-%m-%d"),
+                    _check_prev=True,
                 )
                 real = evaluate_fluctuation(
                     {self.fcode: 100},
                     d.strftime("%Y-%m-%d"),
                     _check=(d - dt.timedelta(days=1)).strftime("%Y-%m-%d"),
+                    _check_prev=True,
                 )
                 posl.append(s(real, pred, posl[-1]))
             current_pos = sum([q ** i * posl[l - i - 1] for i in range(l)]) / sum(

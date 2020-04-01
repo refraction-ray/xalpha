@@ -134,7 +134,7 @@ def test_cache_io():
 def test_cache_mm():
     df = xa.get_daily("SH501018", prev=100)
     l1 = len(df)
-    xa.set_backend(backend="memory")
+    xa.set_backend(backend="memory", prefix="pytestm-")
     xa.get_daily("SH501018", prev=50)
     df = xa.get_daily("SH501018", prev=100)
     l2 = len(df)

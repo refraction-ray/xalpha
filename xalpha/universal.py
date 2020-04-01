@@ -24,12 +24,13 @@ try:
         get_query_count,
         finance,
         get_index_stocks,
+        macro,
     )
 
     # 本地导入
 except ImportError:
     try:
-        from jqdata import finance  # 云平台导入
+        from jqdata import finance, macro  # 云平台导入
     except ImportError:
         pass
 
@@ -248,6 +249,27 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
     :param currency:
     :return: pd.DataFrame
     """
+    bl = ["USD", "EUR", "100JPY", "HKD", "GBP", "AUD", "NZD", "SGD", "CHF", "CAD"]
+    al = [
+        "MYR",
+        "RUB",
+        "ZAR",
+        "KRW",
+        "AED",
+        "SAR",
+        "HUF",
+        "PLN",
+        "DKK",
+        "SEK",
+        "NOK",
+        "TRY",
+        "MXN",
+        "THB",
+    ]
+    is_inverse = False
+    if (currency[:3] in al) or (currency[4:] in bl):
+        is_inverse = True
+        currency = currency[4:] + "/" + currency[:3]
     url = "http://www.chinamoney.com.cn/ags/ms/cm-u-bk-ccpr/CcprHisNew?startDate={start_str}&endDate={end_str}&currency={currency}&pageNum=1&pageSize=300"
     if not end:
         end_obj = today_obj()
@@ -312,6 +334,8 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
     df = pd.DataFrame(data)
     df = df[::-1]
     df["close"] = pd.to_numeric(df["close"])
+    if is_inverse:
+        df["close"] = 1 / df["close"]
     return df
 
 
@@ -519,6 +543,19 @@ def get_historical_fromyh(code, start=None, end=None):
     return df
 
 
+@data_source("jq")
+def get_macro(table, start, end, datecol="stat_year"):
+    df = macro.run_query(
+        query(getattr(macro, table))
+        .filter(getattr(getattr(macro, table), datecol) >= start)
+        .filter(getattr(getattr(macro, table), datecol) <= end)
+        .order_by(getattr(getattr(macro, table), datecol))
+    )
+    df[datecol] = pd.to_datetime(df[datecol])
+    df["date"] = df[datecol]
+    return df
+
+
 def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, **kws):
     """
     universal fetcher for daily historical data of literally everything has a value in market.
@@ -557,6 +594,8 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
             15. 形如 YH-CSGOLD.SW 格式的数据，返回雅虎财经标的日线数据（最近十年）。代码来自标的网页 url：https://finance.yahoo.com/quote/CSGOLD.SW。
 
             16. 形如 FT-22065529 格式的数据或 FT-INX:IOM，可以返回 financial times 的数据，推荐直接用后者。前者数字代码来源，打开浏览器 network 监视，切换图标时间轴时，会新增到 https://markets.ft.com/data/chartapi/series 的 XHR 请求，其 request payload 里的 [elements][symbol] 即为该指数对应数字。
+
+            17. 形如 mcy-MAC_AREA_UNEMPLOY 格式的数据，返回相应的宏观数据，需要聚宽数据源。mcy，mcq，mcm 代表年度，季度和月度的数据，code 为表名，可以参考 https://www.joinquant.com/help/api/help?name=macroData
 
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
@@ -645,6 +684,16 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
         code = get_investing_id(code, app=True)
         df = get_historical_fromcninvesting(code, start_str, end_str, app=True)
         df = prettify(df)
+
+    elif _from == "mcy":
+        df = get_macro(code, start=start[:4], end=end[:4], datecol="stat_year")
+
+    elif _from == "mcq":
+        df = get_macro(code, start=start[:4], end=end[:4], datecol="stat_quarter")
+
+    elif _from == "mcm":
+        df = get_macro(code, start=start[:4], end=end[:4], datecol="stat_month")
+
     else:
         raise ParserFailure("no such data source: %s" % _from)
 
@@ -709,6 +758,7 @@ def get_cninvesting_rt(suburl):
         "法国": "FR",
         "中国": "CN",
         "墨西哥": "MX",
+        "澳大利亚": "AU",
     }
     url = "https://cn.investing.com"
     if not suburl.startswith("/"):
@@ -1116,7 +1166,7 @@ def cachedio(**ioconf):
                     d = getattr(thismodule, "cached_dict")
                     d[key] = df0
 
-            if df0 is not None:
+            if df0 is not None and len(df0) > 0:
                 df0 = df0[df0["date"] <= end_str]
                 df0 = df0[df0["date"] >= start_str]
 
