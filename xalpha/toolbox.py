@@ -376,6 +376,7 @@ def get_market(code):
         "CHF": "CH",
         "JPY": "JP",
         "EUR": "DE",
+        "AUD": "AU",
     }
     try:
         if code in market_info:

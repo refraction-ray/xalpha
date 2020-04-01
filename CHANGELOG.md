@@ -1,8 +1,10 @@
 # Changelog
 ## Unreleased
+
+## v0.8.1 - 2020.04.01
 ### added
 * 增加英为 app 源备份
-* 增加QDII预测的日期返回, 增加溢价率估计
+* 增加QDII预测的日期返回, 增加溢价率估计，增加t1计算状态
 * ``set_proxy()`` 空时添加取消代理功能，和 socks5 代理支持
 * ``set_holdings()`` 允许外部导入数据 py
 * 增加标的对应 id 的缓存
