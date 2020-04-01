@@ -1364,3 +1364,47 @@ def _inverse_convert_code(code):
         return code[2:] + ".XSHG"
     elif code.startswith("SZ"):
         return code[2:] + ".XSHE"
+
+
+def get_bar(code, prev=120, interval=3600):
+    """
+    get bar data beyond daily bar
+
+    :param code: str. investing id or url
+    :param prev: int, data points from now, max might be around 500, if exceed, only None is returnd
+    :param interval: default 3600. optional 60, 300, 900, 1800, 18000, 86400, "week", "month"
+    :return: pd.DataFrame or None if prev and interval unmatch the API
+    """
+    if interval == "day":
+        interval = 86400
+    elif interval == "hour":
+        interval = 3600
+    elif interval == "minute":
+        interval = 60
+    if len(code.split("/")) == 2:
+        code = get_investing_id(code)
+    r = rget_json(
+        "https://cn.investing.com/common/modules/js_instrument_chart/api/data.php?pair_id={code}&pair_id_for_news={code}\
+    &chart_type=area&pair_interval={interval}&candle_count={prev}&events=yes&volume_series=yes&period=".format(
+            code=code, prev=str(prev), interval=str(interval)
+        ),
+        headers={
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4)\
+                    AppleWebKit/537.36 (KHTML, like Gecko)",
+            "Host": "cn.investing.com",
+            "Referer": "https://cn.investing.com/commodities/",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+            "X-Requested-With": "XMLHttpRequest",
+        },
+    )
+    if not r:
+        return  # None
+    tz_bj = dt.timezone(dt.timedelta(hours=8))
+    df = pd.DataFrame(r["candles"], columns=["date", "close", "0", "1"])
+    df = df.drop(["0", "1"], axis=1)
+    df["date"] = df["date"].apply(
+        lambda t: dt.datetime.fromtimestamp(t / 1000, tz=tz_bj).replace(tzinfo=None)
+    )
+    return df

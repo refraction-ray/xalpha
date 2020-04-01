@@ -76,3 +76,9 @@ def test_fund_share(csv_cache):
 def test_teb_range(csv_cache, reset_table):
     df = xa.get_daily("teb-SH000300", start="20070101", end="20200212")
     assert round(df[df["date"] == "20200207"].iloc[0]["e"], 1) == 31168.6
+
+
+@pytest.mark.skip
+def test_get_macro():
+    df = xa.get_daily("mcq-MAC_INDUSTRY_AGR_PRODUCT_IDX_QUARTER", start="20180101")
+    assert df.iloc[0]["wheat"] == 0

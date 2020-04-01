@@ -12,6 +12,13 @@ def test_compare():
     c.v()
 
 
+def test_get_currency():
+    assert (
+        xa.toolbox.get_currency_code("indices/india-50-futures") == "currencies/inr-cny"
+    )
+    assert xa.toolbox._get_currency_code("JPY") == "100JPY/CNY"
+
+
 def test_qdii_predict():
     hb = xa.QDIIPredict(
         "SZ162411",

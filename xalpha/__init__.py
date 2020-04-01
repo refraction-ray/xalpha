@@ -10,6 +10,6 @@ from xalpha.multiple import mul, mulfix, imul
 from xalpha.realtime import rfundinfo, review
 from xalpha.record import record, irecord
 from xalpha.trade import trade, itrade
-from xalpha.universal import get_daily, get_rt, set_backend
+from xalpha.universal import get_daily, get_rt, get_bar, set_backend
 from xalpha.provider import show_providers, set_proxy
 from xalpha.toolbox import PEBHistory, Compare, SWPEBHistory, QDIIPredict, set_holdings

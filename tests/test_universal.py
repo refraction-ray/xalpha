@@ -31,6 +31,8 @@ def test_get_rmb():
     assert len(df) == 528
     df = xa.get_daily(code="EUR/CNY", end="20200306")
     assert round(df.iloc[-1]["close"], 4) == 7.7747
+    df = xa.get_daily("CNY/EUR", end="20200306", prev=5)
+    assert round(df.iloc[-1]["close"], 3) == round(1 / 7.7747, 3)
 
 
 def test_get_fund():

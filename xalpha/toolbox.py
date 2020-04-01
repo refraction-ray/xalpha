@@ -365,7 +365,7 @@ def _get_currency_code(c):
     if c == "CNY":
         return  # None
     if c == "JPY":
-        return "100JPY"
+        return "100JPY/CNY"
     zjjl = [
         "USD",
         "EUR",
