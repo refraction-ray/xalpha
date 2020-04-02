@@ -3,8 +3,9 @@
 ### added
 * 增加聚宽宏观数据到 get_daily
 * QDIIPredict 实时预测支持不同时间片混合涨幅计算
+* 增加 get_bar
 * 英为实时增加 app 源
-* 增加日志系统
+* 增加日志系统，可以打印网络爬虫的详细信息
 ### fixed
 * 增加 daily_increment 的过去选项，防止假期阻止严格检查。
 * get_daily 同时兼容双向人民币中间价

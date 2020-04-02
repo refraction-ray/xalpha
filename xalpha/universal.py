@@ -954,7 +954,9 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
         try:
             return get_cninvesting_rt(code)
         except Exception as e:
-            print(e.args)
+            logger.warning(
+                "Fails due to %s, now trying app source of investing.com" % e.args[0]
+            )
             return get_cninvesting_rt(code, app=True)
     elif double_check and _from in ["xueqiu", "sina"]:
         r1 = get_xueqiu_rt(code, token=get_token())
@@ -966,7 +968,9 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
         try:
             return get_xueqiu_rt(code, token=get_token())
         except Exception as e:  # 默认雪球实时引入备份机制
-            print(e.args)
+            logging.warning(
+                "Fails due to %s, now trying backup data source from sina" % e.args[0]
+            )
             return get_rt_from_sina(code)
     elif _from in ["sina", "sn", "xinlang"]:
         return get_rt_from_sina(code)
@@ -1236,7 +1240,7 @@ def _get_index_weight_range(code, start, end):
 
             df["date"] = pd.to_datetime(df["date"])
             return df
-        print("call", d, " ", code)
+        logger.debug("fetch index weight on %s for %s" % (d, code))
         df0 = get_index_weights(index_id=code, date=d.strftime("%Y-%m-%d"))
         df0["code"] = df0.index
         df = df.append(df0, ignore_index=True)
@@ -1258,7 +1262,7 @@ def _get_peb_range(code, start, end):  # 盈利，净资产，总市值
     data = {"date": [], "pe": [], "pb": []}
     for d in pd.date_range(start=start, end=end, freq="W-FRI"):
         data["date"].append(d)
-        print("compute pe pb on %s" % d)
+        logger.debug("compute pe pb on %s" % d)
         r = get_peb(code, date=d.strftime("%Y-%m-%d"))
         data["pe"].append(r["pe"])
         data["pb"].append(r["pb"])
@@ -1397,7 +1401,6 @@ def _inverse_convert_code(code):
         return code[2:] + ".XSHE"
 
 
-@lru_cache(maxsize=128)
 def get_bar(code, prev=120, interval=3600):
     """
     get bar data beyond daily bar
@@ -1417,7 +1420,7 @@ def get_bar(code, prev=120, interval=3600):
         code = get_investing_id(code)
     r = rget_json(
         "https://cn.investing.com/common/modules/js_instrument_chart/api/data.php?pair_id={code}&pair_id_for_news={code}\
-    &chart_type=area&pair_interval={interval}&candle_count={prev}&events=yes&volume_series=yes&period=".format(
+&chart_type=area&pair_interval={interval}&candle_count={prev}&events=yes&volume_series=yes&period=".format(
             code=code, prev=str(prev), interval=str(interval)
         ),
         headers={

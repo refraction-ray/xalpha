@@ -489,7 +489,7 @@ def is_on(date, market="CN", no_trading_days=None):
     elif market in ["HK"]:
         code = "indices/hang-sen-40"
     else:
-        print("unknown oversea market %s" % market)
+        logger.warning("unknown oversea market %s" % market)
         return True
     return _is_on(code, date)
 
@@ -612,6 +612,11 @@ def evaluate_fluctuation(hdict, date, lastday=None, _check=None, _check_prev=Fal
 class QDIIPredict:
     """
     T+2 确认份额的 QDII 型基金净值预测类
+    
+    .. warning::
+
+        由于该类与现实时间的强烈耦合和激进的缓存利用，该类的对象不能"过夜"使用，每天需声明新的对象
+
     """
 
     def __init__(self, code, t1dict=None, t0dict=None, positions=False):
@@ -639,12 +644,30 @@ class QDIIPredict:
         # t0 实时净值自然不 cache
         self.positions = positions
         self.position_zero = sum([v for _, v in self.t1dict.items()])
-        self.today = (
-            dt.datetime.now(tz=dt.timezone(dt.timedelta(hours=8)))
-            .replace(tzinfo=None)
-            .replace(hour=0, minute=0, second=0, microsecond=0)
+        self.now = dt.datetime.now(tz=dt.timezone(dt.timedelta(hours=8))).replace(
+            tzinfo=None
         )
+        self.today = self.now.replace(hour=0, minute=0, second=0, microsecond=0)
         self.t1_type = "未计算"
+        self.bar_cache = {}
+
+    def set_t1(self, value, date=None):
+        """
+        设定 T-1 的基金净值，有时我们只想计算实时净值，这就不需要重复计算 t1，可以先行设定
+
+        :param value:
+        :param date:
+        :return:
+        """
+        if date is None:
+            yesterday = last_onday(self.today)
+            datekey = yesterday.strftime("%Y%m%d")
+        else:
+            datekey = date.replace("/", "").replace("-", "")
+        if datekey in self.t1value_cache:
+            print("t-1 value already exists, rewriting...")
+        self.t1value_cache[datekey] = value
+        self.t1_type = "已计算"
 
     @error_catcher
     def get_t1(self, date=None, return_date=True):
@@ -664,7 +687,6 @@ class QDIIPredict:
         if datekey not in self.t1value_cache:
 
             if self.positions:
-                # print("datekey", datekey)
                 current_pos = self.get_position(datekey, return_date=False)
                 hdict = scale_dict(self.t1dict.copy(), aim=current_pos * 100)
             else:
@@ -741,12 +763,17 @@ class QDIIPredict:
             ]  # 日期是按当地时间
         # TODO: check it is indeed date of last_on(today)
         else:
-            funddf = get_bar(code, prev=48, interval="3600")  ## 获取小时线
+            if code not in self.bar_cache:
+                funddf = get_bar(code, prev=48, interval="3600")  ## 获取小时线
+                if self.now > 6:  # 昨日美国市场收盘才正常，才缓存参考小时线
+                    self.bar_cache[code] = funddf
+            else:
+                funddf = self.bar_cache[code]
             return funddf[
                 funddf["date"] <= self.today + dt.timedelta(hours=shift)
             ].iloc[-1][
                 "close"
-            ]  # 时间是按北京时间
+            ]  # 时间是按北京时间, 小时线只能手动缓存，日线不需要是因为自带透明缓存器
 
     def get_t0(self, percent=False, return_date=True):
         """
@@ -902,7 +929,6 @@ class QDIIPredict:
                 current_pos = sum([q ** i * fq[l - i - 1] for i in range(l)]) / sum(
                     [q ** i for i in range(l)]
                 )
-                # print(current_pos)
                 if current_pos > 1:
                     current_pos = 1
 
