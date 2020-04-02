@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.8.2 - 2020.04.02
 ### added
 * 增加聚宽宏观数据到 get_daily
 * QDIIPredict 实时预测支持不同时间片混合涨幅计算
