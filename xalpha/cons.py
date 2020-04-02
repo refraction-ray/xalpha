@@ -30,6 +30,14 @@ logger = logging.getLogger(__name__)
 # date obj of today
 today = lambda: dt.datetime.combine(dt.date.today(), dt.time.min)
 
+tz_bj = dt.timezone(dt.timedelta(hours=8))
+
+
+def today_obj():
+    now = dt.datetime.now(tz=tz_bj)
+    return now.replace(hour=0, minute=0, second=0, microsecond=0).replace(tzinfo=None)
+
+
 # string for yesterday, only used for indexinfo url
 yesterday = lambda: dt.datetime.strftime(
     (dt.datetime.now() - dt.timedelta(1)), "%Y%m%d"

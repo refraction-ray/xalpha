@@ -1,5 +1,8 @@
 # Changelog
 ## Unreleased
+### fixed
+* 防止 precached 之前的日线数据无法抓取
+* 为 imul 增加 istatus 关键字参数作为冗余防止误输入
 
 ## v0.8.2 - 2020.04.02
 ### added

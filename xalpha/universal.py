@@ -36,7 +36,7 @@ except ImportError:
         pass
 
 from xalpha.info import fundinfo, mfundinfo
-from xalpha.cons import rget, rpost, rget_json, rpost_json, yesterday, opendate
+from xalpha.cons import rget, rpost, rget_json, rpost_json, tz_bj, today_obj
 from xalpha.provider import data_source
 from xalpha.exceptions import DataPossiblyWrong, ParserFailure
 
@@ -44,11 +44,6 @@ from xalpha.exceptions import DataPossiblyWrong, ParserFailure
 thismodule = sys.modules[__name__]
 xamodule = sys.modules["xalpha"]
 logger = logging.getLogger(__name__)
-
-
-def today_obj():
-    now = dt.datetime.today()
-    return now.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def tomorrow_ts():
@@ -88,7 +83,6 @@ def get_history(
 
 
 def ts2pdts(ts):
-    tz_bj = dt.timezone(dt.timedelta(hours=8))
     dto = dt.datetime.fromtimestamp(ts / 1000, tz=tz_bj).replace(tzinfo=None)
     return dto.replace(
         hour=0, minute=0, second=0, microsecond=0
@@ -1089,6 +1083,9 @@ def cachedio(**ioconf):
             prefix = ioconf.get("prefix", "")
             key = prefix + key
             # print("xdebug: %s" % ioconf.get("backend", "no"))
+            if precached:
+                precached = precached.replace("/", "").replace("-", "")
+                precached_obj = dt.datetime.strptime(precached, "%Y%m%d")
             if not prev:
                 prev = 365
             if not end:
@@ -1184,10 +1181,12 @@ def cachedio(**ioconf):
 
                     except (FileNotFoundError, exc.ProgrammingError, KeyError):
                         if precached:
-                            kws["start"] = precached.replace("/", "").replace("-", "")
-                            kws["end"] = (today_obj() - dt.timedelta(days=1)).strftime(
-                                "%Y%m%d"
-                            )
+                            if start_obj > precached_obj:
+                                kws["start"] = precached
+                            if end_obj < today_obj():
+                                kws["end"] = (
+                                    today_obj() - dt.timedelta(days=1)
+                                ).strftime("%Y%m%d")
                         is_changed = True
                         df0 = f(*args, **kws)
 
@@ -1418,7 +1417,7 @@ def get_bar(code, prev=120, interval=3600):
         interval = 60
     if len(code.split("/")) == 2:
         code = get_investing_id(code)
-    r = rget_json(
+    r = rget(
         "https://cn.investing.com/common/modules/js_instrument_chart/api/data.php?pair_id={code}&pair_id_for_news={code}\
 &chart_type=area&pair_interval={interval}&candle_count={prev}&events=yes&volume_series=yes&period=".format(
             code=code, prev=str(prev), interval=str(interval)
@@ -1434,9 +1433,9 @@ def get_bar(code, prev=120, interval=3600):
             "X-Requested-With": "XMLHttpRequest",
         },
     )
-    if not r:
+    if not r.text:
         return  # None
-    tz_bj = dt.timezone(dt.timedelta(hours=8))
+    r = r.json()
     df = pd.DataFrame(r["candles"], columns=["date", "close", "0", "1"])
     df = df.drop(["0", "1"], axis=1)
     df["date"] = df["date"].apply(

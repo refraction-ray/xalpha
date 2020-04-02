@@ -169,6 +169,13 @@ xalpha 的数据来自天天基金，英为财情，雪球，彭博，标普，�
 场内账单的例子请参考 tests/demo3.csv. 其列头分别是 date,code,value,share,fee。date 格式为20200202。code 对应场内代码，开头需包含 SH 或 SZ。value 是成交的净值单价。
 share 代表成交的份数。fee 代表手续费，也可以不计，则默认为0，建议记录以得到交易盈利的更好全景。
 
+场内账单的读入使用 ``ist=xa.irecord(path)``. 其既可以传入专门的场内投资组合类 ``xa.imul(status=ist)``，
+也可以和场内记账单一起传入投资组合类 ``xa.mul(status=st, istatus=ist)`` 进行场内外投资结果的汇总。
+
+.. Note::
+
+    场内账单处理逻辑为了保持和场外一致，也只处理到截止昨天的交易，因此可能出现和现时实盘不符的情形。
+
 
 
 QDII 净值预测

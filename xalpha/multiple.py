@@ -376,17 +376,20 @@ class mulfix(mul, indicator):
 
 
 class imul(mul):
-    def __init__(self, *fundtradeobj, status=None):
+    def __init__(self, *fundtradeobj, status=None, istatus=None):
         """
         对场内投资组合进行分析的类
 
         :param fundtradeobj: itrade objects.
         :param status: 场内格式记账单，或 irecord 对象。
         """
-        if isinstance(status, irecord):
-            status = status.status
+
         if not fundtradeobj:
             fundtradeobj = []
+            if not status:
+                status = istatus
+            if isinstance(status, irecord):
+                status = status.status
             for code in status.code.unique():
                 fundtradeobj.append(itrade(code, status))
         self.fundtradeobj = tuple(fundtradeobj)

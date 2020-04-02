@@ -11,7 +11,7 @@ from collections import deque
 from functools import wraps, lru_cache
 import logging
 
-from xalpha.cons import opendate, yesterday, next_onday, last_onday, scale_dict
+from xalpha.cons import opendate, yesterday, next_onday, last_onday, scale_dict, tz_bj
 from xalpha.universal import (
     get_rt,
     get_bar,
@@ -644,9 +644,7 @@ class QDIIPredict:
         # t0 实时净值自然不 cache
         self.positions = positions
         self.position_zero = sum([v for _, v in self.t1dict.items()])
-        self.now = dt.datetime.now(tz=dt.timezone(dt.timedelta(hours=8))).replace(
-            tzinfo=None
-        )
+        self.now = dt.datetime.now(tz=tz_bj).replace(tzinfo=None)
         self.today = self.now.replace(hour=0, minute=0, second=0, microsecond=0)
         self.t1_type = "未计算"
         self.bar_cache = {}
