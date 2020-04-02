@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from collections import deque
 from functools import wraps, lru_cache
+import logging
 
 from xalpha.cons import opendate, yesterday, next_onday, last_onday, scale_dict
 from xalpha.universal import (
@@ -22,6 +23,8 @@ import xalpha.universal as xu  ## 为了 set_backend 可以动态改变此模块
 from xalpha.exceptions import ParserFailure, DateMismatch, NonAccurate
 
 thismodule = sys.modules[__name__]
+
+logger = logging.getLogger(__name__)
 
 
 def _set_holdings(module):
@@ -427,7 +430,7 @@ def get_market(code):
             return market_info[code]
         market = get_rt(code)["market"]
         if market is None:
-            market = get_rt(code)["currency"]
+            market = get_currency(code)
             market = trans.get(market, market)
     except (TypeError, AttributeError, ValueError):
         market = "CN"

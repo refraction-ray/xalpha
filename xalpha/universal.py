@@ -9,6 +9,7 @@ import sys
 import datetime as dt
 import numpy as np
 import pandas as pd
+import logging
 from bs4 import BeautifulSoup
 from functools import wraps, lru_cache
 from uuid import uuid4
@@ -42,6 +43,7 @@ from xalpha.exceptions import DataPossiblyWrong, ParserFailure
 
 thismodule = sys.modules[__name__]
 xamodule = sys.modules["xalpha"]
+logger = logging.getLogger(__name__)
 
 
 def today_obj():

@@ -6,6 +6,8 @@ basic constants and utility functions
 import datetime as dt
 import os
 import time
+import logging
+import inspect
 from decimal import Decimal
 import requests
 from functools import wraps
@@ -22,6 +24,8 @@ from pyecharts.options import (
 from scipy import optimize
 
 from xalpha import __path__
+
+logger = logging.getLogger(__name__)
 
 # date obj of today
 today = lambda: dt.datetime.combine(dt.date.today(), dt.time.min)
@@ -185,19 +189,33 @@ def reconnect(tries=5, timeout=12):
     def robustify(f):
         @wraps(f)
         def wrapper(*args, **kws):
+            import xalpha.provider as xp
+
+            if getattr(xp, "proxy", None):
+                kws["proxies"] = {"http": xp.proxy, "https": xp.proxy}
+                kws["timeout"] = timeout
+                logger.debug("Using proxy %s" % xp.proxy)
+            if args:
+                url = args[0]
+            else:
+                url = kws.get("url", "")
+
             for count in range(tries):
                 try:
-                    import xalpha.provider as xp
-
-                    if getattr(xp, "proxy", None):
-                        kws["proxies"] = {"http": xp.proxy, "https": xp.proxy}
-                        kws["timeout"] = timeout
+                    logger.debug(
+                        "Fetching url: %s . Inside function `%s`"
+                        % (url, inspect.stack()[1].function)
+                    )
                     r = f(*args, **kws)
                     return r
                 except connection_errors as e:
+                    logger.warning("Fails at fetching url: %s. Try again." % url)
                     if count == tries - 1:
                         print(*args, sep="\n")
-                        print("still wrong after several tries")
+                        logger.critical(
+                            "Still wrong at fetching url: %s. after several tries."
+                            % url
+                        )
                         raise e
                     time.sleep(0.5 * count)
 

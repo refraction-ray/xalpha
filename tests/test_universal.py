@@ -58,6 +58,7 @@ def test_get_investng_app():
         code="INA-currencies/usd-cny", end="20200307", prev=30
     )  # 似乎外网链接有问题？
     assert round(df.iloc[-1]["close"], 4) == 6.9321
+    assert xa.get_rt("INA-indices/germany-30")["name"] == "德国DAX30指数 (GDAXI)"
 
 
 def test_get_xueqiu_rt():
@@ -77,7 +78,6 @@ def test_get_investing_rt():
     assert xa.get_rt("/indices/germany-30")["name"] == "德国DAX30指数 (GDAXI)"
     ext = xa.get_rt("equities/pinduoduo")["current_ext"]
     assert isinstance(ext, float) or (ext is None)
-    assert xa.get_rt("INA-indices/germany-30")["name"] == "德国DAX30指数 (GDAXI)"
 
 
 @pytest.mark.local

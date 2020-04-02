@@ -205,3 +205,43 @@ QDII 净值预测
     import xalpha as xa
     xa.set_holdings(holdings) # 设置 xalpha 使用该数据文件
     # 之后的操作与之前相同
+
+
+
+日志系统
+---------------
+
+xalpha 引入了 python logger 的日志系统，尤其是用来记录网络链接和爬虫等详细的 debug 信息。
+
+
+Jupyter 中的使用
++++++++++++++++++++++
+
+.. code-block:: python
+
+    import xalpha as xa
+    import logging
+    logger = logging.getLogger('xalpha')
+    logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    logger.addHandler(ch)
+
+以上配置，日志将打印在 jupyter notebook 前端
+
+
+脚本程序中使用
++++++++++++++++++
+
+.. code-block:: python
+
+    import xalpha as xa
+    import logging
+    logger = logging.getLogger('xalpha')
+    logger.setLevel(logging.DEBUG)
+    fhandler = logging.FileHandler(filename='debug.log', mode='a')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fhandler.setFormatter(formatter)
+    logger.addHandler(fhandler)
+
+以上配置，日志将输入文件 debug.log
