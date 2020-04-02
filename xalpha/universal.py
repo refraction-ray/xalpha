@@ -1400,7 +1400,37 @@ def _inverse_convert_code(code):
         return code[2:] + ".XSHE"
 
 
-def get_bar(code, prev=120, interval=3600):
+def get_bar(code, prev=24, interval=3600, _from=None):
+    """
+
+    :param code: str. 支持雪球和英为的代码
+    :param prev: points of data from now to back, often limited by API around several hundreds
+    :param interval: float, seconds. need to match the corresponding API,
+        typical values include 60, 300, 3600, 86400, 86400*7
+    :return: pd.DataFrame
+    """
+    if not _from:
+        if code.startswith("SH") or code.startswith("SZ"):
+            _from = "xueqiu"
+        elif code.isdigit():
+            _from = "cninvesting"
+        elif code.startswith("HK") and code[2:].isdigit() and len(code) == 7:
+            _from = "xueqiu"
+            code = code[2:]
+        elif len(code.split("/")) > 1:
+            _from = "cninvesting"
+            code = get_investing_id(code)
+        else:
+            _from = "xueqiu"  # 美股
+    if _from in ["xq", "xueqiu", "XQ"]:
+        return get_bar_fromxq(code, prev, interval)
+    elif _from in ["IN", "cninvesting", "investing"]:
+        return get_bar_frominvesting(code, prev, interval)
+    else:
+        raise ParserFailure("unrecoginized _from %s" % _from)
+
+
+def get_bar_frominvesting(code, prev=120, interval=3600):
     """
     get bar data beyond daily bar
 
@@ -1415,6 +1445,10 @@ def get_bar(code, prev=120, interval=3600):
         interval = 3600
     elif interval == "minute":
         interval = 60
+    elif interval == 86400 * 7:
+        interval = "week"
+    elif interval == 86400 * 30:
+        interval = "month"
     if len(code.split("/")) == 2:
         code = get_investing_id(code)
     r = rget(
@@ -1441,4 +1475,54 @@ def get_bar(code, prev=120, interval=3600):
     df["date"] = df["date"].apply(
         lambda t: dt.datetime.fromtimestamp(t / 1000, tz=tz_bj).replace(tzinfo=None)
     )
+    return df
+
+
+def get_bar_fromxq(code, prev, interval=3600):
+    """
+
+    :param code:
+    :param prev:
+    :param interval: 1m, 5m, 15m, 30m, 60m, 120m, month, quarter, year, week, day
+    :return:
+    """
+    # max interval is also around 500
+    trans = {
+        60: "1m",
+        300: "5m",
+        900: "15m",
+        1800: "30m",
+        3600: "60m",
+        7200: "120m",
+        86400: "day",
+        604800: "week",
+        2592000: "month",
+    }
+    interval = trans.get(interval, interval)
+    url = "https://stock.xueqiu.com/v5/stock/chart/kline.json?symbol={code}&begin={tomorrow}&period={interval}&type=before\
+&count=-{prev}&indicator=kline,pe,pb,ps,pcf,market_capital,agt,ggt,balance".format(
+        code=code, tomorrow=int(tomorrow_ts() * 1000), prev=prev, interval=interval
+    )
+    r = rget(
+        url, headers={"user-agent": "Mozilla/5.0"}, cookies={"xq_a_token": get_token()}
+    )
+    if not r.text:
+        return  # None
+    else:
+        df = pd.DataFrame(r.json()["data"]["item"], columns=r.json()["data"]["column"])
+        df["date"] = df["timestamp"].apply(
+            lambda t: dt.datetime.fromtimestamp(t / 1000, tz=tz_bj).replace(tzinfo=None)
+        )
+        df = df[
+            [
+                "date",
+                "open",
+                "high",
+                "low",
+                "close",
+                "volume",
+                "turnoverrate",
+                "percent",
+            ]
+        ]
     return df

@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### added
+* get_bar 增加雪球源
 ### fixed
 * 防止 precached 之前的日线数据无法抓取
 * 为 imul 增加 istatus 关键字参数作为冗余防止误输入

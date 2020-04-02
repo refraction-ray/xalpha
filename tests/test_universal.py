@@ -137,9 +137,14 @@ def test_cache_io():
 def test_cache_mm():
     df = xa.get_daily("SH501018", prev=100)
     l1 = len(df)
-    xa.set_backend(backend="memory", prefix="pytestm-")
+    # xa.set_backend(backend="memory", prefix="pytestm-")
     xa.get_daily("SH501018", prev=50)
     df = xa.get_daily("SH501018", prev=100)
     l2 = len(df)
     assert l1 == l2
     xa.universal.check_cache("SH501018", start="2018/09/01")
+
+
+def test_get_bar_xq():
+    xa.get_bar("HK00700", interval=60)
+    xa.get_bar("commodities/brent-oil", interval=300, prev=20)
