@@ -2,13 +2,15 @@
 ## Unreleased
 ### added
 * 增加聚宽宏观数据到 get_daily
+* QDIIPredict 实时预测支持不同时间片混合涨幅计算
+* 英为实时增加 app 源
 ### fixed
 * 增加 daily_increment 的过去选项，防止假期阻止严格检查。
 * get_daily 同时兼容双向人民币中间价
 
 ## v0.8.1 - 2020.04.01
 ### added
-* 增加英为 app 源备份
+* 日线增加英为 app 源备份
 * 增加QDII预测的日期返回, 增加溢价率估计，增加t1计算状态
 * ``set_proxy()`` 空时添加取消代理功能，和 socks5 代理支持
 * ``set_holdings()`` 允许外部导入数据 py

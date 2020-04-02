@@ -747,7 +747,7 @@ def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
     }
 
 
-def get_cninvesting_rt(suburl):
+def get_cninvesting_rt(suburl, app=False):
     trans = {
         "瑞士": "CH",
         "日本": "JP",
@@ -760,16 +760,36 @@ def get_cninvesting_rt(suburl):
         "墨西哥": "MX",
         "澳大利亚": "AU",
     }
-    url = "https://cn.investing.com"
+    if not app:
+        url = "https://cn.investing.com"
+    else:
+        url = "https://cnappapi.investing.com"
     if not suburl.startswith("/"):
         url += "/"
     url += suburl
-    r = rget(
-        url,
-        headers={
+    if not app:
+        headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36"
-        },
-    )
+        }
+    else:
+        headers = {
+            "Accept": "*/*",
+            "Accept-Encoding": "gzip",
+            "Accept-Language": "zh-cn",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "User-Agent": "Investing.China/0.0.3 CFNetwork/1121.2.2 Darwin/19.3.0",
+            "ccode": "CN",
+            #'ccode_time': '1585551041.986028',
+            "x-app-ver": "117",
+            "x-meta-ver": "14",
+            "x-os": "ios",
+            "x-uuid": str(uuid4()),
+            "Host": "cn.investing.com",
+            "X-Requested-With": "XMLHttpRequest",
+        }
+
+    r = rget(url, headers=headers,)
     s = BeautifulSoup(r.text, "lxml")
     last_last = s.find("span", id="last_last")
     q = _float(last_last.string)
@@ -919,18 +939,22 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
     # 现在用的新浪实时数据源延迟严重， double check 并不靠谱，港股数据似乎有15分钟延迟（已解决）
     # 雪球实时和新浪实时在9：00之后一段时间可能都有问题
     if not _from:
-        if len(code.split("/")) > 1:
-            _from = "investing"
-        # elif code.startswith("HK") and code[2:].isdigit():
+        # if code.startswith("HK") and code[2:].isdigit():
         #     _from = "xueqiu"
-        elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 2:
+        if len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             _from = code.split("-")[0]
             code = "-".join(code.split("-")[1:])
+        elif len(code.split("/")) > 1:
+            _from = "investing"
         else:  # 默认不启用新浪实时，只做双重验证备份
             _from = "xueqiu"
     if _from in ["cninvesting", "investing"]:
-        return get_cninvesting_rt(code)
-    elif double_check:
+        try:
+            return get_cninvesting_rt(code)
+        except Exception as e:
+            print(e.args)
+            return get_cninvesting_rt(code, app=True)
+    elif double_check and _from in ["xueqiu", "sina"]:
         r1 = get_xueqiu_rt(code, token=get_token())
         r2 = get_rt_from_sina(code)
         if abs(r1["current"] / r2["current"] - 1) > double_check_threhold:
@@ -939,12 +963,17 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
     elif _from in ["xueqiu", "xq", "snowball"]:
         try:
             return get_xueqiu_rt(code, token=get_token())
-        except:  # 默认雪球实时引入备份机制
+        except Exception as e:  # 默认雪球实时引入备份机制
+            print(e.args)
             return get_rt_from_sina(code)
     elif _from in ["sina", "sn", "xinlang"]:
         return get_rt_from_sina(code)
     elif _from in ["FT", "ft"]:
         return get_rt_from_ft(code)
+    elif _from in ["INA"]:  # investing app
+        return get_cninvesting_rt(code, app=True)
+    else:
+        raise ParserFailure("unrecoginzed _from for %s" % _from)
 
 
 get_realtime = get_rt
@@ -1366,6 +1395,7 @@ def _inverse_convert_code(code):
         return code[2:] + ".XSHE"
 
 
+@lru_cache(maxsize=128)
 def get_bar(code, prev=120, interval=3600):
     """
     get bar data beyond daily bar

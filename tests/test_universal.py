@@ -77,6 +77,7 @@ def test_get_investing_rt():
     assert xa.get_rt("/indices/germany-30")["name"] == "德国DAX30指数 (GDAXI)"
     ext = xa.get_rt("equities/pinduoduo")["current_ext"]
     assert isinstance(ext, float) or (ext is None)
+    assert xa.get_rt("INA-indices/germany-30")["name"] == "德国DAX30指数 (GDAXI)"
 
 
 @pytest.mark.local

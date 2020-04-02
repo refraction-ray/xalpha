@@ -13,6 +13,7 @@ from functools import wraps, lru_cache
 from xalpha.cons import opendate, yesterday, next_onday, last_onday, scale_dict
 from xalpha.universal import (
     get_rt,
+    get_bar,
     _convert_code,
     _inverse_convert_code,
     get_newest_netvalue,
@@ -729,12 +730,27 @@ class QDIIPredict:
         else:
             return r
 
+    def _base_value(self, code, shift):
+        if not shift:
+            funddf = xu.get_daily(code)  ## 获取股指现货日线
+            return funddf[funddf["date"] < self.today.strftime("%Y-%m-%d")].iloc[-1][
+                "close"
+            ]  # 日期是按当地时间
+        # TODO: check it is indeed date of last_on(today)
+        else:
+            funddf = get_bar(code, prev=48, interval="3600")  ## 获取小时线
+            return funddf[
+                funddf["date"] <= self.today + dt.timedelta(hours=shift)
+            ].iloc[-1][
+                "close"
+            ]  # 时间是按北京时间
+
     def get_t0(self, percent=False, return_date=True):
         """
-        获取当日实时净值估计
+        获取当日实时净值估计, 该接口每日凌晨到美股收盘（早晨），不保证自洽和可用
 
         :param percent: bool， default False。现在有两种实时的预测处理逻辑。若 percent 是 True，则将 t0dict 的
-            每个持仓标的的今日涨跌幅进行估算，若为 False，则将标的现价和标的对应指数昨日收盘价的比例作为涨跌幅估算。
+            每个持仓标的的今日涨跌幅进行估算，若为 False，则将标的现价和标的对应指数昨日收盘价的比例作为涨跌幅估算。不推荐使用 percent=True.
         :param return_date: bool, default True. return tuple, the second one is date in the format %Y%m%d
         :return: float
         """
@@ -745,29 +761,36 @@ class QDIIPredict:
         n = 0
         today_str = self.today.strftime("%Y%m%d")
         for k, v in self.t0dict.items():
-            t += v
+            if not isinstance(v, dict):
+                v = {"weight": v}
+            if len(k.split("~")) > 1 and k.split("~")[-1].isdigit():
+                # 为了持仓中可以同标的多次出现的 workaround
+                k = k.split("~")[0]
+            w = v["weight"]
+            shift = v.get("time", None)
+            base = v.get("base", None)
+            t += w
             r = get_rt(
                 k
             )  # k should support get_rt, investing pid doesn't support this!
             if percent:
-                c = v / 100 * (1 + r["percent"] / 100)  # 直接取标的当日涨跌幅
+                c = w / 100 * (1 + r["percent"] / 100)  # 直接取标的当日涨跌幅
             else:
-                if k in futures_info:
+                if k in futures_info and not base:
                     kf = futures_info[k]
-                else:
+                elif not base:
                     kf = k[:-8]  # k + "-futures"
+                else:
+                    kf = base
                 try:
-                    funddf = xu.get_daily(kf)  ## 获取股指现货日线
+                    basev = self._base_value(kf, shift)
                 except Exception as e:
                     kf = get_alt(kf)
-                    if kf:
+                    if not kf:
                         raise e
                     else:
-                        funddf = xu.get_daily(kf)
-                last_line = funddf[funddf["date"] < today_str].iloc[
-                    -1
-                ]  # TODO: check it is indeed date of last_on(today)
-                c = v / 100 * r["current"] / last_line["close"]
+                        basev = self._base_value(kf, shift)
+                c = w / 100 * r["current"] / basev
             currency_code = get_currency_code(k)
             if currency_code:
                 c = c * daily_increment(currency_code, today_str)

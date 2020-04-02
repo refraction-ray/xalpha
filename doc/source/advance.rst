@@ -187,9 +187,9 @@ QDII 净值预测
     print(nfyy.get_t1()) # 返回上个交易日的净值预测
     print(nfyy.t1_type) # 已计算
     print(nfyy.get_position()) # 返回基于前天和更早净值数据判断而得出的昨日仓位估计
-    print(nfyy.get_t0(percent=True)) # 实时净值预测
+    print(nfyy.get_t0()) # 实时净值预测
     print(nfyy.get_t1_rate()) # 实时市价相对昨日净值预测的溢价率
-    print(nfyy.get_t0_rate(percent=True)) # 实时市价相对实时估值的溢价率
+    print(nfyy.get_t0_rate()) # 实时市价相对实时估值的溢价率
     nfyy.benchmark_test("2020-01-01", "2020-03-01") # 回测一段时间内的预测效果
     nfyy.analyse() # 打印出回测的定量分析
 
