@@ -2,9 +2,11 @@
 ## Unreleased
 ### added
 * get_bar 增加雪球源
+* 增加 set_handler
 ### fixed
 * 防止 precached 之前的日线数据无法抓取
 * 为 imul 增加 istatus 关键字参数作为冗余防止误输入
+* predict 对于跨市场休市更完善的考虑
 
 ## v0.8.2 - 2020.04.02
 ### added

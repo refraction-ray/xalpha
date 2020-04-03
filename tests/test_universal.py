@@ -148,3 +148,16 @@ def test_cache_mm():
 def test_get_bar_xq():
     xa.get_bar("HK00700", interval=60)
     xa.get_bar("commodities/brent-oil", interval=300, prev=20)
+
+
+def test_set_handler():
+    def alt_get_bar(code, **kws):
+        if code == 1:
+            return 1
+        else:
+            return
+
+    xa.set_handler(method="bar", f=alt_get_bar)
+    assert xa.get_bar(1) == 1
+    assert len(xa.get_bar("PDD")) == 24
+    xa.set_handler(method="bar")

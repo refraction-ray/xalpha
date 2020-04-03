@@ -252,3 +252,30 @@ Jupyter 中的使用
     logger.addHandler(fhandler)
 
 以上配置，日志将输入文件 debug.log
+
+
+get 方法钩子
+-----------------
+
+有时候可能用户自己维护了一部分数据或数据库，也可能用户有其他更好的数据 API 可用。为了将这些无缝的融合进 xalpha，我们引入了 handler 来处理。
+
+举例来说，我的数据库里有 A 股股票的日线数据，而且我觉得这个数据质量比网上爬虫要好，那么我希望 ``xa.get_daily("SH600000")`` 的时候，
+xalpha 不要去雪球爬取数据，而是直接从我的数据库里来拿，这样又快又稳。这样所有基于 xa.get_daily 构建的 xalpha 的工具箱就也可以继续无缝的使用了。
+
+为了实现这点，可以按如下示例：
+
+.. code-block:: python
+
+    import xalpha as xa
+
+    def fetch_from_database(code, start, end, **kws): # **kws 是声明钩子函数所必须的，即使你用不到
+        if code.startswith("SH"): # 请只过滤符合要求的代码，其他代码仍然用 get_daily 方法
+            # 这里定义连接数据库和拿数据
+            return df # 最终返回符合约定的 pd.DataFrame, 比如必须有 date 列，type 是 pd.Timestamp
+        else:
+            return None # 对于不满足的代码，返回 None 即可，程序将自动按照原来的 get_daily 处理
+
+    xa.set_handler(method="daily", f=fetch_from_database) # 设定好钩子
+    xa.get_daily("SH600000") # 此时程序将从数据库获取日线数据
+
+同样的方法，也可以应用到 ``get_rt`` 和 ``get_bar``, 对应的 method="rt", "bar".

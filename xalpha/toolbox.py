@@ -662,6 +662,7 @@ class QDIIPredict:
         self.bar_cache = {}
         self.t0_delta = None
         self.t1_delta = None
+        # 不建议直接使用以上两者看变化量，在手动 set 后，以上两者可能继续为 None
 
     def set_t1(self, value, date=None):
         """
@@ -737,7 +738,10 @@ class QDIIPredict:
                 cday = last_onday(last_onday(self.today))
                 while last_date_obj < cday:  # 前天净值数据还没更新
                     # 是否存在部分 QDII 在 A 股交易日，美股休市日不更新净值的情形？
-                    if cday not in gap_info(self.fcode):
+                    if (
+                        cday.strftime("%Y-%m-%d") not in gap_info[self.fcode]
+                    ) and is_on(cday, "US", no_trading_days):
+                        # 这里检查比较宽松，只要当天美股休市，就可以认为确实基金数据不存在而非未更新
                         self.t1_type = "前日未出"
                         raise DateMismatch(
                             self.code,

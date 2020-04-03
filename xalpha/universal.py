@@ -10,6 +10,7 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 import logging
+import inspect
 from bs4 import BeautifulSoup
 from functools import wraps, lru_cache
 from uuid import uuid4
@@ -552,6 +553,17 @@ def get_macro(table, start, end, datecol="stat_year"):
     return df
 
 
+def set_handler(method="daily", f=None):
+    """
+    为 ``get_daily``, ``get_bar`` 或 ``get_rt`` 设置 hook，优先按照函数 f 进行处理，若返回 None，再按一般情形处理
+
+    :param method: str. daily, rt, bar
+    :param f: func, default None.
+    :return: None
+    """
+    setattr(thismodule, "get_" + method + "_handler", f)
+
+
 def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, **kws):
     """
     universal fetcher for daily historical data of literally everything has a value in market.
@@ -602,6 +614,13 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
     :return: pd.Dataframe.
         must include cols: date[pd.Timestamp]，close[float64]。
     """
+    if getattr(thismodule, "get_daily_handler", None):
+        args = inspect.getargvalues(inspect.currentframe())
+        f = getattr(thismodule, "get_daily_handler")
+        fr = f(**args.locals)
+        if fr:
+            return fr
+
     if not end:
         end_obj = today_obj()
     else:
@@ -934,6 +953,14 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
     # 对于一些标的，get_rt 的主任务可能不是 current 价格，而是去拿 market currency 这些元数据
     # 现在用的新浪实时数据源延迟严重， double check 并不靠谱，港股数据似乎有15分钟延迟（已解决）
     # 雪球实时和新浪实时在9：00之后一段时间可能都有问题
+
+    if getattr(thismodule, "get_rt_handler", None):
+        args = inspect.getargvalues(inspect.currentframe())
+        f = getattr(thismodule, "get_rt_handler")
+        fr = f(**args.locals)
+        if fr:
+            return fr
+
     if not _from:
         # if code.startswith("HK") and code[2:].isdigit():
         #     _from = "xueqiu"
@@ -1409,6 +1436,13 @@ def get_bar(code, prev=24, interval=3600, _from=None):
         typical values include 60, 300, 3600, 86400, 86400*7
     :return: pd.DataFrame
     """
+    if getattr(thismodule, "get_bar_handler", None):
+        args = inspect.getargvalues(inspect.currentframe())
+        f = getattr(thismodule, "get_bar_handler")
+        fr = f(**args.locals)
+        if fr:
+            return fr
+
     if not _from:
         if code.startswith("SH") or code.startswith("SZ"):
             _from = "xueqiu"
