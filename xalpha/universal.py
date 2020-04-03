@@ -1499,17 +1499,17 @@ def get_bar_fromxq(code, prev, interval=3600):
     """
     # max interval is also around 500
     trans = {
-        60: "1m",
-        300: "5m",
-        900: "15m",
-        1800: "30m",
-        3600: "60m",
-        7200: "120m",
-        86400: "day",
-        604800: "week",
-        2592000: "month",
+        "60": "1m",
+        "300": "5m",
+        "900": "15m",
+        "1800": "30m",
+        "3600": "60m",
+        "7200": "120m",
+        "86400": "day",
+        "604800": "week",
+        "2592000": "month",
     }
-    interval = trans.get(interval, interval)
+    interval = trans.get(str(interval), interval)
     url = "https://stock.xueqiu.com/v5/stock/chart/kline.json?symbol={code}&begin={tomorrow}&period={interval}&type=before\
 &count=-{prev}&indicator=kline,pe,pb,ps,pcf,market_capital,agt,ggt,balance".format(
         code=code, tomorrow=int(tomorrow_ts() * 1000), prev=prev, interval=interval

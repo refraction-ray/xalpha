@@ -426,6 +426,7 @@ def get_market(code):
         "EUR": "DE",
         "AUD": "AU",
         "INR": "IN",
+        "SGD": "SG",
     }
     try:
         if code in market_info:
@@ -651,6 +652,7 @@ class QDIIPredict:
             self.t0dict = t0dict
         self.position_cache = {}
         self.t1value_cache = {}
+        self.t2value_cache = None
         # t0 实时净值自然不 cache
         self.positions = positions
         self.position_zero = sum([v for _, v in self.t1dict.items()])
@@ -658,6 +660,8 @@ class QDIIPredict:
         self.today = self.now.replace(hour=0, minute=0, second=0, microsecond=0)
         self.t1_type = "未计算"
         self.bar_cache = {}
+        self.t0_delta = None
+        self.t1_delta = None
 
     def set_t1(self, value, date=None):
         """
@@ -676,6 +680,32 @@ class QDIIPredict:
             print("t-1 value already exists, rewriting...")
         self.t1value_cache[datekey] = value
         self.t1_type = "已计算"
+
+    def set_t2(self, value, date=None):
+        """
+        手动设定 t2 净值
+
+        :param value:
+        :return:
+        """
+        if not date:
+            date = last_onday(last_onday(self.today)).strftime("%Y-%m-%d")
+        self.t2value_cache = (value, date)
+
+    def get_t2(self, return_date=True):
+        """
+        返回最新的已公布基金净值，注意这里严格按照最新公布，不一定是前两个交易日，可以更新，但更老会报错 DateMismatch
+
+        :param return_date:
+        :return: if return_date is True, tuple (value, %Y-%m-%d)
+        """
+        if not self.t2value_cache:
+            last_value, last_date = get_newest_netvalue(self.fcode)
+            self.t2value_cache = (last_value, last_date)
+        if return_date:
+            return self.t2value_cache
+        else:
+            return self.t2value_cache[0]
 
     @error_catcher
     def get_t1(self, date=None, return_date=True):
@@ -702,9 +732,9 @@ class QDIIPredict:
 
             if date is None:  # 此时预测上个交易日净值
                 yesterday_str = datekey
-                last_value, last_date = get_newest_netvalue(self.fcode)
+                last_value, last_date = self.get_t2()
                 last_date_obj = dt.datetime.strptime(last_date, "%Y-%m-%d")
-                cday = last_onday(yesterday)
+                cday = last_onday(last_onday(self.today))
                 while last_date_obj < cday:  # 前天净值数据还没更新
                     # 是否存在部分 QDII 在 A 股交易日，美股休市日不更新净值的情形？
                     if cday not in gap_info(self.fcode):
@@ -717,19 +747,17 @@ class QDIIPredict:
                     else:
                         cday = last_onday(cday)
                     # 经过这个没报错，就表示数据源是最新的
-                if last_date_obj > last_onday(yesterday):  # 昨天数据已出，不需要再预测了
+                if last_date_obj >= last_onday(self.today):  # 昨天数据已出，不需要再预测了
                     print(
                         "no need to predict t-1 value since it has been out for %s"
                         % self.code
                     )
                     self.t1_type = "昨日已出"
+                    self.t1value_cache = {last_date.replace("-", ""): last_value}
                     if not return_date:
                         return last_value
                     else:
-                        return (
-                            last_value,
-                            datekey[:4] + "-" + datekey[4:6] + "-" + datekey[6:8],
-                        )
+                        return last_value, last_date
             else:
                 yesterday_str = datekey
                 fund_price = xu.get_daily(self.fcode)  # 获取国内基金净值
@@ -738,13 +766,14 @@ class QDIIPredict:
                 # 事实上这里计算的预测是针对 date 之前的最晚数据和之前一日的预测
                 last_value = fund_last["close"]
                 last_date = fund_last["date"].strftime("%Y-%m-%d")
-            net = last_value * (
+            self.t1_delta = (
                 1
                 + evaluate_fluctuation(
                     hdict, yesterday_str, lastday=last_date, _check=True
                 )
                 / 100
             )
+            net = last_value * self.t1_delta
             self.t1value_cache[datekey] = net
             self.t1_type = "已计算"
         if not return_date:
@@ -845,10 +874,12 @@ class QDIIPredict:
                 # TODO: 中间价未更新，但实时数据不检查问题也不大
             n += c
         n += (100 - t) / 100
+        t0value = n * t1value
+        self.t0_delta = n
         if not return_date:
-            return n * t1value
+            return t0value
         else:
-            return n * t1value, self.today.strftime("%Y-%m-%d")
+            return t0value, self.today.strftime("%Y-%m-%d")
 
     @error_catcher
     def get_position(self, date=None, refresh=False, return_date=True, **kws):
