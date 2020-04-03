@@ -1,4 +1,5 @@
 import sys
+import pytest
 
 sys.path.insert(0, "../")
 import xalpha as xa
@@ -30,3 +31,9 @@ def test_qdii_predict():
     hb.get_t0(percent=True)
     hb.benchmark_test("20200202", "20200302")
     hb.analyse()
+
+
+@pytest.mark.local
+def test_qdii_predict_local():
+    xc = xa.QDIIPredict("SZ165513", positions=True)
+    xc.get_t0_rate()

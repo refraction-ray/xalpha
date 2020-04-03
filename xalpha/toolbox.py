@@ -35,6 +35,7 @@ def _set_holdings(module):
         "market_info",
         "futures_info",
         "alt_info",
+        "gap_info",
     ]:
         setattr(thismodule, name, getattr(module, name, {}))
 
@@ -424,6 +425,7 @@ def get_market(code):
         "JPY": "JP",
         "EUR": "DE",
         "AUD": "AU",
+        "INR": "IN",
     }
     try:
         if code in market_info:
@@ -432,7 +434,7 @@ def get_market(code):
         if market is None:
             market = get_currency(code)
             market = trans.get(market, market)
-    except (TypeError, AttributeError, ValueError):
+    except (TypeError, AttributeError, ValueError, IndexError):
         market = "CN"
     return market
 
@@ -470,6 +472,9 @@ def is_on(date, market="CN", no_trading_days=None):
     """
 
     date_obj = dt.datetime.strptime(date.replace("-", "").replace("/", ""), "%Y%m%d")
+    if date_obj.weekday() in [5, 6]:  # 周末休市
+        # 注意部分中东市场周日开市，暂时涉及不到
+        return False
     date_dash = date_obj.strftime("%Y-%m-%d")
     if no_trading_days:
         if date_dash in no_trading_days.get(market, []):
@@ -494,47 +499,52 @@ def is_on(date, market="CN", no_trading_days=None):
     return _is_on(code, date)
 
 
-def daily_increment(code, date, lastday=None, _check=None, _check_prev=False):
+def daily_increment(code, date, lastday=None, _check=False):
     """
     单一标的 date 日（若 date 日无数据则取之前的最晚有数据日，但该日必须大于 _check 对应的日期）较上一日或 lastday 的倍数，
     lastday 支持不完整，且不能离 date 太远
 
     :param code:
     :param date:
-    :param lastday:
-    :param _check:
-    :param _check_prev: bool default False. 如果 True，则是回测模式，应该忽略数据未更新的可能性，唯一可能就是假期或数据缺失。
+    :param lastday: 如果用默认 None，则表示和前一日的涨跌
+    :param _check: 数据必须已更新到 date 日，除非之前每天都是节假日
     :return:
     """
     try:
-        tds = xu.get_daily(code=code, end=date, prev=20)
+        tds = xu.get_daily(code=code, end=date, prev=30)
     except Exception as e:  # 只能笼统 catch 了，因为抓取失败的异常是什么都能遇到。。。
         code = get_alt(code)
         if code:
-            tds = xu.get_daily(code=code, end=date, prev=20)
+            tds = xu.get_daily(code=code, end=date, prev=30)
         else:
             raise e
     tds = tds[tds["date"] <= date]
     if _check:
-        _check = _check.replace("-", "").replace("/", "")
-        _check_obj = dt.datetime.strptime(_check, "%Y%m%d")
-        if tds.iloc[-1]["date"] <= _check_obj:  # in case data is not up to date
+        date = date.replace("-", "").replace("/", "")
+        date_obj = dt.datetime.strptime(date, "%Y%m%d")
+        while tds.iloc[-1]["date"] < date_obj:
+            # in case data is not up to date
             # 但是存在日本市场休市时间不一致的情况，估计美股也存在
-            if _check_prev or not is_on(
-                date, get_market(code), no_trading_days=no_trading_days
+            if not is_on(
+                date_obj.strftime("%Y%m%d"),
+                get_market(code),
+                no_trading_days=no_trading_days,
             ):
-                # 注意有时计价货币无法和市场保持一致，暂时不处理，遇到再说
-                # TODO: get_market 函数
                 print("%s is closed on %s" % (code, date))
-                return 1  # 当日没有涨跌，这里暂时为考虑休市日和 lastday 并非前一日的情形
+                if not lastday:
+                    return 1  # 当日没有涨跌，这里暂时为考虑 _check 和 lastday 相同的的情形
+                date_obj -= dt.timedelta(days=1)
             else:
                 raise DateMismatch(
-                    code, reason="%s has no data newer than %s" % (code, _check)
+                    code,
+                    reason="%s has no data newer than %s"
+                    % (code, date_obj.strftime("%Y-%m-%d")),
                 )
     if not lastday:
         ratio = tds.iloc[-1]["close"] / tds.iloc[-2]["close"]
     else:
         tds2 = tds[tds["date"] <= lastday]
+        # 未考虑连 lastday 的数据数据源都没更新的情形，这种可能极小
         ratio = tds.iloc[-1]["close"] / tds2.iloc[-1]["close"]
     return ratio
 
@@ -583,7 +593,7 @@ def error_catcher(f):
     return wrapper
 
 
-def evaluate_fluctuation(hdict, date, lastday=None, _check=None, _check_prev=False):
+def evaluate_fluctuation(hdict, date, lastday=None, _check=None):
     """
     分析资产组合 hdict 的涨跌幅，全部兑换成人民币考虑
 
@@ -597,11 +607,11 @@ def evaluate_fluctuation(hdict, date, lastday=None, _check=None, _check_prev=Fal
     tot = 0
 
     for fundid, percent in hdict.items():
-        ratio = daily_increment(fundid, date, lastday, _check, _check_prev)
+        ratio = daily_increment(fundid, date, lastday, _check)
         exchange = 1
         currency = get_currency_code(fundid)
         if currency:
-            exchange = daily_increment(currency, date, lastday, _check, _check_prev)
+            exchange = daily_increment(currency, date, lastday, _check)
         price += ratio * percent / 100 * exchange
         tot += percent
     remain = 100 - tot
@@ -694,14 +704,20 @@ class QDIIPredict:
                 yesterday_str = datekey
                 last_value, last_date = get_newest_netvalue(self.fcode)
                 last_date_obj = dt.datetime.strptime(last_date, "%Y-%m-%d")
-                if last_date_obj < last_onday(yesterday):  # 前天净值数据还没更新
-                    self.t1_type = "前日未出"
-                    raise DateMismatch(
-                        self.code,
-                        reason="%s netvalue has not been updated to the day before yesterday"
-                        % self.code,
-                    )
-                elif last_date_obj > last_onday(yesterday):  # 昨天数据已出，不需要再预测了
+                cday = last_onday(yesterday)
+                while last_date_obj < cday:  # 前天净值数据还没更新
+                    # 是否存在部分 QDII 在 A 股交易日，美股休市日不更新净值的情形？
+                    if cday not in gap_info(self.fcode):
+                        self.t1_type = "前日未出"
+                        raise DateMismatch(
+                            self.code,
+                            reason="%s netvalue has not been updated to the day before yesterday"
+                            % self.code,
+                        )
+                    else:
+                        cday = last_onday(cday)
+                    # 经过这个没报错，就表示数据源是最新的
+                if last_date_obj > last_onday(yesterday):  # 昨天数据已出，不需要再预测了
                     print(
                         "no need to predict t-1 value since it has been out for %s"
                         % self.code
@@ -723,10 +739,14 @@ class QDIIPredict:
                 last_value = fund_last["close"]
                 last_date = fund_last["date"].strftime("%Y-%m-%d")
             net = last_value * (
-                1 + evaluate_fluctuation(hdict, yesterday_str, _check=last_date) / 100
+                1
+                + evaluate_fluctuation(
+                    hdict, yesterday_str, lastday=last_date, _check=True
+                )
+                / 100
             )
             self.t1value_cache[datekey] = net
-        self.t1_type = "已计算"
+            self.t1_type = "已计算"
         if not return_date:
             return self.t1value_cache[datekey]
         else:
@@ -822,6 +842,7 @@ class QDIIPredict:
             currency_code = get_currency_code(k)
             if currency_code:
                 c = c * daily_increment(currency_code, today_str)
+                # TODO: 中间价未更新，但实时数据不检查问题也不大
             n += c
         n += (100 - t) / 100
         if not return_date:
@@ -859,14 +880,12 @@ class QDIIPredict:
                 pred = evaluate_fluctuation(
                     fdict,
                     d.strftime("%Y-%m-%d"),
-                    _check=(d - dt.timedelta(days=1)).strftime("%Y-%m-%d"),
-                    _check_prev=True,
+                    lastday=last_onday(d).strftime("%Y-%m-%d"),
                 )
                 real = evaluate_fluctuation(
                     {self.fcode: 100},
                     d.strftime("%Y-%m-%d"),
-                    _check=(d - dt.timedelta(days=1)).strftime("%Y-%m-%d"),
-                    _check_prev=True,
+                    lastday=last_onday(d).strftime("%Y-%m-%d"),
                 )
                 posl.append(s(real, pred, posl[-1]))
             current_pos = sum([q ** i * posl[l - i - 1] for i in range(l)]) / sum(
