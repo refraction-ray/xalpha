@@ -449,7 +449,7 @@ timeframe={years}&period=daily&volumePeriod=daily".format(
     return df
 
 
-def get_historical_fromft(code, start, end):
+def get_historical_fromft(code, start, end, _type="indices"):
     """
     finance times 数据
 
@@ -459,7 +459,7 @@ def get_historical_fromft(code, start, end):
     :return:
     """
     if not code.isdigit():
-        code = get_ft_id(code)
+        code = get_ft_id(code, _type=_type)
     start = start.replace("/", "").replace("-", "")
     end = end.replace("/", "").replace("-", "")
     start = start[:4] + "/" + start[4:6] + "/" + start[6:]
@@ -603,7 +603,9 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
 
             16. 形如 FT-22065529 格式的数据或 FT-INX:IOM，可以返回 financial times 的数据，推荐直接用后者。前者数字代码来源，打开浏览器 network 监视，切换图标时间轴时，会新增到 https://markets.ft.com/data/chartapi/series 的 XHR 请求，其 request payload 里的 [elements][symbol] 即为该指数对应数字。
 
-            17. 形如 mcy-MAC_AREA_UNEMPLOY 格式的数据，返回相应的宏观数据，需要聚宽数据源。mcy，mcq，mcm 代表年度，季度和月度的数据，code 为表名，可以参考 https://www.joinquant.com/help/api/help?name=macroData
+            17. 形如 FTC-WTI+Crude+Oil 格式的数据，开头可以是 FTC, FTE, FTX, FTF, FTB, FTI 对应 commdities，equities，currencies，funds，bonds，indicies。其中 FTI 和 FT 相同。
+
+            18. 形如 mcy-MAC_AREA_UNEMPLOY 格式的数据，返回相应的宏观数据，需要聚宽数据源。mcy，mcq，mcm 代表年度，季度和月度的数据，code 为表名，可以参考 https://www.joinquant.com/help/api/help?name=macroData
 
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
@@ -692,8 +694,23 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
     elif _from == "YH":
         df = get_historical_fromyh(code, start=start, end=end)
 
-    elif _from == "FT":
+    elif _from in ["FT", "FTI"]:
         df = get_historical_fromft(code, start=start, end=end)
+
+    elif _from == "FTE":
+        df = get_historical_fromft(code, start=start, end=end, _type="equities")
+
+    elif _from == "FTB":
+        df = get_historical_fromft(code, start=start, end=end, _type="bonds")
+
+    elif _from == "FTF":
+        df = get_historical_fromft(code, start=start, end=end, _type="funds")
+
+    elif _from == "FTX":
+        df = get_historical_fromft(code, start=start, end=end, _type="currencies")
+
+    elif _from == "FTC":
+        df = get_historical_fromft(code, start=start, end=end, _type="commodities")
 
     elif _from == "INA":  # investing app
         code = get_investing_id(code, app=True)
@@ -766,6 +783,7 @@ def get_cninvesting_rt(suburl, app=False):
     trans = {
         "瑞士": "CH",
         "日本": "JP",
+        "韩国": "KR",
         "美国": "US",
         "香港": "HK",
         "德国": "DE",
@@ -774,6 +792,8 @@ def get_cninvesting_rt(suburl, app=False):
         "中国": "CN",
         "墨西哥": "MX",
         "澳大利亚": "AU",
+        "新加坡": "SG",
+        "印度": "IN",
     }
     if not app:
         url = "https://cn.investing.com"
@@ -882,11 +902,45 @@ def get_rt_from_sina(code):
     return d
 
 
+def make_ft_url(code, _type="indices"):
+    """
+
+    :param code:
+    :param _type: indices, commodities, currencies, funds, equities, bonds
+    :return:
+    """
+    if _type == "indices":
+        url = "https://markets.ft.com/data/indices/tearsheet/summary?s={code}".format(
+            code=code
+        )
+    elif _type == "commodities":
+        url = "https://markets.ft.com/data/commodities/tearsheet/summary?c={code}".format(
+            code=code
+        )
+    elif _type == "currencies":
+        url = "https://markets.ft.com/data/currencies/tearsheet/summary?s={code}".format(
+            code=code
+        )
+    elif _type == "funds":
+        url = "https://markets.ft.com/data/funds/tearsheet/summary?s={code}".format(
+            code=code
+        )
+    elif _type == "equities":
+        url = "https://markets.ft.com/data/equities/tearsheet/summary?s={code}".format(
+            code=code
+        )
+    elif _type == "bonds":
+        url = "https://markets.ft.com/data/bonds/tearsheet/summary?s={code}".format(
+            code=code
+        )
+    else:
+        raise ParserFailure("no reconginzed type for ft datasource: %s" % _type)
+    return url
+
+
 @lru_cache(maxsize=512)
-def get_ft_id(code):
-    url = "https://markets.ft.com/data/indices/tearsheet/summary?s={code}".format(
-        code=code
-    )
+def get_ft_id(code, _type="indices"):
+    url = make_ft_url(code, _type=_type)
     r = rget(url)
     b = BeautifulSoup(r.text, "lxml")
     return eval(
@@ -894,12 +948,9 @@ def get_ft_id(code):
     )["xid"]
 
 
-def get_rt_from_ft(code):
-    r = rget(
-        "https://markets.ft.com/data/indices/tearsheet/summary?s={code}".format(
-            code=code
-        )
-    )
+def get_rt_from_ft(code, _type="indices"):
+    url = make_ft_url(code, _type=_type)
+    r = rget(url)
     b = BeautifulSoup(r.text, "lxml")
     d = {}
     d["name"] = b.find("h1").string
@@ -997,6 +1048,16 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
         return get_rt_from_sina(code)
     elif _from in ["FT", "ft"]:
         return get_rt_from_ft(code)
+    elif _from == "FTE":
+        return get_rt_from_ft(code, _type="equities")
+    elif _from == "FTB":
+        return get_rt_from_ft(code, _type="bonds")
+    elif _from == "FTF":
+        return get_rt_from_ft(code, _type="funds")
+    elif _from == "FTX":
+        return get_rt_from_ft(code, _type="currencies")
+    elif _from == "FTC":
+        return get_rt_from_ft(code, _type="commodities")
     elif _from in ["INA"]:  # investing app
         return get_cninvesting_rt(code, app=True)
     else:

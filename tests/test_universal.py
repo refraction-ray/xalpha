@@ -83,6 +83,7 @@ def test_get_investing_rt():
 @pytest.mark.local
 def test_get_ft_rt():
     assert xa.get_rt("FT-INX:IOM")["currency"] == "USD"
+    assert xa.get_rt("FTC-WTI+Crude+Oil")["name"] == "NYMEX Crude Oil Front Month"
 
 
 def test_get_sp_daily():
@@ -107,6 +108,7 @@ def test_get_ft_daily():
     assert len(df) == 306
     df = xa.get_daily("FT-AUCHAH:SWX:CHF", prev=10, end="20200327")
     assert round(df.iloc[-1]["close"], 2) == 66.37
+    xa.get_daily("FTE-DVN:NYQ", prev=10)
 
 
 def test_cache():
