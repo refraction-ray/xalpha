@@ -1417,6 +1417,9 @@ def get_bar(code, prev=24, interval=3600, _from=None):
         elif code.startswith("HK") and code[2:].isdigit() and len(code) == 7:
             _from = "xueqiu"
             code = code[2:]
+        elif len(code.split("-")) > 2 and len(code.split("-")[0]) <= 3:
+            _from = code.split("-")[0]
+            code = "-".join(code.split("-")[1:])
         elif len(code.split("/")) > 1:
             _from = "cninvesting"
             code = get_investing_id(code)
@@ -1426,6 +1429,9 @@ def get_bar(code, prev=24, interval=3600, _from=None):
         return get_bar_fromxq(code, prev, interval)
     elif _from in ["IN", "cninvesting", "investing"]:
         return get_bar_frominvesting(code, prev, interval)
+    elif _from in ["INA"]:
+        return get_bar_frominvesting(code, prev, interval)
+        # 这里 app 源是 404，只能用网页源
     else:
         raise ParserFailure("unrecoginized _from %s" % _from)
 
@@ -1451,21 +1457,26 @@ def get_bar_frominvesting(code, prev=120, interval=3600):
         interval = "month"
     if len(code.split("/")) == 2:
         code = get_investing_id(code)
+
+    url = "https://cn.investing.com"
+    headers = {
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4)\
+                AppleWebKit/537.36 (KHTML, like Gecko)",
+        "Host": "cn.investing.com",
+        "Referer": "https://cn.investing.com/commodities/",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        "X-Requested-With": "XMLHttpRequest",
+    }
+
     r = rget(
-        "https://cn.investing.com/common/modules/js_instrument_chart/api/data.php?pair_id={code}&pair_id_for_news={code}\
+        url
+        + "/common/modules/js_instrument_chart/api/data.php?pair_id={code}&pair_id_for_news={code}\
 &chart_type=area&pair_interval={interval}&candle_count={prev}&events=yes&volume_series=yes&period=".format(
             code=code, prev=str(prev), interval=str(interval)
         ),
-        headers={
-            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4)\
-                    AppleWebKit/537.36 (KHTML, like Gecko)",
-            "Host": "cn.investing.com",
-            "Referer": "https://cn.investing.com/commodities/",
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-origin",
-            "X-Requested-With": "XMLHttpRequest",
-        },
+        headers=headers,
     )
     if not r.text:
         return  # None

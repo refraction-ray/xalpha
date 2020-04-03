@@ -219,7 +219,7 @@ def reconnect(tries=5, timeout=12):
                 except connection_errors as e:
                     logger.warning("Fails at fetching url: %s. Try again." % url)
                     if count == tries - 1:
-                        logger.critical(
+                        logger.error(
                             "Still wrong at fetching url: %s. after %s tries."
                             % (url, tries)
                         )

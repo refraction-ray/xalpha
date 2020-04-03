@@ -763,7 +763,7 @@ class QDIIPredict:
         else:
             if code not in self.bar_cache:
                 funddf = get_bar(code, prev=48, interval="3600")  ## 获取小时线
-                if self.now > 6:  # 昨日美国市场收盘才正常，才缓存参考小时线
+                if self.now.hour > 6:  # 昨日美国市场收盘才正常，才缓存参考小时线
                     self.bar_cache[code] = funddf
             else:
                 funddf = self.bar_cache[code]
