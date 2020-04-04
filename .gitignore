@@ -1,6 +1,5 @@
 htmlcov/
 holdings.py
-misc.py
 tests/SH000807.csv
 *auth.txt
 pytest*.csv

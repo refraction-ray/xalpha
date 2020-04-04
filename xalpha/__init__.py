@@ -4,6 +4,7 @@ __name__ = "xalpha"
 
 import xalpha.policy
 import xalpha.remain
+import xalpha.misc
 from xalpha.evaluate import evaluate
 from xalpha.info import fundinfo, indexinfo, cashinfo, mfundinfo, FundReport
 from xalpha.multiple import mul, mulfix, imul
