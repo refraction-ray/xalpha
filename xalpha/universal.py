@@ -92,7 +92,7 @@ def lru_cache_time(ttl=None, maxsize=None):
 @lru_cache_time(ttl=300)
 def get_token():
     """
-    获取雪球的验权 token，匿名也可获取，而且似乎永远恒定
+    获取雪球的验权 token，匿名也可获取，而且似乎永远恒定(大时间范围内会改变)
 
     :return:
     """
