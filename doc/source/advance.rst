@@ -48,6 +48,11 @@ precached 可以不设，若设置为 %Y%m%d 的时间字符串格式，则代�
 最后为了可以在运行时动态改变 xalpha 函数的缓存行为，也即任何时刻 ``xa.set_backend`` 都可以生效，xalpha 强烈推荐所有函数，都以 ``xa.meth`` 的形式使用，
 强烈不建议 ``from xalpha import meth`` 这种导入方式。
 
+.. Note::
+
+    若不设定第一部分基金交易的缓存，则 ``xa.set_backend()`` 的设定会默认决定第一部分基金元数据的缓存位置，一旦后端是 csv 或 sql，基金信息类的缓存将默认打开，
+    默认 fetch=True, svae=True. 因此 ``xa.set_backend()`` 事实上成为了设置 xalpha 数据缓存的统一接口。
+
 
 数据本地化
 -------------

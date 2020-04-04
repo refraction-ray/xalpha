@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 ## super ugly but quick way to exclude .py files in the packages
 
-excludes = ["holdings.py"]
+excludes = ["holdings.py", "misc.py"]
 
 for f in excludes:
     absf = os.path.join(os.getcwd(), "xalpha", f)

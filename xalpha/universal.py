@@ -42,7 +42,7 @@ from xalpha.cons import rget, rpost, rget_json, rpost_json, tz_bj, today_obj
 from xalpha.provider import data_source
 from xalpha.exceptions import DataPossiblyWrong, ParserFailure
 
-
+pd.options.mode.chained_assignment = None  # turn off setwith copy warning
 thismodule = sys.modules[__name__]
 xamodule = sys.modules["xalpha"]
 logger = logging.getLogger(__name__)
@@ -369,10 +369,11 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
 
 
 def get_fund(code):
+    # 随意设置非空 path，防止嵌套缓存到 fundinfo
     if code[0] == "F":
-        df = fundinfo(code[1:]).price
+        df = fundinfo(code[1:], path="nobackend").price
     elif code[0] == "M":
-        df = mfundinfo(code[1:]).price
+        df = mfundinfo(code[1:], path="nobackend").price
     df["close"] = df["netvalue"]
     return df[["date", "close"]]
 
@@ -753,10 +754,13 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
         df = get_macro(code, start=start[:4], end=end[:4], datecol="stat_year")
 
     elif _from == "mcq":
-        df = get_macro(code, start=start[:4], end=end[:4], datecol="stat_quarter")
+        df = get_macro(code, start=start, end=end, datecol="stat_quarter")
 
     elif _from == "mcm":
-        df = get_macro(code, start=start[:4], end=end[:4], datecol="stat_month")
+        df = get_macro(code, start=start, end=end, datecol="stat_month")
+
+    elif _from == "mcd":
+        df = get_macro(code, start=start, end=end, datecol="day")
 
     else:
         raise ParserFailure("no such data source: %s" % _from)
@@ -1279,14 +1283,15 @@ def cachedio(**ioconf):
                                     df0 = df1.append(df0, ignore_index=True)
                         # 向后延拓
                         if df0.iloc[-1][date] < end_obj:
+                            nextday_str = (
+                                df0.iloc[-1][date] + dt.timedelta(days=1)
+                            ).strftime("%Y%m%d")
                             if len(df0[df0["date"] == df0.iloc[-1]["date"]]) == 1:
                                 kws["start"] = (df0.iloc[-1][date]).strftime("%Y%m%d")
-                            else:
-                                kws["start"] = (
-                                    df0.iloc[-1][date] + dt.timedelta(days=1)
-                                ).strftime("%Y%m%d")
+                            else:  # 单日多行的表默认最后一日是准确的，不再刷新了
+                                kws["start"] = nextday_str
                             kws["end"] = end_str
-                            if has_weekday(kws["start"], kws["end"]):
+                            if has_weekday(nextday_str, kws["end"]):  # 新更新的日期里有工作日
                                 df2 = f(*args, **kws)
                                 if len(df2) > 0:
                                     df2 = df2[df2["date"] >= kws["start"]]
@@ -1409,6 +1414,7 @@ def set_backend(**ioconf):
     setattr(xamodule, "get_daily", get_daily)
     setattr(thismodule, "get_index_weight_range", get_index_weight_range)
     setattr(thismodule, "get_peb_range", get_peb_range)
+    ioconf["prefix"] = prefix
     setattr(thismodule, "ioconf", ioconf)
 
 

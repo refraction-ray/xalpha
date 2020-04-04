@@ -2,13 +2,14 @@
 """
 modules of info class, including cashinfo, indexinfo and fundinfo class
 """
+
+import os
 import csv
 import datetime as dt
 import json
 import re
 
 import pandas as pd
-import requests as rq
 from bs4 import BeautifulSoup
 from sqlalchemy import exc
 
@@ -214,13 +215,25 @@ class basicinfo(indicator):
     ):
         # 增量 IO 的逻辑都由 basicinfo 类来处理，对于具体的子类，只需实现_save_form 和 _fetch_form 以及 update 函数即可
         self.code = code
-        self.format = form
+
         self.round_label = round_label
         self.dividend_label = dividend_label
         self.value_label = value_label
         self.specialdate = []
         self.fenhongdate = []
         self.zhesuandate = []
+
+        # compatible with new xa.set_backend()
+        import xalpha.universal as xu
+
+        if (xu.ioconf["backend"] in ["csv", "sql"]) and (not path):
+            fetch = True
+            save = True
+            form = xu.ioconf["backend"]
+            path = xu.ioconf["path"]
+            path = os.path.join(path, xu.ioconf["prefix"] + "INFO-")
+            print(path)
+        self.format = form
         if fetch is False:
             self._basic_init()  # update self. name rate and price table
         else:

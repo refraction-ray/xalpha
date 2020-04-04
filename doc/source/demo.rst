@@ -18,6 +18,8 @@
 
 *	基金交易策略生成与回测： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/policy.ipynb>`_
 
+*   2020 新用法新范式整理 (推荐)： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/newparadigm.ipynb>`_
+
 
 研究案例
 -----------

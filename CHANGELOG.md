@@ -1,5 +1,9 @@
 # Changelog
 ## Unreleased
+### changed
+* xa.set_backend 也可影响 fundinfo 的缓存设定
+### fixed
+* 进一步完善缓存刷新掉最后一天和节假日的处理逻辑
 
 ## v0.8.3 - 2020.04.04
 ### added
