@@ -207,7 +207,12 @@ def reconnect(tries=5, timeout=12):
                 url = args[0]
             else:
                 url = kws.get("url", "")
-
+            headers = kws.get("headers", {})
+            if (not headers.get("user-agent", None)) and (
+                not headers.get("User-Agent", None)
+            ):
+                headers["user-agent"] = "Mozilla/5.0"
+            kws["headers"] = headers
             for count in range(tries):
                 try:
                     logger.debug(

@@ -547,3 +547,7 @@ class itrade(trade):
 
     def get_netvalue(self, date=yesterdayobj()):
         return get_daily(self.code, end=date.strftime("%Y%m%d"), prev=20).iloc[-1].close
+
+
+Trade = trade
+ITrade = itrade

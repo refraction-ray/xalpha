@@ -19,6 +19,7 @@ linter 部分：使用 ``black`` 及其默认设置。
 如果添加新功能请注意添加对应的测试案例到 tests 中，新函数请保证必要的 docstring，如有必要，请相应修改 CHANGELOG.md 的内容。
 也可添加文档介绍新功能到 ``doc/source`` 中或新的案例分析 jupyter notebook 到 ``doc/sample`` 中。
 
+
 欢迎的贡献方向
 ----------------
 

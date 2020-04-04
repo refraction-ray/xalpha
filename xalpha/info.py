@@ -23,7 +23,6 @@ from xalpha.cons import (
     yesterdaydash,
     yesterdayobj,
     today,
-    connection_errors,
     rget,
 )
 from xalpha.exceptions import FundTypeError, TradeBehaviorError
@@ -232,7 +231,6 @@ class basicinfo(indicator):
             form = xu.ioconf["backend"]
             path = xu.ioconf["path"]
             path = os.path.join(path, xu.ioconf["prefix"] + "INFO-")
-            print(path)
         self.format = form
         if fetch is False:
             self._basic_init()  # update self. name rate and price table
@@ -1163,3 +1161,9 @@ class mfundinfo(basicinfo):
         if len(df) != 0:
             self.price = self.price.append(df, ignore_index=True, sort=True)
             return df
+
+
+FundInfo = fundinfo
+MFundInfo = mfundinfo
+CashInfo = cashinfo
+IndexInfo = indexinfo

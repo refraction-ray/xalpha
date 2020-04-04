@@ -151,3 +151,7 @@ class irecord(record):
         :return:
         """
         return self.status["fee"].sum()
+
+
+Record = record
+IRecord = irecord

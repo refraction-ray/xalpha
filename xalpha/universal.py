@@ -1102,7 +1102,7 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
 
 
 get_realtime = get_rt
-
+get_now = get_rt
 
 _cached_data = {}
 
@@ -1442,7 +1442,7 @@ def get_peb(index, date=None, table=False):
         end=(middle + dt.timedelta(days=5)).strftime("%Y-%m-%d"),
     )
     q = query(valuation).filter(valuation.code.in_(list(iwdf.code)))
-    #     df = get_fundamentals(q, date)
+    logger.debug("get_fundamentals on %s" % (date))
     df = get_fundamentals(q, date=date)
     df = df.merge(iwdf, on="code")
     df["e"] = df["weight"] / df["pe_ratio"]

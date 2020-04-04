@@ -395,3 +395,7 @@ class imul(mul):
         self.fundtradeobj = tuple(fundtradeobj)
         self.totcftable = self._mergecftb()
         self.is_in = True
+
+
+Mul = mul
+IMul = imul
