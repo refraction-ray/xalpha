@@ -279,3 +279,19 @@ xalpha 不要去雪球爬取数据，而是直接从我的数据库里来拿，�
     xa.get_daily("SH600000") # 此时程序将从数据库获取日线数据
 
 同样的方法，也可以应用到 ``get_rt`` 和 ``get_bar``, 对应的 method="rt", "bar".
+
+
+set 方法总结
+---------------
+
+xalpha 激进地利用了 python 的 reflection 机制，很多设定可以运行时动态改变，这些往往被抽象成一些 ``set_`` 接口。
+
+* set_proxy: 设定代理，支持 http 和 socks 代理，set_proxy() 可以立即取消代理 :func:`xalpha.provider.set_proxy`
+
+* set_backend: 设定数据缓存的后端和行为 :func:`xalpha.universal.set_backend`
+
+* set_holdings: 导入外部的 holdings.py 数据文件 :func:`xalpha.toolbox.set_holdings`
+
+* set_handler: 为 ``get_`` 数据函数设定钩子 :func:`xalpha.universal.set_handler`
+
+* set_jq_data: 聚宽数据源鉴权 :func:`xalpha.provider.set_jq_data`

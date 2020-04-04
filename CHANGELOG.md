@@ -4,6 +4,7 @@
 * get_bar 增加雪球源
 * 增加 set_handler
 * 增加更多 FT 数据
+* 增加 lru_cache_time，带 ttl 的缓存更好的防止重复爬取
 ### fixed
 * 防止 precached 之前的日线数据无法抓取
 * 为 imul 增加 istatus 关键字参数作为冗余防止误输入

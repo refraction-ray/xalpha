@@ -41,6 +41,12 @@ def _set_holdings(module):
 
 
 def set_holdings(module=None):
+    """
+    导入外部 holdings.py 数据文件用来预测基金净值
+
+    :param module: mod. import holdings
+    :return: None.
+    """
     if not module:
         try:
             from xalpha import holdings

@@ -1,4 +1,5 @@
 import sys
+import time
 import pytest
 
 sys.path.insert(0, "../")
@@ -163,3 +164,22 @@ def test_set_handler():
     assert xa.get_bar(1) == 1
     assert len(xa.get_bar("PDD")) == 24
     xa.set_handler(method="bar")
+
+
+def test_cache_time():
+    class F:
+        def __init__(self):
+            self.r = 0
+
+        def __call__(self):
+            self.r += 1
+            return self.r
+
+        __name__ = "F"
+
+    f = xa.universal.lru_cache_time(ttl=5)(F())
+
+    assert f() == 1
+    assert f() == 1
+    time.sleep(5)
+    assert f() == 2

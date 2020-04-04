@@ -6,6 +6,7 @@ for almost everything in the market
 
 import os
 import sys
+import time
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -59,6 +60,36 @@ def has_weekday(start, end):
     return False
 
 
+def lru_cache_time(ttl=None, maxsize=None):
+    """
+    TTL support on lru_cache
+
+    :param ttl: float or int, seconds
+    :param maxsize: int, maxsize for lru_cache
+    :return:
+    """
+
+    def wrapper(func):
+        # Lazy function that makes sure the lru_cache() invalidate after X secs
+        @lru_cache(maxsize)
+        def time_aware(_ttl, *args, **kwargs):
+            return func(*args, **kwargs)
+
+        setattr(thismodule, func.__name__ + "_ttl", time_aware)
+
+        @wraps(func)
+        def newfunc(*args, **kwargs):
+            ttl_hash = round(time.time() / ttl)
+            f_ttl = getattr(thismodule, func.__name__ + "_ttl")
+            return f_ttl(ttl_hash, *args, **kwargs)
+
+        return newfunc
+
+    return wrapper
+
+
+# TODO: 缓存 token 的合适时间尺度
+@lru_cache_time(ttl=300)
 def get_token():
     """
     获取雪球的验权 token，匿名也可获取，而且似乎永远恒定
@@ -187,7 +218,7 @@ def dstr2dobj(dstr):
     return d_obj
 
 
-@lru_cache(maxsize=512)
+@lru_cache(maxsize=1024)
 def get_investing_id(suburl, app=False):
     if not app:
         url = "https://cn.investing.com"
@@ -236,6 +267,7 @@ def _variate_ua():
     return ua[choice][:last]
 
 
+@lru_cache_time(ttl=120, maxsize=128)
 def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
     """
     获取人民币汇率中间价, 该 API 官网数据源，稳定性很差
@@ -938,7 +970,7 @@ def make_ft_url(code, _type="indices"):
     return url
 
 
-@lru_cache(maxsize=512)
+@lru_cache(maxsize=1024)
 def get_ft_id(code, _type="indices"):
     url = make_ft_url(code, _type=_type)
     r = rget(url)
@@ -1004,6 +1036,7 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
     # 对于一些标的，get_rt 的主任务可能不是 current 价格，而是去拿 market currency 这些元数据
     # 现在用的新浪实时数据源延迟严重， double check 并不靠谱，港股数据似乎有15分钟延迟（已解决）
     # 雪球实时和新浪实时在9：00之后一段时间可能都有问题
+    # FT 数据源有10到20分钟的延迟
 
     if getattr(thismodule, "get_rt_handler", None):
         args = inspect.getargvalues(inspect.currentframe())
@@ -1488,6 +1521,7 @@ def _inverse_convert_code(code):
         return code[2:] + ".XSHE"
 
 
+@lru_cache_time(ttl=60, maxsize=512)
 def get_bar(code, prev=24, interval=3600, _from=None):
     """
 
