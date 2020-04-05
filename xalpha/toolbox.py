@@ -26,6 +26,8 @@ from xalpha.universal import (
     _convert_code,
     _inverse_convert_code,
     get_newest_netvalue,
+    fetch_backend,
+    save_backend,
 )
 import xalpha.universal as xu  ## 为了 set_backend 可以动态改变此模块的 get_daily
 from xalpha.exceptions import ParserFailure, DateMismatch, NonAccurate
@@ -555,7 +557,7 @@ def daily_increment(code, date, lastday=None, _check=False):
                 date_obj.strftime("%Y%m%d"),
                 get_market(code),
                 no_trading_days=no_trading_days,
-            ):
+            ) or (date_obj.strftime("%Y-%m-%d") in gap_info.get(code, [])):
                 print("%s is closed on %s" % (code, date))
                 if not lastday:
                     return 1  # 当日没有涨跌，这里暂时为考虑 _check 和 lastday 相同的的情形
@@ -655,16 +657,23 @@ class QDIIPredict:
 
     """
 
-    def __init__(self, code, t1dict=None, t0dict=None, positions=False):
+    def __init__(
+        self, code, t1dict=None, t0dict=None, positions=False, fetch=False, save=False
+    ):
         """
 
         :param code: str, 场内基金代码，eg SH501018
         :param t1dict: Dict[str, float]. 用来预测 T-1 净值的基金组合持仓，若为空自动去 holdings 中寻找。
         :param t0ict: Dict[str, float]. 用来预测 T 实时净值的基金组合持仓，若为空自动去 holdings 中寻找。
         :param positions: bool. 仓位是否浮动，默认固定仓位。
+        :param fetch: bool, default True. 优先从 backend fetch t1。
+        :param save: bool, default True. 将 t1 缓存到 backend。
         """
         self.code = code
         self.fcode = "F" + code[2:]
+        self.fetch = fetch
+        self.save = save
+
         if not t1dict:
             self.t1dict = holdings.get(code[2:], None)
             if not self.t1dict:
@@ -688,6 +697,12 @@ class QDIIPredict:
         self.t0_delta = None
         self.t1_delta = None
         # 不建议直接使用以上两者看变化量，在手动 set 后，以上两者可能继续为 None
+        if fetch:
+            df = fetch_backend("t1-" + code)
+            if df is not None:
+                df["date"] = pd.to_datetime(df["date"])
+                for i, r in df.iterrows():
+                    self.set_t1(float(r["t1"]), r["date"].strftime("%Y-%m-%d"))
 
     def set_t1(self, value, date=None):
         """
@@ -703,7 +718,7 @@ class QDIIPredict:
         else:
             datekey = date.replace("/", "").replace("-", "")
         if datekey in self.t1value_cache:
-            print("t-1 value already exists, rewriting...")
+            logger.debug("t-1 value already exists, rewriting...")
         self.t1value_cache[datekey] = value
         self.t1_type = "已计算"
 
@@ -749,7 +764,7 @@ class QDIIPredict:
         else:
             datekey = date.replace("/", "").replace("-", "")
         if datekey not in self.t1value_cache:
-
+            logger.debug("no cache for t1 value, computing from beginning")
             if self.positions:
                 current_pos = self.get_position(datekey, return_date=False)
                 hdict = scale_dict(self.t1dict.copy(), aim=current_pos * 100)
@@ -805,6 +820,14 @@ class QDIIPredict:
             net = last_value * self.t1_delta
             self.t1value_cache[datekey] = net
             self.t1_type = "已计算"
+            if self.save:
+                df = pd.DataFrame(
+                    {
+                        "date": [datekey[:4] + "-" + datekey[4:6] + "-" + datekey[6:8]],
+                        "t1": [net],
+                    }
+                )
+                save_backend("t1-" + self.code, df)
         if not return_date:
             return self.t1value_cache[datekey]
         else:

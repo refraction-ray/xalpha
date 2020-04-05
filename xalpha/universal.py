@@ -606,7 +606,9 @@ def set_handler(method="daily", f=None):
     setattr(thismodule, "get_" + method + "_handler", f)
 
 
-def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, **kws):
+def _get_daily(
+    code, start=None, end=None, prev=365, _from=None, wrapper=True, handler=True, **kws
+):
     """
     universal fetcher for daily historical data of literally everything has a value in market.
     数据来源包括天天基金，雪球，英为财情，外汇局官网，聚宽，标普官网，bloomberg，雅虎财经等。
@@ -655,15 +657,17 @@ def _get_daily(code, start=None, end=None, prev=365, _from=None, wrapper=True, *
     :param _from: Optional[str]. 一般用户不需设定该选项。can be one of "xueqiu", "zjj", "investing", "tiantianjijin". Only used for debug to
         enfore data source. For common use, _from can be chosed automatically based on code in the run time.
     :param wrapper: bool. 一般用户不需设定该选项。
+    :param handler: bool. Default True. 若为 False，则 handler 钩子失效，用于钩子函数中的嵌套。
     :return: pd.Dataframe.
         must include cols: date[pd.Timestamp]，close[float64]。
     """
-    if getattr(thismodule, "get_daily_handler", None):
-        args = inspect.getargvalues(inspect.currentframe())
-        f = getattr(thismodule, "get_daily_handler")
-        fr = f(**args.locals)
-        if fr:
-            return fr
+    if handler:
+        if getattr(thismodule, "get_daily_handler", None):
+            args = inspect.getargvalues(inspect.currentframe())
+            f = getattr(thismodule, "get_daily_handler")
+            fr = f(**args.locals)
+            if fr:
+                return fr
 
     if not end:
         end_obj = today_obj()
@@ -999,6 +1003,7 @@ def get_rt_from_ft(code, _type="indices"):
     return d
 
 
+@lru_cache_time(ttl=300, maxsize=512)
 def get_newest_netvalue(code):
     """
     防止天天基金总量 API 最新净值更新不及时，获取基金最新公布净值及对应日期
@@ -1019,7 +1024,9 @@ def get_newest_netvalue(code):
     )
 
 
-def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
+def get_rt(
+    code, _from=None, double_check=False, double_check_threhold=0.005, handler=True
+):
     """
     universal fetcher for realtime price of literally everything.
 
@@ -1028,6 +1035,7 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
         enfore data source. For common use, _from can be chosed automatically based on code in the run time.
     :param double_check: Optional[bool], default False. 如果设为 True，只适用于 A 股，美股，港股实时行情，会通过至少两个不同的数据源交叉验证，确保正确。
             适用于需要自动交易等情形，防止实时数据异常。
+    :param handler: bool. Default True. 若为 False，则 handler 钩子失效，用于钩子函数中的嵌套。
     :return: Dict[str, Any].
         包括 "name", "current", "percent" 三个必有项和 "current_ext"（盘后价格）, "currency" （计价货币）， "market" (发行市场)可能为 ``None`` 的选项。
     """
@@ -1035,13 +1043,13 @@ def get_rt(code, _from=None, double_check=False, double_check_threhold=0.005):
     # 现在用的新浪实时数据源延迟严重， double check 并不靠谱，港股数据似乎有15分钟延迟（已解决）
     # 雪球实时和新浪实时在9：00之后一段时间可能都有问题
     # FT 数据源有10到20分钟的延迟
-
-    if getattr(thismodule, "get_rt_handler", None):
-        args = inspect.getargvalues(inspect.currentframe())
-        f = getattr(thismodule, "get_rt_handler")
-        fr = f(**args.locals)
-        if fr:
-            return fr
+    if handler:
+        if getattr(thismodule, "get_rt_handler", None):
+            args = inspect.getargvalues(inspect.currentframe())
+            f = getattr(thismodule, "get_rt_handler")
+            fr = f(**args.locals)
+            if fr:
+                return fr
 
     if not _from:
         # if code.startswith("HK") and code[2:].isdigit():
@@ -1331,6 +1339,50 @@ def cachedio(**ioconf):
     return cached
 
 
+def fetch_backend(key):
+    prefix = ioconf.get("prefix", "")
+    key = prefix + key
+    backend = ioconf.get("backend")
+    path = ioconf.get("path")
+    if backend == "csv":
+        key = key + ".csv"
+
+    try:
+        if backend == "csv":
+            df0 = pd.read_csv(os.path.join(path, key))
+        elif backend == "sql":
+            df0 = pd.read_sql(key, path)
+        else:
+            raise ValueError("no %s option for backend" % backend)
+
+        return df0
+
+    except (FileNotFoundError, exc.ProgrammingError, KeyError):
+        return None
+
+
+def save_backend(key, df, mode="a"):
+    prefix = ioconf.get("prefix", "")
+    key = prefix + key
+    backend = ioconf.get("backend")
+    path = ioconf.get("path")
+    if backend == "csv":
+        key = key + ".csv"
+
+    if backend == "csv":
+        df.to_csv(os.path.join(path, key), index=False, mode=mode)
+    elif backend == "sql":
+        if mode == "a":
+            mode = "append"
+        else:
+            mode = "replace"
+        df.to_sql(key, con=path, if_exists=mode, index=False)
+    else:
+        raise ValueError("no %s option for backend" % backend)
+
+    logger.debug("%s saved into backend successfully" % key)
+
+
 def check_cache(*args, **kws):
     assert (
         _get_daily(*args, wrapper=False, **kws)
@@ -1522,21 +1574,23 @@ def _inverse_convert_code(code):
 
 
 @lru_cache_time(ttl=60, maxsize=512)
-def get_bar(code, prev=24, interval=3600, _from=None):
+def get_bar(code, prev=24, interval=3600, _from=None, handler=True):
     """
 
     :param code: str. 支持雪球和英为的代码
     :param prev: points of data from now to back, often limited by API around several hundreds
     :param interval: float, seconds. need to match the corresponding API,
         typical values include 60, 300, 3600, 86400, 86400*7
+    :param handler: bool. Default True. 若为 False，则 handler 钩子失效，用于钩子函数中的嵌套。
     :return: pd.DataFrame
     """
-    if getattr(thismodule, "get_bar_handler", None):
-        args = inspect.getargvalues(inspect.currentframe())
-        f = getattr(thismodule, "get_bar_handler")
-        fr = f(**args.locals)
-        if fr:
-            return fr
+    if handler:
+        if getattr(thismodule, "get_bar_handler", None):
+            args = inspect.getargvalues(inspect.currentframe())
+            f = getattr(thismodule, "get_bar_handler")
+            fr = f(**args.locals)
+            if fr:
+                return fr
 
     if not _from:
         if code.startswith("SH") or code.startswith("SZ"):
@@ -1666,9 +1720,6 @@ def get_bar_fromxq(code, prev, interval=3600):
             ]
         ]
     return df
-
-
-## info wrapper for get_daily
 
 
 class vinfo(basicinfo, indicator):

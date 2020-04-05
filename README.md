@@ -41,7 +41,7 @@ xa.get_rt("HK00700", double_check=True) # 双重验证高稳定性支持的实�
 xa.PEBHistory("SH000990").summary()
 ```
 
-xalpha 不止如此，更多特性，欢迎探索。
+xalpha 不止如此，更多特性，欢迎探索。不只是数据，更是工具！
 
 您也可以尝试基于 xalpha 构建的基金净值预测与场内溢价率提醒的项目: [LOF-BOT](https://github.com/refraction-ray/lof-bot).
 

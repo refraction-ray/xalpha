@@ -398,4 +398,5 @@ class imul(mul):
 
 
 Mul = mul
+MulFix = mulfix
 IMul = imul
