@@ -213,6 +213,18 @@ xalpha 可以用来对场外基金和指数进行方便的追踪和研究，
     {'name': '德国DAX30指数 (GDAXI)', 'current': 9525.77, 'current_ext': None, 'currency': 'EUR', 'percent': -0.47, 'market': 'DE'}
 
 
+更有趣的是，任何 ``get_daily`` 获取的标的，都可以套壳成上边的 info 类，从而进行模拟交易和组合分析，而不管其底层是原油，汇率甚至是 AH 比价。
+
+    >>> oil = xa.vinfo("commodities/brent-oil", start="20180101")
+    >>> oil.info()
+    fund name: 伦敦布伦特原油期货 - 2020年6月 (LCOM0)
+    fund code: commodities/brent-oil
+    fund purchase fee: 0%
+    # 如上的 oil info 对象也可以进行 trade 交易和 mul 组合分析
+    >>> oil.max_drawdown()
+    (Timestamp('2018-10-03 00:00:00'), Timestamp('2020-03-31 00:00:00'), -0.736470042878665)
+
+
 功能综述
 ----------------
 鉴于此页仅涵盖了非常小一部分功能的展示，除了参考其他部分学习外，这里整理出了该模块的基本功能。

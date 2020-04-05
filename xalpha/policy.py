@@ -4,7 +4,7 @@ modules for policy making: generate status table for backtesting
 """
 import pandas as pd
 
-from xalpha.cons import myround, opendate, yesterdaydash
+from xalpha.cons import myround, opendate, yesterdaydash, convert_date
 from xalpha.record import record
 
 

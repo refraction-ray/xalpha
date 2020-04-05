@@ -39,7 +39,15 @@ except ImportError:
 
 from xalpha.info import basicinfo, fundinfo, mfundinfo
 from xalpha.indicator import indicator
-from xalpha.cons import rget, rpost, rget_json, rpost_json, tz_bj, today_obj
+from xalpha.cons import (
+    rget,
+    rpost,
+    rget_json,
+    rpost_json,
+    tz_bj,
+    today_obj,
+    region_trans,
+)
 from xalpha.provider import data_source
 from xalpha.exceptions import DataPossiblyWrong, ParserFailure
 
@@ -817,21 +825,6 @@ def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
 
 
 def get_cninvesting_rt(suburl, app=False):
-    trans = {
-        "瑞士": "CH",
-        "日本": "JP",
-        "韩国": "KR",
-        "美国": "US",
-        "香港": "HK",
-        "德国": "DE",
-        "英国": "UK",
-        "法国": "FR",
-        "中国": "CN",
-        "墨西哥": "MX",
-        "澳大利亚": "AU",
-        "新加坡": "SG",
-        "印度": "IN",
-    }
     if not app:
         url = "https://cn.investing.com"
     else:
@@ -888,7 +881,7 @@ def get_cninvesting_rt(suburl, app=False):
     for span in s.findAll("span", class_="elp"):
         if span.find("a") and span.find("a")["href"].startswith("/markets"):
             market = span.string
-    market = trans.get(market, market)
+    market = region_trans.get(market, market)
     return {
         "name": name,
         "current": q,

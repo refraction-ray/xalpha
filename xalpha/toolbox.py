@@ -11,7 +11,15 @@ from collections import deque
 from functools import wraps, lru_cache
 import logging
 
-from xalpha.cons import opendate, yesterday, next_onday, last_onday, scale_dict, tz_bj
+from xalpha.cons import (
+    opendate,
+    yesterday,
+    next_onday,
+    last_onday,
+    scale_dict,
+    tz_bj,
+    holidays,
+)
 from xalpha.universal import (
     get_rt,
     get_bar,
@@ -437,6 +445,8 @@ def get_market(code):
     try:
         if code in market_info:
             return market_info[code]
+        elif code.startswith("CNY/") or code.endswith("/CNY"):
+            return "CM"  # china money 中间价市场标记
         market = get_rt(code)["market"]
         if market is None:
             market = get_currency(code)
@@ -486,7 +496,13 @@ def is_on(date, market="CN", no_trading_days=None):
     if no_trading_days:
         if date_dash in no_trading_days.get(market, []):
             return False
-    if market in ["CN", "CHN", "CNY", "RMB", "CHINA"]:
+    if date_dash in holidays.get(market, []):
+        return False
+    logger.warning(
+        "determine whether %s is holiday in %s market, but may be wrong, be careful!"
+        % (date_dash, market)
+    )
+    if market in ["CN", "CHN", "CNY", "RMB", "CHINA", "CM"]:  # 国内节假日不更新中间价
         return date_dash in opendate
     elif market in ["JP", "JAPAN", "JPY", "100JPY"]:
         code = "indices/japan-ni225"
@@ -501,7 +517,10 @@ def is_on(date, market="CN", no_trading_days=None):
     elif market in ["HK"]:
         code = "indices/hang-sen-40"
     else:
-        logger.warning("unknown oversea market %s" % market)
+        logger.warning(
+            "unknown oversea market %s, assuming %s is not a holiday"
+            % (market, date_dash)
+        )
         return True
     return _is_on(code, date)
 

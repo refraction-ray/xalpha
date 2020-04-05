@@ -5,9 +5,10 @@ modules for misc crawler without unfied API
 
 import re
 import pandas as pd
+import datetime as dt
 from bs4 import BeautifulSoup
 
-from xalpha.cons import rget, rget_json, today_obj
+from xalpha.cons import rget, rget_json, today_obj, region_trans
 from xalpha.universal import lru_cache_time, _float
 from xalpha.exceptions import ParserFailure
 
@@ -100,3 +101,24 @@ CATALOGID=1945_LOF&txtQueryKeyAndJC={code}".format(
     )
     r = rget_json(url)
     return _float(r[0]["data"][0]["dqgm"]) * 1e4
+
+
+def get_tdx_holidays(holidays=None, format="%Y-%m-%d"):
+    r = rget("https://www.tdx.com.cn/url/holiday/")
+    r.encoding = "gbk"
+    b = BeautifulSoup(r.text, "lxml")
+    l = b.find("textarea").string.split("\n")
+    if not holidays:
+        holidays = {}
+    for item in l:
+        if item.strip():
+            c = item.split("|")
+            if c[2] in region_trans:
+                rg = region_trans[c[2]]
+                tobj = dt.datetime.strptime(c[0], "%Y%m%d")
+                tstr = tobj.strftime(format)
+                if rg not in holidays:
+                    holidays[rg] = [tstr]
+                else:
+                    holidays[rg].append(tstr)
+    return holidays
