@@ -37,7 +37,8 @@ except ImportError:
     except ImportError:
         pass
 
-from xalpha.info import fundinfo, mfundinfo
+from xalpha.info import basicinfo, fundinfo, mfundinfo
+from xalpha.indicator import indicator
 from xalpha.cons import rget, rpost, rget_json, rpost_json, tz_bj, today_obj
 from xalpha.provider import data_source
 from xalpha.exceptions import DataPossiblyWrong, ParserFailure
@@ -1672,3 +1673,39 @@ def get_bar_fromxq(code, prev, interval=3600):
             ]
         ]
     return df
+
+
+## info wrapper for get_daily
+
+
+class vinfo(basicinfo, indicator):
+    """
+    vinfo is an info like class wrapper for get_daily, it behaves like info
+    """
+
+    def __init__(
+        self, code, name=None, start=None, end=None, rate=0, col="close", **kws
+    ):
+        if not name:
+            try:
+                name = get_rt(code)["name"]
+            except:
+                name = code
+        self.name = name
+        self.code = code
+        self.start = start  # None is one year ago
+        self.end = end  # None is yesterday
+        df = get_daily(code, start=start, end=end)
+        df["totvalue"] = df[col]
+        df["netvalue"] = df[col] / df.iloc[0][col]
+        self.price = df
+        self.round_label = kws.get("round_label", 0)
+        self.dividend_label = kws.get("dividend_label", 0)
+        self.value_label = kws.get("value_label", 1)  # 默认按金额赎回
+        self.specialdate = []
+        self.fenhongdate = []
+        self.zhesuandate = []
+        self.rate = rate
+
+
+VInfo = vinfo

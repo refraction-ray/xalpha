@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### added
+* 增加 vinfo 类，使得任何 get_daily 可以拿到的标的都可以进行交易。
 ### changed
 * xa.set_backend 也可影响 fundinfo 的缓存设定
 ### fixed

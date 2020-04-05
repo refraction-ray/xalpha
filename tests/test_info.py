@@ -186,3 +186,13 @@ def test_fund_update():
     len4 = len(jxzl.price)
     assert (len3 == len4) or (len3 - len4 == -1)
     assert round(netvalue, 4) in netvaluel  ##天天基金的总量 API 更新越来越慢了。。。
+
+
+def test_vinfo():
+    hs300 = xa.vinfo("SH000300", start="20190901")
+    hs300.info()
+    st = pd.DataFrame({"date": ["20200101", "20200203"], "SH000300": [200, -100]})
+    st["date"] = pd.to_datetime(st["date"])
+    t = xa.trade(hs300, st)
+    t.dailyreport()
+    assert len(t.cftable) == 2

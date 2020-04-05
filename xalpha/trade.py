@@ -236,7 +236,6 @@ class trade:
             share = 0
             rem = self.remtable.iloc[-1].rem
             rdate = date
-
             if (date in recorddate) and (date not in self.aim.zhesuandate):
                 # deal with buy and sell and label the fenhongzaitouru, namely one label a 0.05 in the original table to label fenhongzaitouru
                 value = self.status[self.status["date"] == date].iloc[0].loc[code]
@@ -309,7 +308,7 @@ class trade:
                     cash += dcash2
                     share += dshare2
                 else:
-                    raise ParserFailure("comments not recoginized")
+                    raise ParserFailure("comments not recognized")
 
         self.cftable = self.cftable.append(
             pd.DataFrame([[rdate, cash, share]], columns=["date", "cash", "share"]),

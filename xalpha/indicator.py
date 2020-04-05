@@ -435,7 +435,12 @@ class indicator:
         :param benchmark: bool, whether include benchmark's netvalue curve, default true
         :param vopts: dict, options for pyecharts instead of builtin settings
         """
-        a, b = self.comparison(end)
+        if getattr(self, "bmprice", None) is None:
+            benchmark = False
+        if benchmark:
+            a, b = self.comparison(end)
+        else:
+            a = self.price
         if vopts is None:
             vopts = line_opts
         line = Line()
@@ -444,7 +449,7 @@ class indicator:
             y_axis=list(a.netvalue), series_name=self.name, is_symbol_show=False
         )
         line.set_global_opts(**vopts)
-        if benchmark is True:
+        if benchmark:
             line.add_yaxis(
                 series_name=self.benchmark.name,
                 y_axis=list(b.netvalue),
