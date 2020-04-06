@@ -195,19 +195,14 @@ class PEBHistory:
         u = len(df[df[y] < self.current(y)])
         return round(u / d * 100, 2)
 
-    def summary(self):
+    def summary(self, return_tuple=False):
         """
         打印现在估值的全部分析信息。
 
         :return:
         """
-        print("%s%s估值情况\n" % (self.title, self.name))
-        if dt.datetime.strptime(self.start, "%Y-%m-%d") > dt.datetime(2015, 1, 1):
-            print("(历史数据较少，仅供参考)\n")
-        #         self.percentile()
-        print(
-            "现在 PE 绝对值 %s, 相对分位 %s%%，距离最低点 %s %%\n"
-            % (
+        result = (
+            (
                 self.current("pe"),
                 self.current_percentile("pe"),
                 max(
@@ -216,11 +211,8 @@ class PEBHistory:
                     ),
                     0,
                 ),
-            )
-        )
-        print(
-            "现在 PB 绝对值 %s, 相对分位 %s%%，距离最低点 %s %%\n"
-            % (
+            ),
+            (
                 self.current("pb"),
                 self.current_percentile("pb"),
                 max(
@@ -229,8 +221,16 @@ class PEBHistory:
                     ),
                     0,
                 ),
-            )
+            ),
         )
+        print("%s%s估值情况\n" % (self.title, self.name))
+        if dt.datetime.strptime(self.start, "%Y-%m-%d") > dt.datetime(2015, 1, 1):
+            print("(历史数据较少，仅供参考)\n")
+        #         self.percentile()
+        print("现在 PE 绝对值 %s, 相对分位 %s%%，距离最低点 %s %%\n" % result[0])
+        print("现在 PB 绝对值 %s, 相对分位 %s%%，距离最低点 %s %%\n" % result[1])
+        if return_tuple:
+            return result
 
 
 class SWPEBHistory(PEBHistory):

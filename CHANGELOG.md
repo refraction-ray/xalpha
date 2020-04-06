@@ -1,5 +1,8 @@
 # Changelog
 ## Unreleased
+### added
+* get_bar 增加聚宽源
+* get_daily 支持基金累计净值
 
 ## v0.8.4 - 2020.04.06
 ### added

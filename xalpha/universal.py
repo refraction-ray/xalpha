@@ -28,6 +28,7 @@ try:
         finance,
         get_index_stocks,
         macro,
+        get_price,
     )
 
     # 本地导入
@@ -381,6 +382,9 @@ def get_fund(code):
     # 随意设置非空 path，防止嵌套缓存到 fundinfo
     if code[0] == "F":
         df = fundinfo(code[1:], path="nobackend").price
+    elif code[0] == "T":
+        df = fundinfo(code[1:], path="nobackend").price
+        df["netvalue"] = df["totvalue"]
     elif code[0] == "M":
         df = mfundinfo(code[1:], path="nobackend").price
     df["close"] = df["netvalue"]
@@ -625,7 +629,7 @@ def _get_daily(
 
             5. 对于所有可以在 cn.investing.com 网站查到的金融产品，其代码可以是该网站对应的统一代码，或者是网址部分，比如 DAX 30 的概览页面为 https://cn.investing.com/indices/germany-30，那么对应代码即为 "indices/germany-30"。也可去网页 inspect 手动查找其内部代码（一般不需要自己做，推荐直接使用网页url作为 code 变量值），手动 inspect 加粗的实时价格，其对应的网页 span class 中的 pid 的数值即为内部代码。
 
-            6. 对于国内发行的基金，使用基金代码，同时开头添加 F。
+            6. 对于国内发行的基金，使用基金代码，同时开头添加 F。若想考虑分红使用累计净值，则开头添加 T。
 
             7. 对于国内发行的货币基金，使用基金代码，同时开头添加 M。（全部按照净值数据处理）
 
@@ -685,7 +689,7 @@ def _get_daily(
             _from = "zjj"
         elif code.isdigit():
             _from = "cninvesting"
-        elif code[0] in ["F", "M"] and code[1:].isdigit():
+        elif code[0] in ["F", "M", "T"] and code[1:].isdigit():
             _from = "ttjj"
         elif code.startswith("HK") and code[2:].isdigit() and len(code) == 7:
             _from = "xueqiu"
@@ -1574,7 +1578,7 @@ def _inverse_convert_code(code):
 
 
 @lru_cache_time(ttl=60, maxsize=512)
-def get_bar(code, prev=24, interval=3600, _from=None, handler=True):
+def get_bar(code, prev=24, interval=3600, _from=None, handler=True, **kws):
     """
 
     :param code: str. 支持雪球和英为的代码
@@ -1593,7 +1597,13 @@ def get_bar(code, prev=24, interval=3600, _from=None, handler=True):
                 return fr
 
     if not _from:
-        if code.startswith("SH") or code.startswith("SZ"):
+        if (
+            kws.get("start", None)
+            and kws.get("end", None)
+            and (code.startswith("SH") or code.startswith("SZ"))
+        ):
+            _from = "jq"
+        elif code.startswith("SH") or code.startswith("SZ"):
             _from = "xueqiu"
         elif code.isdigit():
             _from = "cninvesting"
@@ -1615,8 +1625,34 @@ def get_bar(code, prev=24, interval=3600, _from=None, handler=True):
     elif _from in ["INA"]:
         return get_bar_frominvesting(code, prev, interval)
         # 这里 app 源是 404，只能用网页源
+    elif _from in ["jq"]:
+        return get_bar_fromjq(
+            code,
+            start=kws["start"],
+            end=kws["end"],
+            interval=interval,
+            fq=kws.get("fq", "pre"),
+        )
     else:
         raise ParserFailure("unrecoginized _from %s" % _from)
+
+
+@data_source("jq")
+def get_bar_fromjq(code, start, end, interval, fq="pre"):
+    code = _inverse_convert_code(code)
+    trans = {
+        "60": "1m",
+        "120": "2m",
+        "300": "5m",
+        "900": "15m",
+        "1800": "30m",
+        "3600": "60m",
+        "7200": "120m",
+        "86400": "daily",
+    }
+    interval = trans.get(str(interval), interval)
+    logger.debug("calling ``get_price`` from jq with %s" % code)
+    return get_price(code, start_date=start, end_date=end, frequency=interval, fq=fq)
 
 
 def get_bar_frominvesting(code, prev=120, interval=3600):
