@@ -28,13 +28,13 @@ setuptools.setup(
     install_requires=[
         "lxml",
         "pandas",
-        "xlrd >= 1.0.0",  #  read excel support
+        "xlrd>=1.0.0",  #  read excel support
         "numpy",
         "scipy",
         "matplotlib",
         "requests",
         "pyecharts>=1.1.0",  # broken api between 0.x and 1.x
-        "beautifulsoup4",
+        "beautifulsoup4>=4.9.0",
         "sqlalchemy",
         "pysocks",  # sock5 proxy support
     ],

@@ -822,6 +822,9 @@ def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
         pass
     currency = r["data"]["quote"]["currency"]
     market = r["data"]["market"]["region"]
+    timestr = dt.datetime.fromtimestamp(r["data"]["quote"]["time"] / 1000).strftime(
+        "%Y-%m-%d %H:%M:%S"
+    )
     return {
         "name": n,
         "current": q,
@@ -829,6 +832,7 @@ def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
         "current_ext": _float(q_ext) if q_ext else None,
         "currency": currency,
         "market": market,  # HK, US, CN
+        "time": timestr,
     }
 
 
@@ -868,6 +872,7 @@ def get_cninvesting_rt(suburl, app=False):
     q = _float(last_last.string)
     name = s.find("h1").string.strip()
     ind = 0
+    timestr = s.select('span[class*="ClockBigIcon"]+span')[0].text
     l = s.find("div", class_="lighterGrayFont").contents
     for i, c in enumerate(l):
         if isinstance(c, str) and c.strip() == "货币":
@@ -894,6 +899,7 @@ def get_cninvesting_rt(suburl, app=False):
         "name": name,
         "current": q,
         "current_ext": q_ext,
+        "time": timestr,
         "currency": currency,
         "percent": percent,
         "market": market,
@@ -924,11 +930,13 @@ def get_rt_from_sina(code):
             d["currency"] = "HKD"
             d["percent"] = round(float(l[8]), 2)
             d["market"] = "HK"
+            d["time"] = l[17] + " " + l[18]
         else:
             d["current"] = float(l[3])
             d["currency"] = "CNY"
             d["percent"] = round((float(l[3]) / float(l[2]) - 1) * 100, 2)
             d["market"] = "CN"
+            d["time"] = l[-4] + " " + l[-3]
         d["current_ext"] = None
 
     else:
@@ -937,6 +945,7 @@ def get_rt_from_sina(code):
         d["percent"] = float(l[2])
         d["current_ext"] = None
         d["market"] = "US"
+        d["time"] = l[3]
     return d
 
 
@@ -1004,6 +1013,7 @@ def get_rt_from_ft(code, _type="indices"):
     d["currency"] = b.find("span", class_="mod-ui-data-list__label").string.split("(")[
         1
     ][:-1]
+    d["time"] = b.find("div", class_="mod-disclaimer").string
     return d
 
 
@@ -1028,6 +1038,32 @@ def get_newest_netvalue(code):
     )
 
 
+def get_rt_from_ttjj(code):
+    code = code[1:]
+    r = rget("http://fund.eastmoney.com/{code}.html".format(code=code))
+    r.encoding = "utf-8"
+    s = BeautifulSoup(r.text, "lxml")
+    value, date, name = (
+        float(
+            s.findAll("dd", class_="dataNums")[1]
+            .find("span", class_="ui-font-large")
+            .string
+        ),
+        str(s.findAll("dt")[1]).split("(")[1].split(")")[0][7:],
+        s.select("div[style='float: left']")[0].text.split("(")[0],
+    )
+
+    return {
+        "name": name,
+        "time": date,
+        "current": value,
+        "market": "CN",
+        "currency": "CNY",
+        "current_ext": None,
+    }
+    # 是否有美元份额计价的基金会出问题？
+
+
 def get_rt(
     code, _from=None, double_check=False, double_check_threhold=0.005, handler=True
 ):
@@ -1041,7 +1077,7 @@ def get_rt(
             适用于需要自动交易等情形，防止实时数据异常。
     :param handler: bool. Default True. 若为 False，则 handler 钩子失效，用于钩子函数中的嵌套。
     :return: Dict[str, Any].
-        包括 "name", "current", "percent" 三个必有项和 "current_ext"（盘后价格）, "currency" （计价货币）， "market" (发行市场)可能为 ``None`` 的选项。
+        包括 "name", "current", "percent" 三个必有项和 "current_ext"（盘后价格）, "currency" （计价货币）， "market" (发行市场), "time"(记录时间) 可能为 ``None`` 的选项。
     """
     # 对于一些标的，get_rt 的主任务可能不是 current 价格，而是去拿 market currency 这些元数据
     # 现在用的新浪实时数据源延迟严重， double check 并不靠谱，港股数据似乎有15分钟延迟（已解决）
@@ -1061,6 +1097,8 @@ def get_rt(
         if len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             _from = code.split("-")[0]
             code = "-".join(code.split("-")[1:])
+        elif code.startswith("F") and code[1:].isdigit():
+            _from = "ttjj"
         elif len(code.split("/")) > 1:
             _from = "investing"
         else:  # 默认不启用新浪实时，只做双重验证备份
@@ -1089,7 +1127,9 @@ def get_rt(
             return get_rt_from_sina(code)
     elif _from in ["sina", "sn", "xinlang"]:
         return get_rt_from_sina(code)
-    elif _from in ["FT", "ft"]:
+    elif _from in ["ttjj"]:
+        return get_rt_from_ttjj(code)
+    elif _from in ["FT", "ft", "FTI"]:
         return get_rt_from_ft(code)
     elif _from == "FTE":
         return get_rt_from_ft(code, _type="equities")
@@ -1515,6 +1555,7 @@ def get_sw_from_jq(code, start=None, end=None, **kws):
     :param kws:
     :return:
     """
+    logger.debug("get sw data of %s" % code)
     df = finance.run_query(
         query(finance.SW1_DAILY_VALUATION)
         .filter(finance.SW1_DAILY_VALUATION.date >= start)

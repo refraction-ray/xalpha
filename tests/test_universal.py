@@ -183,3 +183,7 @@ def test_cache_time():
     assert f() == 1
     time.sleep(5)
     assert f() == 2
+
+
+def test_get_ttjj():
+    assert xa.get_rt("F501018")["name"] == "南方原油A"

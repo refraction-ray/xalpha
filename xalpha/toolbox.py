@@ -297,12 +297,16 @@ class Compare:
     将不同金融产品同起点归一化比较
     """
 
-    def __init__(self, *codes, start="20200101", end=yesterday(), col="close"):
+    def __init__(
+        self, *codes, start="20200101", end=yesterday(), col="close", normalize=True
+    ):
         """
 
         :param codes: Union[str, tuple], 格式与 :func:`xalpha.universal.get_daily` 相同，若需要汇率转换，需要用 tuple，第二个元素形如 "USD"
         :param start: %Y%m%d
         :param end: %Y%m%d, default yesterday
+        :param col: str, default close. The column to be compared.
+        :param normalize: bool, default True. 是否将对比价格按起点时间归一。
         """
         totdf = pd.DataFrame()
         codelist = []
@@ -322,7 +326,10 @@ class Compare:
                 cdf = cdf[cdf["date"].isin(opendate)]
                 df = df.merge(right=cdf, on="date", suffixes=("_x", "_y"))
                 df[col] = df[col + "_x"] * df[col + "_y"]
-            df[code] = df[col] / df.iloc[0][col]
+            if normalize:
+                df[code] = df[col] / df.iloc[0][col]
+            else:
+                df[code] = df[col]
             df = df.reset_index()
             df = df[["date", code]]
             if "date" not in totdf.columns:
@@ -721,7 +728,7 @@ class RTPredict:
                 c = w / 100 * (1 + r["percent"] / 100)  # 直接取标的当日涨跌幅
             else:
                 df = xu.get_daily(k)
-                basev = df[df["date"] < self.today].iloc[-1]["close"]
+                basev = df[df["date"] <= last_date].iloc[-1]["close"]
                 c = w / 100 * r["current"] / basev
             currency_code = get_currency_code(k)
             if currency_code:
