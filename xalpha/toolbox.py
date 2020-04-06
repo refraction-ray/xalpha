@@ -647,6 +647,104 @@ def evaluate_fluctuation(hdict, date, lastday=None, _check=None):
     return (price - 1) * 100
 
 
+class RTPredict:
+    """
+    场内 ETF LOF 实时溢价，非 QDII 类
+    """
+
+    def __init__(self, code, t0dict=None):
+        """
+
+        :param code:
+        :param t0dict:
+        """
+        self.code = code
+        self.fcode = "F" + code[2:]
+        if not t0dict:
+            t0dict = holdings.get(code[2:], None)
+        if not t0dict:
+            raise ValueError("Please provide t0dict for prediction")
+        if isinstance(t0dict, str):
+            t0dict = {t0dict: 100}
+        self.t0dict = t0dict
+        self.t1value_cache = None
+        self.now = dt.datetime.now(tz=tz_bj).replace(tzinfo=None)
+        self.today = self.now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    def get_t1(self, return_date=True):
+        """
+        获取昨日基金净值
+
+        :return:
+        """
+        if not self.t1value_cache:
+            last_value, last_date = get_newest_netvalue(self.fcode)
+            self.t1value_cache = (last_value, last_date)
+        if return_date:
+            return self.t1value_cache
+        else:
+            return self.t1value_cache[0]
+
+    def get_t0(self, return_date=True, percent=False):
+        last_value, last_date = self.get_t1()
+        last_date_obj = dt.datetime.strptime(last_date, "%Y-%m-%d")
+        cday = last_onday(self.today)
+        while last_date_obj < cday:  # 昨天净值数据还没更新
+            # 是否存在部分部分基金可能有 gap？
+            if cday.strftime("%Y-%m-%d") not in gap_info[self.fcode]:
+                self.t1_type = "昨日未出"
+                raise DateMismatch(
+                    self.code,
+                    reason="%s netvalue has not been updated to yesterday" % self.code,
+                )
+            else:
+                cday = last_onday(cday)
+            # 经过这个没报错，就表示数据源是最新的
+        if last_date_obj >= self.today:  # 今天数据已出，不需要再预测了
+            print(
+                "no need to predict net value since it has been out for %s" % self.code
+            )
+            self.t1_type = "今日已出"
+            if not return_date:
+                return last_value
+            else:
+                return last_value, last_date
+        t = 0
+        n = 0
+        today_str = self.today.strftime("%Y%m%d")
+        for k, v in self.t0dict.items():
+            w = v
+            t += w
+            r = get_rt(k)
+            # k should support get_rt, investing pid doesn't support this!
+            if percent:
+                c = w / 100 * (1 + r["percent"] / 100)  # 直接取标的当日涨跌幅
+            else:
+                df = xu.get_daily(k)
+                basev = df[df["date"] < self.today].iloc[-1]["close"]
+                c = w / 100 * r["current"] / basev
+            currency_code = get_currency_code(k)
+            if currency_code:
+                c = c * daily_increment(currency_code, today_str)
+            n += c
+        n += (100 - t) / 100
+        t0value = n * last_value
+        self.t0_delta = n
+        if not return_date:
+            return t0value
+        else:
+            return t0value, self.today.strftime("%Y-%m-%d")
+
+    def get_t0_rate(self, percent=False, return_date=True):
+        iopv = self.get_t0(percent=False, return_date=False)
+        rtv = get_rt(self.code)["current"]
+        r = (rtv / iopv - 1) * 100
+        if return_date:
+            return r, self.today.strftime("%Y-%m-%d")
+        else:
+            return r
+
+
 class QDIIPredict:
     """
     T+2 确认份额的 QDII 型基金净值预测类

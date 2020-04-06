@@ -14,6 +14,7 @@ xaenv
 *.pyc
 doc/build
 demo.ipynb
+demo.html
 .ipynb_checkpoints/
 build/
 dist/

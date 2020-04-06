@@ -8,6 +8,7 @@ import csv
 import datetime as dt
 import json
 import re
+import logging
 
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -29,6 +30,7 @@ from xalpha.exceptions import FundTypeError, TradeBehaviorError
 from xalpha.indicator import indicator
 
 _warnmess = "Something weird on redem fee, please adjust self.segment by hand"
+logger = logging.getLogger(__name__)
 
 
 def _shengoucal(sg, sgf, value, label):
@@ -70,7 +72,7 @@ def _nfloat(string):
             elif re.match(r'"拆分\D*(\d*\.\d*)\D*"', string):
                 result = -float(re.match(r'"拆分\D*(\d*\.\d*)\D*"', string).group(1))
             else:
-                print("The comment col cannot be converted: %s" % string)
+                logger.warning("The comment col cannot be converted: %s" % string)
                 result = string
     return result
 
@@ -242,7 +244,7 @@ class basicinfo(indicator):
                     self.save(path, self.format, option="a", delta=df)
 
             except (FileNotFoundError, exc.ProgrammingError) as e:
-                print("no saved copy of %s" % self.code)
+                logger.info("no saved copy of %s" % self.code)
                 fetch = False
                 self._basic_init()
 
@@ -479,7 +481,7 @@ class fundinfo(basicinfo):
             )
         except ValueError:
             rate = 0
-            print("warning: this fund has no data for rate")  # know cases: 510030
+            logger.info("warning: this fund has no data for rate")  # know cases: ETF
 
         name = eval(re.match(r".*fS_name = ([^;]*);.*", self._page.text).groups()[0])
 
@@ -509,7 +511,8 @@ class fundinfo(basicinfo):
             if item.string != "---"
         ]
         # this could be [], known case 510030
-        if not self.feeinfo:
+        if not self.feeinfo or len(self.feeinfo) % 2 != 0:
+            logger.debug("feeinfo is not typical, mainly due to ETF: %s" % self.feeinfo)
             self.feeinfo = ["小于7天", "1.50%", "大于等于7天", "0.00%"]
         self.segment = fundinfo._piecewise(self.feeinfo)
 

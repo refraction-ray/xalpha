@@ -4,6 +4,7 @@
 * 增加 vinfo 类，使得任何 get_daily 可以拿到的标的都可以进行交易。
 * 增加主流市场节假日信息
 * 为 get 函数增加 handler 选项，方便钩子函数嵌套
+* 增加非 QDII 的溢价实时预测类 RTPredict
 ### changed
 * xa.set_backend 也可影响 fundinfo 的缓存设定
 ### fixed

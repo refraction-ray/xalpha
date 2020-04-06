@@ -37,3 +37,8 @@ def test_qdii_predict():
 def test_qdii_predict_local():
     xc = xa.QDIIPredict("SZ165513", positions=True)
     xc.get_t0_rate()
+
+
+def test_rt_predict():
+    p = xa.RTPredict("SH512500", t0dict="SH000905")
+    p.get_t0_rate()
