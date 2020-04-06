@@ -33,7 +33,7 @@ setuptools.setup(
         "scipy",
         "matplotlib",
         "requests",
-        "pyecharts>=1.1.0",  # broken api between 0.x and 1.x
+        "pyecharts>=1.7.0",  # broken api between 0.x and 1.x
         "beautifulsoup4>=4.9.0",
         "sqlalchemy",
         "pysocks",  # sock5 proxy support

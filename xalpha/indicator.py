@@ -4,7 +4,9 @@ module for implementation of indicator class, which is designed as MinIn for sys
 """
 
 import pandas as pd
-from pyecharts.charts import Line
+from pyecharts import options as opts
+from pyecharts.charts import Kline, Line, Bar, Grid
+from pyecharts.commons.utils import JsCode
 
 from xalpha.cons import line_opts, opendate, yesterdayobj
 
@@ -481,3 +483,132 @@ class indicator:
                 inddata = list(partprice[ind])
                 line.add_yaxis(series_name=ind, y_axis=inddata, is_symbol_show=False)
         return line.render_notebook()
+
+
+def plot_kline(df, rendered=True, col=""):
+    """
+    针对 dataframe 直接画出标准看盘软件的上k线图下成交量图的形式
+
+    :param df:
+    :param rendered:
+    :param col:
+    :return:
+    """
+    kline = (
+        Kline()
+        .add_xaxis(xaxis_data=list(df["date"]))
+        .add_yaxis(
+            series_name="",
+            itemstyle_opts=opts.ItemStyleOpts(
+                color="#ef232a",
+                color0="#14b143",
+                border_color="#ef232a",
+                border_color0="#14b143",
+            ),
+            y_axis=list(zip(df["open"], df["close"], df["high"], df["low"])),
+            markpoint_opts=opts.MarkPointOpts(
+                data=[
+                    opts.MarkPointItem(type_="max", name="最大值"),
+                    opts.MarkPointItem(type_="min", name="最小值"),
+                ]
+            ),
+        )
+        .set_global_opts(
+            datazoom_opts=[
+                opts.DataZoomOpts(
+                    is_show=True,
+                    type_="slider",
+                    range_start=50,
+                    range_end=100,
+                    xaxis_index=[0, 1],
+                ),
+                opts.DataZoomOpts(
+                    is_show=False,
+                    type_="inside",
+                    range_start=50,
+                    range_end=100,
+                    xaxis_index=1,
+                ),
+            ],
+            tooltip_opts=opts.TooltipOpts(
+                is_show=True,
+                trigger="axis",
+                trigger_on="mousemove",
+                axis_pointer_type="cross",
+            ),
+        )
+    )
+    if col:
+        line = (
+            Line()
+            .add_xaxis(xaxis_data=list(df["date"]))
+            .add_yaxis(
+                series_name="",
+                y_axis=list(df[col]),
+                is_smooth=True,
+                linestyle_opts=opts.LineStyleOpts(opacity=0.5),
+                label_opts=opts.LabelOpts(is_show=False),
+            )
+        )
+        kline = kline.overlap(line)
+
+    if "volume" in df.columns:
+        vl = list(df["volume"])
+    else:
+        vl = [0 for _ in range(len(df))]
+    bar = (
+        Bar()
+        .add_js_funcs("var barData = {}".format(list(df["close"] - df["open"])))
+        .add_xaxis(xaxis_data=list(df["date"]))
+        .add_yaxis(
+            series_name="",
+            yaxis_data=vl,
+            label_opts=opts.LabelOpts(is_show=False),
+            itemstyle_opts=opts.ItemStyleOpts(
+                color=JsCode(
+                    """
+                function(params) {
+                    var colorList;
+                    console.log(params);
+                    if (barData[params.dataIndex]>0) {
+                        colorList = '#ef232a';
+                    } else {
+                        colorList = '#14b143';
+                    }
+                    return colorList;
+                }
+                """
+                )
+            ),
+        )
+        .set_global_opts(
+            tooltip_opts=opts.TooltipOpts(
+                is_show=True,
+                trigger="axis",
+                trigger_on="mousemove",
+                axis_pointer_type="cross",
+            ),
+        )
+    )
+    grid_chart = Grid()
+    grid_chart.add_js_funcs("var barData = {}".format(list(df["close"] - df["open"])))
+    grid_chart.add(
+        kline,
+        grid_opts=opts.GridOpts(
+            pos_left="10%", pos_right="1%", pos_top="1%", height="63%"
+        ),
+    )
+
+    grid_chart.add(
+        bar,
+        grid_opts=opts.GridOpts(
+            pos_left="10%", pos_right="1%", pos_top="71%", height="22%"
+        ),
+    )
+    if rendered:
+        return grid_chart.render_notebook()
+    else:
+        return grid_chart
+
+
+pd.DataFrame.v_kline = plot_kline

@@ -206,14 +206,18 @@ def prettify(df):
         "高": "high",
         "低": "low",
         "涨跌幅": "percent",
+        "交易量": "volume",
     }
     df.rename(_map, axis=1, inplace=True)
     if len(df) > 1 and df.iloc[1]["date"] < df.iloc[0]["date"]:
         df = df[::-1]
-    df = df[["date", "open", "close", "high", "low", "percent"]]
-    for k in ["open", "close", "high", "low"]:
-        df[k] = df[k].apply(_float)
-    return df
+    # df = df[["date", "open", "close", "high", "low", "percent"]]
+    df1 = df[["date"]]
+    for k in ["open", "close", "high", "low", "volume"]:
+        if k in df.columns:
+            df1[k] = df[k].apply(_float)
+    df1["percent"] = df["percent"]
+    return df1
 
 
 def dstr2dobj(dstr):
@@ -793,6 +797,14 @@ def _get_daily(
 def _float(n):
     try:
         n = n.replace(",", "")
+        if n.endswith("K") or n.endswith("k"):
+            n = float(n[:-1]) * 1000
+        elif n.endswith("M") or n.endswith("m"):
+            n = float(n[:-1]) * 1000 * 1000
+        elif n.endswith("G") or n.endswith("g"):
+            n = float(n[:-1]) * 1000 * 1000 * 1000
+        elif n == "-":
+            return 0
     except AttributeError:
         pass
     return float(n)
@@ -1277,6 +1289,7 @@ def cachedio(**ioconf):
             end_str = end_obj.strftime("%Y%m%d")
             backend = ioconf.get("backend")
             refresh = ioconf.get("refresh", False)
+            refresh = kws.get("refresh", refresh)
             path = ioconf.get("path")
             kws["start"] = start_str
             kws["end"] = end_str
