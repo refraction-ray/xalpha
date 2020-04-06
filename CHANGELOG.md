@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.8.4 - 2020.04.06
 ### added
 * 增加 vinfo 类，使得任何 get_daily 可以拿到的标的都可以进行交易。
 * 增加主流市场节假日信息
