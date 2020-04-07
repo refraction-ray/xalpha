@@ -54,6 +54,10 @@ precached 可以不设，若设置为 %Y%m%d 的时间字符串格式，则代�
     默认 fetch=True, svae=True. 因此 ``xa.set_backend()`` 事实上成为了设置 xalpha 数据缓存的统一接口。
 
 
+对于部分数据，由于程序升级的不兼容或者缓存数据损坏造成希望重新获取而刷新掉缓存的话，可以在 get_daily 添加 refresh 选项，也即 ``xa.get_daily(code, refresh=True)``，
+浙江重新刷新关于 code 的本地缓存。
+
+
 数据本地化
 -------------
 数据缓存部分提供的方法已经足够满足绝大多数数据本地化的要求，可以透明地将数据落地到本地文件系统或关系型数据库。
@@ -70,6 +74,9 @@ xalpha 提供两部分的可视化。对于基金管理部分，相关类所有�
 
 此外，考虑到所有数据均是 DataFrame 格式，用户也可以对任何数据，轻松可视化，参考代码 ``df.plot(x="date", y=["open", "close"])``.
 更多关于对 DataFrame 的可视化，请参考 Pandas 文档， `Visualization <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_ 。
+
+xalpha 也直接 hack 了些 dataframe 的方法用来链式调用提供更丰富的可视化。最典型的，对于有 date，open，close，high，low 和 volume（可选）列的 dataframe，
+可以直接 ``df.v_kline()`` 绘制出标准的 web 级上 K 线图下交易量的行情图。
 
 
 数据提供商

@@ -510,7 +510,10 @@ def plot_kline(df, rendered=True, col=""):
                 data=[
                     opts.MarkPointItem(type_="max", name="最大值"),
                     opts.MarkPointItem(type_="min", name="最小值"),
-                ]
+                ],
+                symbol="pin",
+                symbol_size=[56, 40],
+                # label_opts=opts.LabelOpts(color="#CCFFFF",position=["top", "bottom"])
             ),
         )
         .set_global_opts(
@@ -595,7 +598,7 @@ def plot_kline(df, rendered=True, col=""):
     grid_chart.add(
         kline,
         grid_opts=opts.GridOpts(
-            pos_left="10%", pos_right="1%", pos_top="1%", height="63%"
+            pos_left="10%", pos_right="1%", pos_top="2%", height="65%"
         ),
     )
 
