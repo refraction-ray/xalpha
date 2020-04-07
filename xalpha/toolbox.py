@@ -187,9 +187,15 @@ class PEBHistory:
         self.pep = [
             round(i, 3) for i in np.nanpercentile(self.df.pe, np.arange(0, 110, 10))
         ]
-        self.pbp = [
-            round(i, 3) for i in np.nanpercentile(self.df.pb, np.arange(0, 110, 10))
-        ]
+        try:
+            self.pbp = [
+                round(i, 3) for i in np.nanpercentile(self.df.pb, np.arange(0, 110, 10))
+            ]
+        except TypeError:
+            df = self.df.fillna(1)
+            self.pbp = [
+                round(i, 3) for i in np.nanpercentile(df.pb, np.arange(0, 110, 10))
+            ]
 
     def percentile(self):
         """
@@ -228,7 +234,10 @@ class PEBHistory:
         :param y: Optional[str]. "pe" (defualt) or "pb"
         :return: float.
         """
-        return round(self.df.iloc[-1][y] * self.fluctuation(), 3)
+        try:
+            return round(self.df.iloc[-1][y] * self.fluctuation(), 3)
+        except TypeError:
+            return np.nan
 
     def current_percentile(self, y="pe"):
         """
@@ -278,6 +287,28 @@ class PEBHistory:
         print("现在 PB 绝对值 %s, 相对分位 %s%%，距离最低点 %s %%\n" % result[1])
         if return_tuple:
             return result
+
+
+class StockPEBHistory(PEBHistory):
+    def __init__(self, code, start=None, end=None):
+        """
+
+        :param code: 801180 申万行业指数
+        :param start:
+        :param end:
+        """
+        self.code = code
+        self.scode = code
+        if not end:
+            end = (dt.datetime.now() - dt.timedelta(days=1)).strftime("%Y-%m-%d")
+        if not start:
+            start = "2012-01-01"
+        self.start = start
+        self.df = xu.get_daily("peb-" + code, start=start, end=end)
+        self.name = get_rt(code)["name"]
+        self.ratio = 1
+        self.title = "个股"
+        self._gen_percentile()
 
 
 class SWPEBHistory(PEBHistory):

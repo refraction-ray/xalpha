@@ -18,6 +18,7 @@ from xalpha.toolbox import (
     PEBHistory,
     Compare,
     SWPEBHistory,
+    StockPEBHistory,
     QDIIPredict,
     RTPredict,
     set_holdings,

@@ -110,20 +110,6 @@ def get_token():
     return r.cookies["xq_a_token"]
 
 
-def get_history(
-    code, prefix="SH", count=365, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"
-):
-    url = "https://stock.xueqiu.com/v5/stock/chart/kline.json?symbol={prefix}{code}&begin={tomorrow}&period=day&type=before&count=-{count}"
-    data = rget_json(
-        url.format(
-            code=code, prefix=prefix, tomorrow=int(tomorrow_ts() * 1000), count=count
-        ),
-        cookies={"xq_a_token": token},
-        headers={"user-agent": "Mozilla/5.0"},
-    )
-    return data
-
-
 def ts2pdts(ts):
     dto = dt.datetime.fromtimestamp(ts / 1000, tz=tz_bj).replace(tzinfo=None)
     return dto.replace(
@@ -131,8 +117,15 @@ def ts2pdts(ts):
     )  # 雪球美股数据时间戳是美国0点，按北京时区换回时间后，把时分秒扔掉就重合了
 
 
-def get_historical_fromxq(code, count):
-    r = get_history(code=code, prefix="", count=count, token=get_token())
+def get_historical_fromxq(code, count, full=False):
+    url = "https://stock.xueqiu.com/v5/stock/chart/kline.json?symbol={code}&begin={tomorrow}&period=day&type=before&count=-{count}"
+    if full:
+        url += "&indicator=kline,pe,pb,ps,pcf,market_capital,agt,ggt,balance"
+    r = rget_json(
+        url.format(code=code, tomorrow=int(tomorrow_ts() * 1000), count=count),
+        cookies={"xq_a_token": get_token()},
+        headers={"user-agent": "Mozilla/5.0"},
+    )
     df = pd.DataFrame(data=r["data"]["item"], columns=r["data"]["column"])
     df["date"] = (df["timestamp"]).apply(ts2pdts)  # reset hours to zero
     return df
@@ -735,7 +728,10 @@ def _get_daily(
         df = get_fund(code)
 
     elif _from == "peb":
-        df = _get_peb_range(code=code, start=start_str, end=end_str)
+        if code.startswith("000") or code.startswith("399"):
+            df = _get_peb_range(code=code, start=start_str, end=end_str)
+        else:
+            df = get_stock_peb_range(code=code, start=start, end=end)
 
     elif _from == "iw":
         df = _get_index_weight_range(code=code, start=start_str, end=end_str)
@@ -1514,6 +1510,25 @@ def _get_peb_range(code, start, end):  # 盈利，净资产，总市值
     return pd.DataFrame(data)
 
 
+def get_stock_peb_range(code, start, end):
+    """
+    获取股票历史 pe pb
+
+    :param code:
+    :param start:
+    :param end:
+    :return:
+    """
+    if code.startswith("HK") and code[2:].isdigit():
+        code = code[2:]
+    count = (today_obj() - dt.datetime.strptime(start, "%Y%m%d")).days
+    df = get_historical_fromxq(code, count, full=True)
+    df = df[["date", "pe", "pb", "ps"]]
+    df = df[df["date"] >= start]
+    df = df[df["date"] <= end]
+    return df
+
+
 def set_backend(**ioconf):
     """
     设定 xalpha get_daily 函数的缓存后端，默认为内存。 ioconf 参数设置可参考 :func:`cachedio`
@@ -1597,10 +1612,12 @@ def get_sw_from_jq(code, start=None, end=None, **kws):
     return df
 
 
+@data_source("jq")
 def get_teb(code, date):
     if len(code.split(".")) != 2:
         code = _inverse_convert_code(code)
     sl = get_index_stocks(code, date=date)
+    logger.debug("get fundamentals from jq for %s" % code)
     df = get_fundamentals(query(valuation).filter(valuation.code.in_(sl)), date=date)
     df["e"] = df["market_cap"] / df["pe_ratio"]
     df["b"] = df["market_cap"] / df["pb_ratio"]

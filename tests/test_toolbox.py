@@ -13,6 +13,12 @@ def test_compare():
     c.v()
 
 
+def test_stock_peb():
+    h = xa.StockPEBHistory("HK00700")
+    h.summary()
+
+
+@pytest.mark.local
 def test_set_display():
     xa.set_display("notebook")
     df = xa.get_daily("PDD", prev=30)
