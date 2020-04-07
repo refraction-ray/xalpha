@@ -320,6 +320,8 @@ xalpha 激进地利用了 python 的 reflection 机制，很多设定可以运�
 
 * set_jq_data: 聚宽数据源鉴权 :func:`xalpha.provider.set_jq_data`
 
+* set_display: 若参数为 "notebook"，可以设定 dataframe 按照 web 级的表格显示，支持排序，搜索和翻页 :func:`xalpha.toolbox.set_display`
+
 
 爬虫与反爬虫
 -------------------

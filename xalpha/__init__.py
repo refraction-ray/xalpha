@@ -21,4 +21,5 @@ from xalpha.toolbox import (
     QDIIPredict,
     RTPredict,
     set_holdings,
+    set_display,
 )

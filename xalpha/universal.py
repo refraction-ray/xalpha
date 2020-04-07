@@ -1028,10 +1028,7 @@ def get_rt_from_ft(code, _type="indices"):
     d["name"] = b.find("h1").string
     d["current"] = _float(b.find("span", class_="mod-ui-data-list__value").string)
     d["percent"] = _float(
-        b.findAll("span", class_="mod-ui-data-list__value")[1]
-        .find("span")
-        .contents[1]
-        .split("/")[1][:-1]
+        b.select("span[class='mod-format--pos']")[0].text.split("/")[-1].strip()[:-1]
     )
     d["current_ext"] = None
     d["market"] = None

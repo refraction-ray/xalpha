@@ -75,6 +75,54 @@ def set_holdings(module=None):
 set_holdings()
 
 
+def _set_display_notebook():
+    """Initialize DataTable mode for pandas DataFrame represenation."""
+    from IPython.core.display import display, HTML
+
+    display(
+        HTML(
+            """
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.css">
+<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.4.1.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.js"></script>
+<style>
+    td, th {{
+        text-align: center;
+    }}
+</style>
+    """
+        )
+    )
+
+    def _repr_datatable_(self):
+        # create table DOM
+        script = f"$(element).html(`{self.to_html(index=False)}`);\n"
+
+        # execute jQuery to turn table into DataTable
+        script += """
+                $(document).ready( () => {
+                    // Turn existing table into datatable
+                    $(element).find("table.dataframe").DataTable();
+                });
+        """
+
+        return script
+
+    pd.DataFrame._repr_javascript_ = _repr_datatable_
+
+
+def set_display(env=""):
+    if not env:
+        try:
+            delattr(pd.DataFrame, "_repr_javascript_")
+        except AttributeError:
+            pass
+    elif env in ["notebook", "jupyter", "ipython"]:
+        _set_display_notebook()
+    else:
+        raise ParserFailure("unknown env %s" % env)
+
+
 class PEBHistory:
     """
     对于指数历史 PE PB 的封装类
@@ -368,7 +416,7 @@ def get_currency(code):
     :param code:
     :return:
     """
-    # 强制需要自带 cache，否则在回测 table 是，info 里没有的代码将很灾难。。。
+    # 强制需要自带 cache，否则在回测 table 时，info 里没有的代码将很灾难。。。
     # only works for HKD JPY USD GBP CNY EUR, not very general when data source gets diverse more
     try:
         if code in currency_info:

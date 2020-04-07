@@ -13,6 +13,14 @@ def test_compare():
     c.v()
 
 
+def test_set_display():
+    xa.set_display("notebook")
+    df = xa.get_daily("PDD", prev=30)
+    df._repr_javascript_()
+    xa.set_display()
+    assert getattr(df, "_repre_javascript_", None) is None
+
+
 def test_get_currency():
     assert (
         xa.toolbox.get_currency_code("indices/india-50-futures") == "currencies/inr-cny"

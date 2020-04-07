@@ -6,7 +6,10 @@ modules for misc crawler without unfied API
 import re
 import pandas as pd
 import datetime as dt
+import logging
 from bs4 import BeautifulSoup
+
+logger = logging.getLogger(__name__)
 
 from xalpha.cons import rget, rget_json, today_obj, region_trans
 from xalpha.universal import lru_cache_time, _float
@@ -122,3 +125,14 @@ def get_tdx_holidays(holidays=None, format="%Y-%m-%d"):
                 else:
                     holidays[rg].append(tstr)
     return holidays
+
+
+def get_163_fundamentals(code, category="lrb"):
+    # category xjllb zcfzb
+    url = "http://quotes.money.163.com/service/{category}_{code}.html".format(
+        category=category, code=code
+    )
+    logger.debug("Fetching from %s . in `get_163_fundamentals`" % url)
+    df = pd.read_csv(url, encoding="gbk")
+    df = df.set_index("报告日期")
+    return df.T
