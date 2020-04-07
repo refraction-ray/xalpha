@@ -405,7 +405,7 @@ def scale_dict(d, scale=1, ulimit=100, dlimit=50, aim=None):
     return d
 
 
-def reconnect(tries=5, timeout=12):
+def reconnect(tries=5, timeout=16):
     def robustify(f):
         @wraps(f)
         def wrapper(*args, **kws):

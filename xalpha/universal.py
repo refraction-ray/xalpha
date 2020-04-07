@@ -412,7 +412,7 @@ def get_fundshare_byjq(code, **kws):
     return df
 
 
-def get_historical_fromsp(code, start=None, end=None, **kws):
+def get_historical_fromsp(code, start=None, end=None, region="us", **kws):
     """
     标普官网数据源
 
@@ -439,12 +439,20 @@ def get_historical_fromsp(code, start=None, end=None, **kws):
         flag = "three"
     else:
         flag = "ten"
-    url = "https://us.spindices.com/idsexport/file.xls?\
+    url = "https://{region}.spindices.com/idsexport/file.xls?\
 selectedModule=PerformanceGraphView&selectedSubModule=Graph\
 &yearFlag={flag}YearFlag&indexId={code}".format(
-        flag=flag, code=code
+        region=region, flag=flag, code=code
     )
-    r = rget(url)
+    r = rget(
+        url,
+        headers={
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "none",
+            "sec-fetch-user": "?1",
+        },
+    )
     df = pd.read_excel(r.content)
     # print(df.iloc[:10])
     df = df.iloc[6:]
@@ -643,7 +651,7 @@ def _get_daily(
 
             10. 形如 fs-SH501018 格式的数据，可以返回指定场内基金每日份额，需要 enable 聚宽数据源方可查看。
 
-            11. 形如 SP5475707.2 格式的数据，可以返回标普官网相关指数的日线数据（最近十年），id 5475707 部分可以从相关指数 export 按钮获取的链接中得到，小数点后的部分代表保存的列数。参考链接：https://us.spindices.com/indices/equity/sp-global-oil-index
+            11. 形如 SP5475707.2 格式的数据，可以返回标普官网相关指数的日线数据（最近十年），id 5475707 部分可以从相关指数 export 按钮获取的链接中得到，小数点后的部分代表保存的列数。参考链接：https://us.spindices.com/indices/equity/sp-global-oil-index. 若SPC开头，则从中国网站获取。
 
             12. 形如 BB-FGERBIU:ID 格式的数据，对应网页 https://www.bloomberg.com/quote/FGERBIU:ID，可以返回彭博的数据（最近五年）
 
@@ -674,7 +682,7 @@ def _get_daily(
             args = inspect.getargvalues(inspect.currentframe())
             f = getattr(thismodule, "get_daily_handler")
             fr = f(**args.locals)
-            if fr:
+            if fr is not None:
                 return fr
 
     if not end:
@@ -700,6 +708,8 @@ def _get_daily(
             code = code[2:]
         elif code.startswith("SP") and code[2:].split(".")[0].isdigit():
             _from = "SP"
+        elif code.startswith("SPC") and code[3:].split(".")[0].isdigit():
+            _from = "SPC"
         elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             # peb-000807.XSHG
             _from = code.split("-")[0]
@@ -735,6 +745,9 @@ def _get_daily(
 
     elif _from == "SP":
         df = get_historical_fromsp(code, start=start, end=end)
+
+    elif _from == "SPC":
+        df = get_historical_fromsp(code[3:], start=start, end=end, region="chinese")
 
     elif _from == "BB":
         df = get_historical_frombb(code, start=start, end=end)
@@ -1632,7 +1645,9 @@ def _inverse_convert_code(code):
 
 
 @lru_cache_time(ttl=60, maxsize=512)
-def get_bar(code, prev=24, interval=3600, _from=None, handler=True, **kws):
+def get_bar(
+    code, prev=24, interval=3600, _from=None, handler=True, start=None, end=None
+):
     """
 
     :param code: str. 支持雪球和英为的代码
@@ -1647,13 +1662,13 @@ def get_bar(code, prev=24, interval=3600, _from=None, handler=True, **kws):
             args = inspect.getargvalues(inspect.currentframe())
             f = getattr(thismodule, "get_bar_handler")
             fr = f(**args.locals)
-            if fr:
+            if fr is not None:
                 return fr
 
     if not _from:
         if (
-            kws.get("start", None)
-            and kws.get("end", None)
+            (start is None)
+            and (end is None)
             and (code.startswith("SH") or code.startswith("SZ"))
         ):
             _from = "jq"

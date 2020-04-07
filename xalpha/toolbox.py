@@ -476,7 +476,9 @@ def get_alt(code):
     if code in alt_info:
         return alt_info[code]
     elif len(code[1:].split("/")) == 2:
-        return "INA-" + code
+        return "INA-" + code  # 英为 app 源替代网页源
+    elif code.startswith("SP") and code[2:].isdigit():
+        return "SPC" + code[2:]  # 中国区标普源替代美国源
     else:
         return None
 
@@ -962,20 +964,22 @@ class QDIIPredict:
     def _base_value(self, code, shift):
         if not shift:
             funddf = xu.get_daily(code)  ## 获取股指现货日线
-            return funddf[funddf["date"] < self.today.strftime("%Y-%m-%d")].iloc[-1][
+            return funddf[funddf["date"] <= last_onday(self.today)].iloc[-1][
                 "close"
             ]  # 日期是按当地时间
         # TODO: check it is indeed date of last_on(today)
         else:
             if code not in self.bar_cache:
-                funddf = get_bar(code, prev=48, interval="3600")  ## 获取小时线
+                funddf = get_bar(code, prev=168, interval="3600")  ## 获取小时线
+                ## 注意对于国内超长假期，prev 可能还不够
                 if self.now.hour > 6:  # 昨日美国市场收盘才正常，才缓存参考小时线
                     self.bar_cache[code] = funddf
             else:
                 funddf = self.bar_cache[code]
-            return funddf[
-                funddf["date"] <= self.today + dt.timedelta(hours=shift)
-            ].iloc[-1][
+            refdate = last_onday(self.today) + dt.timedelta(days=1)  # 按北京时间校准
+            return funddf[funddf["date"] <= refdate + dt.timedelta(hours=shift)].iloc[
+                -1
+            ][
                 "close"
             ]  # 时间是按北京时间, 小时线只能手动缓存，日线不需要是因为自带透明缓存器
 
