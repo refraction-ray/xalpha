@@ -135,7 +135,7 @@ def test_cache_io():
     df = get_daily_csv("SH501018")
     df = get_daily_csv("SH501018", end="2020-02-01")
     assert df.iloc[0]["date"].strftime("%Y%m%d") == "20190201"
-    xa.universal.check_cache("SH501018", prev=32)
+    xa.universal.check_cache("SH501018", prev=32, omit_lines=1)
 
 
 def test_cache_mm():
@@ -146,7 +146,7 @@ def test_cache_mm():
     df = xa.get_daily("SH501018", prev=100)
     l2 = len(df)
     assert l1 == l2
-    xa.universal.check_cache("SH501018", start="2018/09/01")
+    xa.universal.check_cache("SH501018", start="2018/09/01", omit_lines=1)
 
 
 def test_get_bar_xq():

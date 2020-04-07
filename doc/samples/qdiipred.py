@@ -10,13 +10,13 @@ xa.set_backend(backend="csv", path="../../../lof/data", precached="20200103")
 # xa.set_proxy("socks5://127.0.0.1:1080")
 
 logger = logging.getLogger("xalpha")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARNING)
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.WARNING)
 logger.addHandler(ch)
 
 
-@xa.universal.lru_cache_time(ttl=60)
+@xa.universal.lru_cache_time(ttl=90)
 def cached_get_rt(code, **kws):
     return xa.get_rt(code, handler=False)
 
@@ -50,7 +50,9 @@ qdiis = [
     "SZ164824",
     "SH513030",
     "SZ161714",
+    "SZ165510",
 ]
+nonqdiis = ["SH501021", "SH513880", "SH513520", "SH513000"]
 data = {
     "code": [],
     "name": [],
@@ -59,10 +61,10 @@ data = {
     "now": [],
     "t1rate": [],
     "t0rate": [],
-    "positions": [],
+    "position": [],
 }
 for c in qdiis:
-    p = xa.QDIIPredict(c, fetch=True, save=True)
+    p = xa.QDIIPredict(c, fetch=True, save=True, positions=True)
     try:
         data["t1"].append(round(p.get_t1(return_date=False), 4))
         data["t1rate"].append(round(p.get_t1_rate(return_date=False), 2))
@@ -72,12 +74,23 @@ for c in qdiis:
         except ValueError:
             data["t0"].append("-")
             data["t0rate"].append("-")
-        data["positions"].append(round(p.get_position(return_date=False), 3))
+        data["position"].append(round(p.get_position(return_date=False), 3))
         data["now"].append(xa.get_rt(c)["current"])
         data["code"].append(c)
         data["name"].append(xa.get_rt(c)["name"])
-    except xa.exceptions.NonAccurate:
+    except xa.exceptions.NonAccurate as e:
         print("%s cannot be predicted exactly now" % c)
+        print(e.reason)
+for c in nonqdiis:
+    p = xa.RTPredict(c)
+    data["t1"].append(xa.get_rt("F" + c[2:])["current"])
+    data["t1rate"].append("-")
+    data["t0"].append(round(p.get_t0(return_date=False), 4))
+    data["t0rate"].append(round(p.get_t0_rate(return_date=False), 2))
+    data["position"].append("-")
+    data["now"].append(xa.get_rt(c)["current"])
+    data["code"].append(c)
+    data["name"].append(xa.get_rt(c)["name"])
 df = pd.DataFrame(data)
 with open("demo.html", "w") as f:
     df.to_html(f)

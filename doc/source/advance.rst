@@ -292,6 +292,18 @@ xalpha 不要去雪球爬取数据，而是直接从我的数据库里来拿，�
 
 同样的方法，也可以应用到 ``get_rt`` 和 ``get_bar``, 对应的 method="rt", "bar".
 
+应用举例，有时候你可能不希望抓取实时数据那么实时，每分钟更新一次实时数据就好，那你可以通过下面的方式实现 get_rt 的"迟滞化"。
+
+.. code-block:: python
+
+    import xalpha as xa
+
+    @xa.universal.lru_cache_time(ttl=60)
+    def cached_get_rt(code, **kws):
+        return xa.get_rt(code, handler=False)
+
+    xa.set_handler(method="rt", f=cached_get_rt)
+
 
 set 方法总结
 ---------------

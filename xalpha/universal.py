@@ -814,7 +814,7 @@ def _float(n):
             n = float(n[:-1]) * 1000
         elif n.endswith("M") or n.endswith("m"):
             n = float(n[:-1]) * 1000 * 1000
-        elif n.endswith("G") or n.endswith("g"):
+        elif n.endswith("G") or n.endswith("g") or n.endswith("B") or n.endswith("b"):
             n = float(n[:-1]) * 1000 * 1000 * 1000
         elif n == "-":
             return 0
@@ -1453,12 +1453,19 @@ def save_backend(key, df, mode="a"):
     logger.debug("%s saved into backend successfully" % key)
 
 
-def check_cache(*args, **kws):
-    assert (
-        _get_daily(*args, wrapper=False, **kws)
-        .reset_index(drop=True)
-        .equals(get_daily(*args, **kws).reset_index(drop=True))
-    )
+def check_cache(*args, omit_lines=0, **kws):
+    if omit_lines == 0:
+        assert (
+            _get_daily(*args, wrapper=False, **kws)
+            .reset_index(drop=True)
+            .equals(get_daily(*args, **kws).reset_index(drop=True))
+        )
+    else:
+        assert (
+            _get_daily(*args, wrapper=False, **kws)
+            .reset_index(drop=True)[:-omit_lines]
+            .equals(get_daily(*args, **kws).reset_index(drop=True)[:-omit_lines])
+        )
 
 
 @data_source("jq")

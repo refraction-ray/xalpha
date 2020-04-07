@@ -376,16 +376,16 @@ def get_currency(code):
             return currency_info[code]
         elif (code.startswith("F") or code.startswith("M")) and code[1:].isdigit():
             return "CNY"
+        elif code.startswith("FT-") and len(code.split(":")) > 2:
+            return code.split(":")[-1]
         currency = get_rt(code)["currency"]
         if currency is None:
             currency = "CNY"
         elif currency == "JPY":
             currency = "100JPY"
     except (TypeError, AttributeError, ValueError):
-        if code.startswith("FT-") and len(code.split(":")) > 2:
-            currency = code.split(":")[-1]
-        else:
-            currency = "CNY"
+        logger.warning("set currency of %s as default CNY" % code)
+        currency = "CNY"
     return currency
 
 
@@ -810,6 +810,7 @@ class QDIIPredict:
                 df["date"] = pd.to_datetime(df["date"])
                 for i, r in df.iterrows():
                     self.set_t1(float(r["t1"]), r["date"].strftime("%Y-%m-%d"))
+                    self.set_position(float(r["pos"]), r["date"].strftime("%Y-%m-%d"))
 
     def set_t1(self, value, date=None):
         """
@@ -876,6 +877,7 @@ class QDIIPredict:
                 current_pos = self.get_position(datekey, return_date=False)
                 hdict = scale_dict(self.t1dict.copy(), aim=current_pos * 100)
             else:
+                current_pos = sum([v for _, v in self.t1dict.items()]) / 100
                 hdict = self.t1dict.copy()
 
             if date is None:  # 此时预测上个交易日净值
@@ -932,6 +934,7 @@ class QDIIPredict:
                     {
                         "date": [datekey[:4] + "-" + datekey[4:6] + "-" + datekey[6:8]],
                         "t1": [net],
+                        "pos": [current_pos],
                     }
                 )
                 save_backend("t1-" + self.code, df)
@@ -1041,6 +1044,14 @@ class QDIIPredict:
             return t0value
         else:
             return t0value, self.today.strftime("%Y-%m-%d")
+
+    def set_position(self, value, date=None):
+        if date is None:
+            yesterday = last_onday(self.today)
+            datekey = yesterday.strftime("%Y%m%d")
+        else:
+            datekey = date.replace("/", "").replace("-", "")
+        self.position_cache[datekey] = value
 
     @error_catcher
     def get_position(self, date=None, refresh=False, return_date=True, **kws):
