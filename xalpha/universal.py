@@ -1045,7 +1045,7 @@ def get_rt_from_ft(code, _type="indices"):
 @lru_cache_time(ttl=300, maxsize=512)
 def get_newest_netvalue(code):
     """
-    防止天天基金总量 API 最新净值更新不及时，获取基金最新公布净值及对应日期
+    防止天天基金总量 API 最新净值更新不及时，获取基金最新公布净值及对应日期, depracated, use get_rt("F501018") instead
 
     :param code: six digits string for fund.
     :return: netvalue, %Y-%m-%d

@@ -80,7 +80,7 @@ def turnoverrate(cftable, end=yesterdayobj()):
     return turnover * 365 / (end - start).days
 
 
-def vtradevolume(cftable, freq="D"):
+def vtradevolume(cftable, freq="D", rendered=True):
     """
     aid function on visualization of trade summary
 
@@ -152,8 +152,10 @@ def vtradevolume(cftable, freq="D"):
         xaxis_opts=AxisOpts(type_="time"),
         datazoom_opts=[DataZoomOpts(range_start=99, range_end=100)],
     )
-
-    return bar.render_notebook()
+    if rendered:
+        return bar.render_notebook()
+    else:
+        return bar
 
 
 class trade:
@@ -430,16 +432,16 @@ class trade:
             unitcost = 0
         return unitcost
 
-    def v_tradevolume(self, freq="D"):
+    def v_tradevolume(self, freq="D", rendered=True):
         """
         visualization on trade summary
 
         :param freq: string, "D", "W" and "M" are supported
         :returns: pyecharts.charts.bar.render_notebook()
         """
-        return vtradevolume(self.cftable, freq=freq)
+        return vtradevolume(self.cftable, freq=freq, rendered=rendered)
 
-    def v_tradecost(self, start=None, end=yesterdayobj(), vopts=None):
+    def v_tradecost(self, start=None, end=yesterdayobj(), rendered=True, vopts=None):
         """
         visualization giving the average cost line together with netvalue line
 
@@ -467,9 +469,12 @@ class trade:
         line.add_yaxis(series_name="基金净值", y_axis=funddata, is_symbol_show=False)
         line.add_yaxis(series_name="持仓成本", y_axis=costdata, is_symbol_show=False)
         line.set_global_opts(**vopts)
-        return line.render_notebook()
+        if rendered:
+            return line.render_notebook()
+        else:
+            return line
 
-    def v_totvalue(self, end=yesterdayobj(), vopts=None):
+    def v_totvalue(self, end=yesterdayobj(), rendered=True, vopts=None):
         """
         visualization on the total values daily change of the aim
         """
@@ -488,8 +493,10 @@ class trade:
         line.add_xaxis(date)
         line.add_yaxis(series_name="持仓总值", y_axis=valuedata, is_symbol_show=False)
         line.set_global_opts(**vopts)
-
-        return line.render_notebook()
+        if rendered:
+            return line.render_notebook()
+        else:
+            return line
 
     def __repr__(self):
         return self.aim.name + " 交易情况"
@@ -538,10 +545,10 @@ class itrade(trade):
             d["share"].append(r.share)
         self.cftable = pd.DataFrame(d)
 
-    def v_totvalue(self, end=yesterdayobj(), vopts=None):
+    def v_totvalue(self, **kws):
         raise NotImplementedError()
 
-    def v_tradecost(self, start=None, end=yesterdayobj(), vopts=None):
+    def v_tradecost(self, **kws):
         raise NotImplementedError()
 
     def get_netvalue(self, date=yesterdayobj()):

@@ -228,7 +228,7 @@ class mul:
         )
         return case
 
-    def v_positions(self, date=yesterdayobj(), vopts=None):
+    def v_positions(self, date=yesterdayobj(), rendered=True, vopts=None):
         """
         pie chart visualization of positions ratio in combination
         """
@@ -246,9 +246,12 @@ class mul:
             vopts = pie_opts
         pie.add(series_name="总值占比", data_pair=sdata)
         pie.set_global_opts(**vopts)
-        return pie.render_notebook()
+        if rendered:
+            return pie.render_notebook()
+        else:
+            return pie
 
-    def v_positions_history(self, end=yesterdaydash(), **vkwds):
+    def v_positions_history(self, end=yesterdaydash(), rendered=True, **vkwds):
         """
         river chart visulization of positions ratio history
         use text size to avoid legend overlap in some sense, eg. legend_text_size=8
@@ -274,10 +277,12 @@ class mul:
             label_opts=opts.LabelOpts(is_show=False),
             singleaxis_opts=opts.SingleAxisOpts(type_="time", pos_bottom="10%"),
         )
+        if rendered:
+            return tr.render_notebook()
+        else:
+            return tr
 
-        return tr.render_notebook()
-
-    def v_tradevolume(self, freq="D"):
+    def v_tradevolume(self, freq="D", rendered=True):
         """
         visualization on trade summary of the funds combination
 
@@ -285,7 +290,7 @@ class mul:
             W for week and M for month, namely the trade volume is shown based on the time unit
         :returns: ``pyecharts.Bar()``
         """
-        return vtradevolume(self.totcftable, freq=freq)
+        return vtradevolume(self.totcftable, freq=freq, rendered=rendered)
 
 
 class mulfix(mul, indicator):

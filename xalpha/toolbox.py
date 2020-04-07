@@ -25,7 +25,6 @@ from xalpha.universal import (
     get_bar,
     _convert_code,
     _inverse_convert_code,
-    get_newest_netvalue,
     fetch_backend,
     save_backend,
 )
@@ -687,7 +686,8 @@ class RTPredict:
         :return:
         """
         if not self.t1value_cache:
-            last_value, last_date = get_newest_netvalue(self.fcode)
+            last_r = get_rt(self.fcode)
+            last_value, last_date = last_r["current"], last_r["time"]
             self.t1value_cache = (last_value, last_date)
         if return_date:
             return self.t1value_cache
@@ -849,7 +849,8 @@ class QDIIPredict:
         :return: if return_date is True, tuple (value, %Y-%m-%d)
         """
         if not self.t2value_cache:
-            last_value, last_date = get_newest_netvalue(self.fcode)
+            last_r = get_rt(self.fcode)
+            last_value, last_date = last_r["current"], last_r["time"]
             self.t2value_cache = (last_value, last_date)
         if return_date:
             return self.t2value_cache

@@ -10,13 +10,13 @@ xa.set_backend(backend="csv", path="../../../lof/data", precached="20200103")
 # xa.set_proxy("socks5://127.0.0.1:1080")
 
 logger = logging.getLogger("xalpha")
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
-ch.setLevel(logging.WARNING)
+ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
 
 
-@xa.universal.lru_cache_time(ttl=90)
+@xa.universal.lru_cache_time(ttl=180)
 def cached_get_rt(code, **kws):
     return xa.get_rt(code, handler=False)
 
@@ -92,5 +92,34 @@ for c in nonqdiis:
     data["code"].append(c)
     data["name"].append(xa.get_rt(c)["name"])
 df = pd.DataFrame(data)
+
+htmlstr = (
+    """<html>
+<meta charset="UTF-8">
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.css">
+<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.4.1.min.js"></script>
+
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.js"></script>
+
+<script>
+  $(document).ready( function () {
+    $('#df').DataTable({"scrollY": "88%",
+  "scrollCollapse": true,
+  "paging": false,
+  "fixedHeader": true
+});
+} );
+</script>
+<style>
+    td, th {
+        text-align: center;
+    }
+</style>"""
+    + df.to_html(table_id="df", index=False)
+    + "</html>"
+)
+
+
 with open("demo.html", "w") as f:
-    df.to_html(f)
+    f.writelines([htmlstr])

@@ -429,7 +429,7 @@ class indicator:
 
     ## 以下是可视化部分
 
-    def v_netvalue(self, end=yesterdayobj(), benchmark=True, vopts=None):
+    def v_netvalue(self, end=yesterdayobj(), benchmark=True, rendered=True, vopts=None):
         """
         visulaization on  netvalue curve
 
@@ -457,9 +457,12 @@ class indicator:
                 y_axis=list(b.netvalue),
                 is_symbol_show=False,
             )
-        return line.render_notebook()
+        if rendered:
+            return line.render_notebook()
+        else:
+            return line
 
-    def v_techindex(self, end=yesterdayobj(), col=None, vopts=None):
+    def v_techindex(self, end=yesterdayobj(), col=None, rendered=True, vopts=None):
         """
         visualization on netvalue curve and specified indicators
 
@@ -482,7 +485,10 @@ class indicator:
             for ind in col:
                 inddata = list(partprice[ind])
                 line.add_yaxis(series_name=ind, y_axis=inddata, is_symbol_show=False)
-        return line.render_notebook()
+        if rendered:
+            return line.render_notebook()
+        else:
+            return line
 
 
 def plot_kline(df, rendered=True, col=""):
