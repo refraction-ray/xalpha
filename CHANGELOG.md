@@ -1,14 +1,15 @@
 # Changelog
 ## Unreleased
+## v0.8.5 - 2020.04.08
 ### added
 * get_bar 增加聚宽源
 * get_daily 支持基金累计净值
-* get_rt 增加时间属性
+* get_rt 返回增加时间属性
 * 日线增加成交量数据（注意缓存兼容性）
-* 直接将绘制 k 线图 hack 到 df 上
+* 直接将绘制 k 线图 hack 到 df 上，df.v_kline()
 * 支持 dataframe web 级的显示，可用 set_display 开关
 * 增加 StockPEBHistory 类可以查看个股估值历史
-* 增加 fetchonly 更精细的控制缓存
+* 对 get_daily 增加 fetchonly 更精细的控制缓存
 ### fixed
 * 进一步完善跨市场休市日不同时的净值预测逻辑
 
