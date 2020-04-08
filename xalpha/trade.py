@@ -12,6 +12,7 @@ import xalpha.remain as rm
 from xalpha.cons import convert_date, line_opts, myround, xirr, yesterdayobj
 from xalpha.exceptions import ParserFailure, TradeBehaviorError
 from xalpha.record import irecord
+import xalpha.universal as xu
 from xalpha.universal import get_daily, get_rt
 
 
@@ -42,7 +43,7 @@ def xirrcal(cftable, trades, date, guess=0.1):
                 fund.remtable[fund.remtable["date"] <= date].iloc[-1].rem,
             )[1]
         else:  # 场内交易
-            pricedf = get_daily(fund.code, end=date.strftime("%Y%m%d"), prev=20)
+            pricedf = xu.get_daily(fund.code, end=date.strftime("%Y%m%d"), prev=20)
             price = pricedf[pricedf.date <= date].iloc[-1]["close"]
             rede += fund.cftable.share.sum() * price
     cashflow.append((date, rede))
@@ -142,6 +143,8 @@ def vtradevolume(cftable, freq="D", rendered=True):
     else:
         raise ParserFailure("no such freq tag supporting")
 
+    buydata = [[d, round(x, 1)] for d, x in buydata]
+    selldata = [[d, round(x, 1)] for d, x in selldata]
     bar = Bar()
     bar.add_xaxis(datedata)
     # buydata should before selldata, since emptylist in the first line would make the output fig empty: may be bug in pyecharts
@@ -232,6 +235,8 @@ class trade:
                 lastdate += pd.Timedelta(1, unit="d")
                 if (lastdate - yesterdayobj()).days >= 1:
                     raise Exception("no other info to be add into cashflow table")
+            if (lastdate - yesterdayobj()).days >= 1:
+                raise Exception("no other info to be add into cashflow table")
             date = lastdate
             label = self.aim.dividend_label  # 现金分红 0, 红利再投 1
             cash = 0
@@ -499,7 +504,7 @@ class trade:
             return line
 
     def __repr__(self):
-        return self.aim.name + " 交易情况"
+        return self.name + " 交易情况"
 
 
 """
@@ -552,7 +557,22 @@ class itrade(trade):
         raise NotImplementedError()
 
     def get_netvalue(self, date=yesterdayobj()):
-        return get_daily(self.code, end=date.strftime("%Y%m%d"), prev=20).iloc[-1].close
+        # 若使用请务必配合带 precached 的缓存策略！！
+        if not getattr(self, "fetchonly", None):
+            self.fetchonly = False
+        prestart = self.status.iloc[0]["date"]
+        df = xu.get_daily(
+            self.code,
+            end=date.strftime("%Y%m%d"),
+            prev=20,
+            fetchonly=self.fetchonly,
+            precached=prestart.strftime("%Y%m%d"),
+        )
+        self.fetchonly = True  # 这么做防止数据空白时期的反复抓取
+        if len(df) > 0:
+            return df.iloc[-1].close
+        else:
+            return 0
 
 
 Trade = trade

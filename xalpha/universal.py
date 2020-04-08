@@ -1264,6 +1264,7 @@ def cachedio(**ioconf):
                 code = kws.get("code")
             date = ioconf.get("date", "date")
             precached = ioconf.get("precached", None)
+            precached = kws.get("precached", precached)
             key = kws.get("key", code)
             key = key.replace("/", " ")
             start = kws.get("start", None)

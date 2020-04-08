@@ -315,6 +315,7 @@ class mulfix(mul, indicator):
         self,
         *fundtradeobj,
         status=None,
+        istatus=None,
         property=None,
         fetch=False,
         save=False,
@@ -326,6 +327,7 @@ class mulfix(mul, indicator):
         super().__init__(
             *fundtradeobj,
             status=status,
+            istatus=istatus,
             property=property,
             fetch=fetch,
             save=save,
@@ -338,6 +340,7 @@ class mulfix(mul, indicator):
         nst = mulfix._vcash(totmoney, self.totcftable, cashobj)
         cashtrade = trade(cashobj, nst)
         # 		 super().__init__(*self.fundtradeobj, cashtrade)
+        self.cashobj = cashobj
         self.fundtradeobj = list(self.fundtradeobj)
         self.fundtradeobj.append(cashtrade)
         self.fundtradeobj = tuple(self.fundtradeobj)
@@ -348,6 +351,7 @@ class mulfix(mul, indicator):
             data={"date": [nst.iloc[0].date], "cash": [-totmoney]}
         )
 
+    @staticmethod
     def _vcash(totmoney, totcftable, cashobj):
         """
         return a virtue status table with a mf(cash) column based on the given tot money and cftable

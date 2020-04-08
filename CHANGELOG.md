@@ -1,7 +1,10 @@
 # Changelog
 ## Unreleased
+### added
+* mulfix 增加 istatus 账单读入
 ### fixed
 * 修复雪球实时HK开始的可能bug
+* 今日交易记录的 trade bug
 
 ## v0.8.5 - 2020.04.08
 ### added

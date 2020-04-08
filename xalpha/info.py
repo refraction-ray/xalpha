@@ -926,7 +926,9 @@ class cashinfo(basicinfo):
         self.interest = interest
         start = convert_date(start)
         self.start = start
-        super().__init__("mf", value_label=value_label)
+        super().__init__(
+            "mf", value_label=value_label, fetch=False, save=False, path="nobackend"
+        )  # 永远不缓存 cashinfo
 
     def _basic_init(self):
         self.name = "货币基金"
