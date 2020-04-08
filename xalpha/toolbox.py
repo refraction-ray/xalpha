@@ -112,6 +112,12 @@ def _set_display_notebook():
 
 
 def set_display(env=""):
+    """
+    开关 DataFrame 的显示模式，仅 Jupyter Notebook 有效。
+
+    :param env: str, default "". If env="notebook", pd.DataFrame will be shown in fantastic web language
+    :return:
+    """
     if not env:
         try:
             delattr(pd.DataFrame, "_repr_javascript_")
@@ -454,8 +460,11 @@ def get_currency(code):
             return currency_info[code]
         elif (code.startswith("F") or code.startswith("M")) and code[1:].isdigit():
             return "CNY"
-        elif code.startswith("FT-") and len(code.split(":")) >= 2:
+        elif code.startswith("FT-") and len(code.split(":")) > 2:
+            # be careful! FT-ABC:IOM has no currency information!
             return code.split(":")[-1]
+        elif code.startswith("HK") and code[2:].isdigit():
+            return "HKD"
         currency = get_rt(code)["currency"]
         if currency is None:
             currency = "CNY"
@@ -534,6 +543,8 @@ def get_market(code):
             return market_info[code]
         elif code.startswith("CNY/") or code.endswith("/CNY"):
             return "CM"  # china money 中间价市场标记
+        elif code.startswith("HK") and code[2:].isdigit():
+            return "HK"
         market = get_rt(code)["market"]
         if market is None:
             market = get_currency(code)
@@ -1236,7 +1247,7 @@ class QDIIPredict:
                     current_pos = 1
 
         cpdf = pd.DataFrame(compare_data)
-        cpdf["diff"] = cpdf["est"] - cpdf["real"]
+        cpdf["diff"] = cpdf["real"] - cpdf["est"]
         self.cpdf = cpdf
         return cpdf
 
@@ -1249,7 +1260,7 @@ class QDIIPredict:
         print("净值预测回测分析:\n")
         self.analyse_deviate(self.cpdf, "diff")
         self.analyse_percentile(self.cpdf, "diff")
-        self.analyse_ud(self.cpdf, "real", "est")
+        self.analyse_ud(self.cpdf, "real", "diff")
 
     @staticmethod
     def analyse_ud(cpdf, col1, col2):

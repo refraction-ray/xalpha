@@ -378,9 +378,9 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
 def get_fund(code):
     # 随意设置非空 path，防止嵌套缓存到 fundinfo
     if code[0] == "F":
-        df = fundinfo(code[1:], path="nobackend").price
+        df = fundinfo(code[1:], path="nobackend", priceonly=True).price
     elif code[0] == "T":
-        df = fundinfo(code[1:], path="nobackend").price
+        df = fundinfo(code[1:], path="nobackend", priceonly=True).price
         df["netvalue"] = df["totvalue"]
     elif code[0] == "M":
         df = mfundinfo(code[1:], path="nobackend").price
@@ -820,7 +820,7 @@ def _float(n):
 
 
 def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
-    if code.startswith("HK"):
+    if code.startswith("HK") and code[2:].isdigit():
         code = code[2:]
     url = "https://stock.xueqiu.com/v5/stock/quote.json?symbol={code}&extend=detail"
     r = rget_json(

@@ -45,9 +45,9 @@ xalpha 不止如此，更多特性，欢迎探索。不只是数据，更是工�
 
 您也可以尝试基于 xalpha 构建的基金净值预测与场内溢价率提醒的项目: [LOF-BOT](https://github.com/refraction-ray/lof-bot).
 
-## Documentation
+## 文档
 
-文档地址： https://xalpha.readthedocs.io/ 
+在线文档地址： https://xalpha.readthedocs.io/ 
 
 或者通过以下命令，在本地`doc/build/html`内阅读文档。
 
@@ -57,7 +57,7 @@ $ make html
 ```
 
 
-## Installation
+## 安装
 
 ```bash
 pip install xalpha
@@ -72,7 +72,7 @@ $ git clone https://github.com/refraction-ray/xalpha.git
 $ cd xalpha && python3 setup.py install
 ```
 
-## Usage
+## 用法
 
 ### 本地使用
 
@@ -102,3 +102,9 @@ $ cd xalpha && python3 setup.py install
 ```
 
 由于 xalpha 整合了部分聚宽数据源的 API，在云端直接 ``xa.provider.set_jq_data(debug=True)`` 即可激活聚宽数据源。
+
+## 博客
+
+* [xalpha 诞生记](https://re-ra.xyz/xalpha-%E8%AF%9E%E7%94%9F%E8%AE%B0/)
+
+* [xalpha 设计哲学及其他](https://re-ra.xyz/xalpha-%E8%AE%BE%E8%AE%A1%E5%93%B2%E5%AD%A6%E5%8F%8A%E5%85%B6%E4%BB%96/)

@@ -415,6 +415,7 @@ class fundinfo(basicinfo):
         save=False,
         path="",
         form="csv",
+        priceonly=False,
     ):
         if round_label == 1 or (code in droplist):
             label = 1  # the scheme of round down on share purchase
@@ -426,7 +427,7 @@ class fundinfo(basicinfo):
         self._feeurl = (
             "http://fund.eastmoney.com/f10/jjfl_" + code + ".html"
         )  # html url for trade fees info of certain fund
-
+        self.priceonly = priceonly
         super().__init__(
             code,
             fetch=fetch,
@@ -493,7 +494,8 @@ class fundinfo(basicinfo):
         df = df.reset_index(drop=True)
         self.price = df[df["date"] <= yesterdaydash()]
         # deal with the redemption fee attrs finally
-        self._feepreprocess()
+        if not self.priceonly:
+            self._feepreprocess()
 
     def _feepreprocess(self):
         """

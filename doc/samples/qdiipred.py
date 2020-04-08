@@ -7,7 +7,6 @@ import xalpha as xa
 import logging
 
 xa.set_backend(backend="csv", path="../../../lof/data", precached="20200103")
-# xa.set_proxy("socks5://127.0.0.1:1080")
 
 logger = logging.getLogger("xalpha")
 logger.setLevel(logging.DEBUG)
@@ -43,16 +42,29 @@ qdiis = [
     "SZ163208",
     "SZ162719",
     "SZ165513",
-    "SZ161815",
+    "SZ161815",  # fr
     "SZ161116",
     "SZ164701",
     "SZ160719",
     "SZ164824",
     "SH513030",
+    "SZ160140",
     "SZ161714",
     "SZ165510",
+    "SZ164906",
+    "SH513050",
 ]
-nonqdiis = ["SH501021", "SH513880", "SH513520", "SH513000"]
+nonqdiis = [
+    "SH501021",
+    "SH513880",
+    "SH513520",
+    "SH513000",
+    "SH510510",
+    "SZ159922",
+    "SH510500",
+    "SH512500",
+    "SZ159920",
+]
 data = {
     "code": [],
     "name": [],
@@ -63,6 +75,7 @@ data = {
     "t0rate": [],
     "position": [],
 }
+
 for c in qdiis:
     p = xa.QDIIPredict(c, fetch=True, save=True, positions=True)
     try:
@@ -81,6 +94,7 @@ for c in qdiis:
     except xa.exceptions.NonAccurate as e:
         print("%s cannot be predicted exactly now" % c)
         print(e.reason)
+
 for c in nonqdiis:
     p = xa.RTPredict(c)
     data["t1"].append(xa.get_rt("F" + c[2:])["current"])

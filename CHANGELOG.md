@@ -1,5 +1,8 @@
 # Changelog
 ## Unreleased
+### fixed
+* 修复雪球实时HK开始的可能bug
+
 ## v0.8.5 - 2020.04.08
 ### added
 * get_bar 增加聚宽源
