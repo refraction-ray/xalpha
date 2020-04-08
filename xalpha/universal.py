@@ -1024,7 +1024,7 @@ def get_rt_from_ft(code, _type="indices"):
     d["name"] = b.find("h1").string
     d["current"] = _float(b.find("span", class_="mod-ui-data-list__value").string)
     d["percent"] = _float(
-        b.select("span[class='mod-format--pos']")[0].text.split("/")[-1].strip()[:-1]
+        b.select("span[class^='mod-format--']")[0].text.split("/")[-1].strip()[:-1]
     )
     d["current_ext"] = None
     d["market"] = None
@@ -1296,6 +1296,7 @@ def cachedio(**ioconf):
             backend = ioconf.get("backend")
             refresh = ioconf.get("refresh", False)
             refresh = kws.get("refresh", refresh)
+            fetchonly = kws.get("fetchonly", False)
             path = ioconf.get("path")
             kws["start"] = start_str
             kws["end"] = end_str
@@ -1333,7 +1334,7 @@ def cachedio(**ioconf):
                         df0[date] = pd.to_datetime(df0[date])
                         # 向前延拓
                         is_changed = False
-                        if df0.iloc[0][date] > start_obj:
+                        if df0.iloc[0][date] > start_obj and not fetchonly:
                             kws["start"] = start_str
                             kws["end"] = (
                                 df0.iloc[0][date] - pd.Timedelta(days=1)
@@ -1347,7 +1348,7 @@ def cachedio(**ioconf):
                                     is_changed = True
                                     df0 = df1.append(df0, ignore_index=True)
                         # 向后延拓
-                        if df0.iloc[-1][date] < end_obj:
+                        if df0.iloc[-1][date] < end_obj and not fetchonly:
                             nextday_str = (
                                 df0.iloc[-1][date] + dt.timedelta(days=1)
                             ).strftime("%Y%m%d")
@@ -1370,7 +1371,13 @@ def cachedio(**ioconf):
                                     df0 = df0.append(df2, ignore_index=True)
                             # 注意这里抹去更新了原有最后一天的缓存，这是因为日线最新一天可能有实时数据污染
 
-                    except (FileNotFoundError, exc.ProgrammingError, KeyError):
+                    except (FileNotFoundError, exc.ProgrammingError, KeyError) as e:
+                        if fetchonly:
+                            logger.error(
+                                "no cache in backend for %s but you insist `fetchonly`"
+                                % code
+                            )
+                            raise e
                         if precached:
                             if start_obj > precached_obj:
                                 kws["start"] = precached
@@ -1424,7 +1431,7 @@ def fetch_backend(key):
         return None
 
 
-def save_backend(key, df, mode="a"):
+def save_backend(key, df, mode="a", header=False):
     prefix = ioconf.get("prefix", "")
     key = prefix + key
     backend = ioconf.get("backend")
@@ -1433,7 +1440,10 @@ def save_backend(key, df, mode="a"):
         key = key + ".csv"
 
     if backend == "csv":
-        df.to_csv(os.path.join(path, key), index=False, mode=mode)
+        if mode == "a":
+            df.to_csv(os.path.join(path, key), index=False, header=header, mode=mode)
+        else:
+            df.to_csv(os.path.join(path, key), index=False, mode=mode)
     elif backend == "sql":
         if mode == "a":
             mode = "append"

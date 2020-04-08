@@ -77,20 +77,19 @@ set_holdings()
 
 def _set_display_notebook():
     """Initialize DataTable mode for pandas DataFrame represenation."""
-    from IPython.core.display import display, HTML
+    from IPython.core.display import display, Javascript
 
     display(
-        HTML(
+        Javascript(
             """
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.css">
-<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.4.1.min.js"></script>
-<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.js"></script>
-<style>
-    td, th {{
-        text-align: center;
-    }}
-</style>
-    """
+            require.config({
+                paths: {
+                    DT: '//cdn.datatables.net/1.10.20/js/jquery.dataTables.min',
+                }
+            });
+            $('head').append('<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">');
+            $('head').append('<style> td, th {{text-align: center;}}</style>')
+        """
         )
     )
 
@@ -100,9 +99,10 @@ def _set_display_notebook():
 
         # execute jQuery to turn table into DataTable
         script += """
-                $(document).ready( () => {
+                require(["DT"], function(DT) {$(document).ready( () => {
                     // Turn existing table into datatable
                     $(element).find("table.dataframe").DataTable();
+                    })
                 });
         """
 
@@ -454,7 +454,7 @@ def get_currency(code):
             return currency_info[code]
         elif (code.startswith("F") or code.startswith("M")) and code[1:].isdigit():
             return "CNY"
-        elif code.startswith("FT-") and len(code.split(":")) > 2:
+        elif code.startswith("FT-") and len(code.split(":")) >= 2:
             return code.split(":")[-1]
         currency = get_rt(code)["currency"]
         if currency is None:
@@ -637,6 +637,7 @@ def daily_increment(code, date, lastday=None, _check=False):
     if _check:
         date = date.replace("-", "").replace("/", "")
         date_obj = dt.datetime.strptime(date, "%Y%m%d")
+
         while tds.iloc[-1]["date"] < date_obj:
             # in case data is not up to date
             # 但是存在日本市场休市时间不一致的情况，估计美股也存在
@@ -890,6 +891,9 @@ class QDIIPredict:
                 for i, r in df.iterrows():
                     self.set_t1(float(r["t1"]), r["date"].strftime("%Y-%m-%d"))
                     self.set_position(float(r["pos"]), r["date"].strftime("%Y-%m-%d"))
+            else:  # nodf
+                emptydf = pd.DataFrame({"date": [], "t1": [], "pos": []})
+                save_backend("t1-" + code, emptydf, header=True)
 
     def set_t1(self, value, date=None):
         """
@@ -959,7 +963,6 @@ class QDIIPredict:
             else:
                 current_pos = sum([v for _, v in self.t1dict.items()]) / 100
                 hdict = self.t1dict.copy()
-
             if date is None:  # 此时预测上个交易日净值
                 yesterday_str = datekey
                 last_value, last_date = self.get_t2()

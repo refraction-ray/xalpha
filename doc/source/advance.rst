@@ -55,7 +55,9 @@ precached 可以不设，若设置为 %Y%m%d 的时间字符串格式，则代�
 
 
 对于部分数据，由于程序升级的不兼容或者缓存数据损坏造成希望重新获取而刷新掉缓存的话，可以在 get_daily 添加 refresh 选项，也即 ``xa.get_daily(code, refresh=True)``，
-浙江重新刷新关于 code 的本地缓存。
+这会重新刷新关于 code 的本地缓存。
+
+而对于另一些数据，我们不希望去更新，只希望使用缓存的数据，即使其日期不全（可能是由于节假日造成的错觉），这时可以添加 fetchonly 选项，也即 ``xa.get_daily(code, fetchonly=True)``.
 
 
 数据本地化

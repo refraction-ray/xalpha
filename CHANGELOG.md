@@ -8,6 +8,7 @@
 * 直接将绘制 k 线图 hack 到 df 上
 * 支持 dataframe web 级的显示，可用 set_display 开关
 * 增加 StockPEBHistory 类可以查看个股估值历史
+* 增加 fetchonly 更精细的控制缓存
 ### fixed
 * 进一步完善跨市场休市日不同时的净值预测逻辑
 

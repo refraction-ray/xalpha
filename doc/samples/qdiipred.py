@@ -115,6 +115,9 @@ htmlstr = (
     td, th {
         text-align: center;
     }
+    #df tbody tr:hover {
+    background-color: #ffff99;
+    }
 </style>"""
     + df.to_html(table_id="df", index=False)
     + "</html>"
