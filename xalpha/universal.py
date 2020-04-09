@@ -1056,6 +1056,7 @@ def get_newest_netvalue(code):
     )
 
 
+@lru_cache_time(ttl=600, maxsize=512)
 def get_rt_from_ttjj(code):
     code = code[1:]
     r = rget("http://fund.eastmoney.com/{code}.html".format(code=code))
@@ -1070,7 +1071,18 @@ def get_rt_from_ttjj(code):
         str(s.findAll("dt")[1]).split("(")[1].split(")")[0][7:],
         s.select("div[style='float: left']")[0].text.split("(")[0],
     )
-
+    status = s.select("span[class='staticCell']")[0].text.strip()
+    tb = s.select("div.infoOfFund > table >tr>td")
+    infol = [i.text for i in tb]
+    estimate = s.select("#gz_gsz")[0].text
+    if estimate == "--":
+        estimate = None
+    else:
+        try:
+            estimate = _float(estimate)
+        except ValueError:
+            logger.warning("unrecognized estimate netvalue %s" % estimate)
+            estimate = None
     return {
         "name": name,
         "time": date,
@@ -1078,6 +1090,12 @@ def get_rt_from_ttjj(code):
         "market": "CN",
         "currency": "CNY",
         "current_ext": None,
+        "status": status,
+        "type": infol[0].split("：")[1].split("\xa0")[0],
+        "scale": infol[1].split("：")[1],
+        "manager": infol[2].split("：")[1],
+        "company": infol[4].split("：")[1],
+        "estimate": estimate,
     }
     # 是否有美元份额计价的基金会出问题？
 
@@ -1347,7 +1365,7 @@ def cachedio(**ioconf):
                                     df1 = df1[df1["date"] <= kws["end"]]
                                 if len(df1) > 0:
                                     is_changed = True
-                                    df0 = df1.append(df0, ignore_index=True)
+                                    df0 = df1.append(df0, ignore_index=True, sort=False)
                         # 向后延拓
                         if df0.iloc[-1][date] < end_obj and not fetchonly:
                             nextday_str = (
@@ -1369,7 +1387,7 @@ def cachedio(**ioconf):
                                         == 1
                                     ):
                                         df0 = df0.iloc[:-1]
-                                    df0 = df0.append(df2, ignore_index=True)
+                                    df0 = df0.append(df2, ignore_index=True, sort=False)
                             # 注意这里抹去更新了原有最后一天的缓存，这是因为日线最新一天可能有实时数据污染
 
                     except (FileNotFoundError, exc.ProgrammingError, KeyError) as e:
@@ -1495,7 +1513,7 @@ def _get_index_weight_range(code, start, end):
         logger.debug("fetch index weight on %s for %s" % (d, code))
         df0 = get_index_weights(index_id=code, date=d.strftime("%Y-%m-%d"))
         df0["code"] = df0.index
-        df = df.append(df0, ignore_index=True)
+        df = df.append(df0, ignore_index=True, sort=False)
         d = d + relativedelta(months=1)
 
 
