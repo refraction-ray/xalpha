@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.8.7 - 2020.04.10
 ### added
 * 增加了基金详细股票和债券持仓的信息，可以通过 ``fundinfo.get_holdings(year, season)`` 调用
 ### fixed

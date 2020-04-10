@@ -136,4 +136,3 @@ def get_163_fundamentals(code, category="lrb"):
     df = pd.read_csv(url, encoding="gbk")
     df = df.set_index("报告日期")
     return df.T
-

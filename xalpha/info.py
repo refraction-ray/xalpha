@@ -73,6 +73,8 @@ def _nfloat(string):
                 result = -float(re.match(r".*折算(\d*\.\d*)\D*", string).group(1))
             elif re.match(r'"拆分\D*(\d*\.\d*)\D*"', string):
                 result = -float(re.match(r'"拆分\D*(\d*\.\d*)\D*"', string).group(1))
+            elif re.match(r"\D*分拆(\d*\.\d*)\D*", string):
+                result = -float(re.match(r"\D*分拆(\d*\.\d*)\D*", string).group(1))
             else:
                 logger.warning("The comment col cannot be converted: %s" % string)
                 result = string
@@ -190,7 +192,7 @@ class FundReport:
 
 
 @lru_cache()
-def get_fund_holdings(code, year, season=None, month=None, category="jjcc"):
+def get_fund_holdings(code, year="", season="", month="", category="jjcc"):
     """
     获取基金详细的底层持仓信息
 
@@ -201,9 +203,7 @@ def get_fund_holdings(code, year, season=None, month=None, category="jjcc"):
     :param category: str. stock 股票持仓， bond 债券持仓，天天基金无法自动处理海外基金持仓，暂未兼容 FOF 的国内基金持仓
     :return: pd.DataFrame or None. 没有对应持仓时返回 None。
     """
-    if not season and not month:
-        raise ValueError("at least specify one of season and month")
-    if not month:
+    if not month and season:
         month = 3 * int(season)
     if category in ["stock", "stocks", "jjcc", "", "gp", "s"]:
         category = "jjcc"
@@ -240,12 +240,13 @@ year={year}&month={month}".format(
         i.string for i in s.findAll("font", class_="px12") if i.text.startswith("2")
     ]
     ind = 0
-    for i, d in enumerate(timeline):
-        if d.split("-")[1][-1] == str(month)[-1]:  # avoid 09 compare to 9
-            ind = i
-            break
-    else:
-        return
+    if month:
+        for i, d in enumerate(timeline):
+            if d.split("-")[1][-1] == str(month)[-1]:  # avoid 09 compare to 9
+                ind = i
+                break
+        else:
+            return  # not update to this month
     t1 = s.findAll("table")[ind]
     main = [[j.text for j in i.contents] for i in t1.findAll("tr")[1:]]
     cols = [j.text for j in t1.findAll("tr")[0].contents if j.text.strip()]
@@ -517,6 +518,12 @@ class fundinfo(basicinfo):
             label = 1  # the scheme of round down on share purchase
         else:
             label = 0
+        if code.startswith("F") and code[1:].isdigit():
+            code = code[1:]
+        elif code.startswith("M") and code[1:].isdigit():
+            raise FundTypeError(
+                "This code seems to be a mfund, use ``mfundinfo`` instead"
+            )
         self._url = (
             "http://fund.eastmoney.com/pingzhongdata/" + code + ".js"
         )  # js url api for info of certain fund
@@ -524,8 +531,7 @@ class fundinfo(basicinfo):
             "http://fund.eastmoney.com/f10/jjfl_" + code + ".html"
         )  # html url for trade fees info of certain fund
         self.priceonly = priceonly
-        if code.startswith("F") and code[1:].isdigit():
-            code = code[1:]
+
         super().__init__(
             code,
             fetch=fetch,
@@ -677,6 +683,7 @@ class fundinfo(basicinfo):
                 .replace("以内", "")
                 .replace("的", "")
                 .replace("(含7天)", "")
+                .replace("份额持有时间", "")
             ).split("，")
             for i in range(int(len(a) / 2))
         ]
@@ -927,17 +934,17 @@ class fundinfo(basicinfo):
             self.price = self.price.append(df, ignore_index=True, sort=True)
             return df
 
-    def get_holdings(self, year, season=None, month=None, category="stock"):
+    def get_holdings(self, year="", season="", month="", category="stock"):
         return get_fund_holdings(
             self.code, year, season=season, month=month, category=category
         )
 
-    def get_stock_holdings(self, year, season=None, month=None):
+    def get_stock_holdings(self, year="", season="", month=""):
         return get_fund_holdings(
             self.code, year, season=season, month=month, category="stock"
         )
 
-    def get_bond_holdings(self, year, season=None, month=None):
+    def get_bond_holdings(self, year="", season="", month=""):
         return get_fund_holdings(
             self.code, year, season=season, month=month, category="bond"
         )
@@ -963,6 +970,10 @@ class indexinfo(basicinfo):
         self, code, value_label=0, fetch=False, save=False, path="", form="csv"
     ):
         date = yesterday()
+        if code.startswith("SH") and code[2:].isdigit():
+            code = "0" + code[2:]
+        elif code.startswith("SZ") and code[2:].isdigit():
+            code = "1" + code[2:]
         self.rate = 0
         self._url = (
             "http://quotes.money.163.com/service/chddata.html?code="
@@ -971,10 +982,6 @@ class indexinfo(basicinfo):
             + date
             + "&fields=TCLOSE"
         )
-        if code.startswith("SH") and code[2:].isdigit():
-            code = "0" + code[2:]
-        elif code.startswith("SZ") and code[2:].isdigit():
-            code = "1" + code[2:]
         super().__init__(
             code, value_label=value_label, fetch=fetch, save=save, path=path, form=form
         )
@@ -1145,10 +1152,10 @@ class mfundinfo(basicinfo):
         path="",
         form="csv",
     ):
-        self._url = "http://fund.eastmoney.com/pingzhongdata/" + code + ".js"
-        self.rate = 0
         if code.startswith("M") and code[1:].isdigit():
             code = code[1:]
+        self._url = "http://fund.eastmoney.com/pingzhongdata/" + code + ".js"
+        self.rate = 0
         super().__init__(
             code,
             fetch=fetch,
