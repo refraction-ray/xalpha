@@ -9,6 +9,7 @@ import datetime as dt
 import json
 import re
 import logging
+from functools import lru_cache
 
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -25,8 +26,9 @@ from xalpha.cons import (
     yesterdayobj,
     today,
     rget,
+    _float,
 )
-from xalpha.exceptions import FundTypeError, TradeBehaviorError
+from xalpha.exceptions import FundTypeError, TradeBehaviorError, ParserFailure
 from xalpha.indicator import indicator
 
 _warnmess = "Something weird on redem fee, please adjust self.segment by hand"
@@ -185,6 +187,100 @@ class FundReport:
                 if len(ss) == 2:
                     d["start_date"] = ss[-1]
         return d
+
+
+@lru_cache()
+def get_fund_holdings(code, year, season=None, month=None, category="jjcc"):
+    """
+    获取基金详细的底层持仓信息
+
+    :param code: str. 6 位基金代码
+    :param year:  int. eg. 2019
+    :param season: int, 1,2,3,4
+    :param month: Optional[int]. 指定 season 即可，一般不需理会
+    :param category: str. stock 股票持仓， bond 债券持仓，天天基金无法自动处理海外基金持仓，暂未兼容 FOF 的国内基金持仓
+    :return: pd.DataFrame or None. 没有对应持仓时返回 None。
+    """
+    if not season and not month:
+        raise ValueError("at least specify one of season and month")
+    if not month:
+        month = 3 * int(season)
+    if category in ["stock", "stocks", "jjcc", "", "gp", "s"]:
+        category = "jjcc"
+    elif category in ["bond", "bonds", "zq", "zqcc", "b"]:
+        category = "zqcc"
+    else:
+        raise ParserFailure("unrecognized category %s" % category)
+    r = rget(
+        "http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type={category}&code={code}&topline=10&\
+year={year}&month={month}".format(
+            year=str(year), month=str(month), code=code, category=category
+        ),
+        headers={
+            "Host": "fundf10.eastmoney.com",
+            "Referer": "http://fundf10.eastmoney.com/ccmx_{code}.html".format(
+                code=code
+            ),
+        },
+    )
+    if len(r.text) < 50:
+        return
+        # raise ParserFailure(
+        #     "This fund has no holdings on stock or bonds in this period"
+        # )
+    s = BeautifulSoup(
+        re.match("[\s\S]*apidata={ content:(.*),arryear:", r.text).groups()[0], "lxml"
+    )
+    if len(s.text) < 30:
+        return
+        # raise ParserFailure(
+        #     "This fund has no holdings on stock or bonds in this period"
+        # )
+    timeline = [
+        i.string for i in s.findAll("font", class_="px12") if i.text.startswith("2")
+    ]
+    ind = 0
+    for i, d in enumerate(timeline):
+        if d.split("-")[1][-1] == str(month)[-1]:  # avoid 09 compare to 9
+            ind = i
+            break
+    else:
+        return
+    t1 = s.findAll("table")[ind]
+    main = [[j.text for j in i.contents] for i in t1.findAll("tr")[1:]]
+    cols = [j.text for j in t1.findAll("tr")[0].contents if j.text.strip()]
+    icode = 1
+    iname = 2
+    iratio = 4
+    ishare = 5
+    ivalue = 6
+    for j, col in enumerate(cols):
+        if col.endswith("代码"):
+            icode = j
+        elif col.endswith("名称"):
+            iname = j
+        elif col.endswith("比例"):
+            iratio = j
+        elif col.startswith("持股数"):
+            ishare = j
+        elif col.startswith("持仓市值"):
+            ivalue = j
+    if category == "jjcc":
+        result = {"code": [], "name": [], "ratio": [], "share": [], "value": []}
+        for l in main:
+            result["code"].append(l[icode])
+            result["name"].append(l[iname])
+            result["ratio"].append(float(l[iratio][:-1]))
+            result["share"].append(_float(l[ishare]))
+            result["value"].append(_float(l[ivalue]))
+    elif category == "zqcc":
+        result = {"code": [], "name": [], "ratio": [], "value": []}
+        for l in main:
+            result["code"].append(l[1])
+            result["name"].append(l[2])
+            result["ratio"].append(float(l[3][:-1]))
+            result["value"].append(_float(l[4]))
+    return pd.DataFrame(result)
 
 
 class basicinfo(indicator):
@@ -428,6 +524,8 @@ class fundinfo(basicinfo):
             "http://fund.eastmoney.com/f10/jjfl_" + code + ".html"
         )  # html url for trade fees info of certain fund
         self.priceonly = priceonly
+        if code.startswith("F") and code[1:].isdigit():
+            code = code[1:]
         super().__init__(
             code,
             fetch=fetch,
@@ -449,15 +547,21 @@ class fundinfo(basicinfo):
 
     def _basic_init(self):
         self._page = rget(self._url)
+        if self._page.status_code == 404:
+            raise ParserFailure("Unrecognized fund, please check fund code you input.")
         if self._page.text[:800].find("Data_millionCopiesIncome") >= 0:
             raise FundTypeError("This code seems to be a mfund, use mfundinfo instead")
 
-        l = re.match(r".*Data_netWorthTrend = ([^;]*);.*", self._page.text).groups()[0]
+        l = re.match(
+            r"[\s\S]*Data_netWorthTrend = ([^;]*);[\s\S]*", self._page.text
+        ).groups()[0]
         l = l.replace("null", "None")  # 暂未发现基金净值有 null 的基金，若有，其他地方也很可能出问题！
         l = eval(l)
-        ltot = re.match(r".*Data_ACWorthTrend = ([^;]*);.*", self._page.text).groups()[
+        ltot = re.match(
+            r"[\s\S]*Data_ACWorthTrend = ([^;]*);[\s\S]*", self._page.text
+        ).groups()[
             0
-        ]
+        ]  # .* doesn't match \n
         ltot = ltot.replace("null", "None")  ## 096001 总值数据中有 null！
         ltot = eval(ltot)
         ## timestamp transform tzinfo must be taken into consideration
@@ -478,13 +582,19 @@ class fundinfo(basicinfo):
 
         try:
             rate = float(
-                eval(re.match(r".*fund_Rate=([^;]*);.*", self._page.text).groups()[0])
+                eval(
+                    re.match(
+                        r"[\s\S]*fund_Rate=([^;]*);[\s\S]*", self._page.text
+                    ).groups()[0]
+                )
             )
         except ValueError:
             rate = 0
             logger.info("warning: this fund has no data for rate")  # know cases: ETF
 
-        name = eval(re.match(r".*fS_name = ([^;]*);.*", self._page.text).groups()[0])
+        name = eval(
+            re.match(r"[\s\S]*fS_name = ([^;]*);[\s\S]*", self._page.text).groups()[0]
+        )
 
         self.rate = rate
         # shengou rate in tiantianjijin, daeshengou rate discount is not considered
@@ -492,6 +602,8 @@ class fundinfo(basicinfo):
         df = pd.DataFrame(data=infodict)
         df = df[df["date"].isin(opendate)]
         df = df.reset_index(drop=True)
+        if len(df) == 0:
+            raise ParserFailure("no price table found for this fund %s" % self.code)
         self.price = df[df["date"] <= yesterdaydash()]
         # deal with the redemption fee attrs finally
         if not self.priceonly:
@@ -505,42 +617,83 @@ class fundinfo(basicinfo):
         soup = BeautifulSoup(
             feepage.text, "lxml"
         )  # parse the redemption fee html page with beautiful soup
-        self.feeinfo = [
-            item.string
-            for item in soup.findAll("a", {"name": "shfl"})[
-                0
-            ].parent.parent.next_sibling.next_sibling.find_all("td")
-            if item.string != "---"
-        ]
+        somethingwrong = False
+        if not soup.findAll("a", {"name": "shfl"}):
+            somethingwrong = True
+            logger.warning("%s 基金赎回信息为空，可能由于该基金已终止运作" % self.code)
+            self.feeinfo = []
+        else:
+            self.feeinfo = [
+                item.string
+                for item in soup.findAll("a", {"name": "shfl"})[
+                    0
+                ].parent.parent.next_sibling.next_sibling.find_all("td")
+                if item.string != "---"
+            ]
         # this could be [], known case 510030
+
         if not self.feeinfo or len(self.feeinfo) % 2 != 0:
-            logger.debug("feeinfo is not typical, mainly due to ETF: %s" % self.feeinfo)
+            somethingwrong = True
+        else:
+            for item in self.feeinfo:
+                if "开放期" in item or "封闭" in item or "开放日期" in item or "运作期" in item:
+                    # 暂时没有完美维护定开基金赎回费处理的计划
+                    somethingwrong = True
+        if somethingwrong:
+            logger.warning(
+                "%s 赎回费信息异常，多是因为定开基金，封闭基金或场内 ETF: %s" % (self.code, self.feeinfo)
+            )
             self.feeinfo = ["小于7天", "1.50%", "大于等于7天", "0.00%"]
-        self.segment = fundinfo._piecewise(self.feeinfo)
+        # print(self.feeinfo)
+        try:
+            self.segment = fundinfo._piecewise(self.feeinfo)
+        except (ValueError, IndexError) as e:
+            logger.warning(
+                "%s 赎回费信息抓取异常，请手动设定 ``self.segment`` 和 ``self.feeinfo``: %s"
+                % (self.code, self.feeinfo)
+            )
+            # below is default one
+            self.feeinfo = ["小于7天", "1.50%", "大于等于7天", "0.00%"]
+            self.segment = fundinfo._piecewise(self.feeinfo)
 
     @staticmethod
     def _piecewise(a):
         """
         Transform the words list into a pure number segment list for redemption fee, eg. [[0,7],[7,365],[365]]
         """
+
         b = [
             (
                 a[2 * i]
+                .replace("持有期限", "")
+                .replace("开放运作期时持有", "")
+                .replace("不少于", "")
                 .replace("小于", "")
                 .replace("大于", "")
                 .replace("等于", "")
                 .replace("个", "")
+                .replace("持有", "")
+                .replace("以上", "")
+                .replace("以内", "")
+                .replace("的", "")
+                .replace("(含7天)", "")
             ).split("，")
             for i in range(int(len(a) / 2))
         ]
+        # ['赎回时份额持有7天以内的', '1.50%', '持有7天以上(含7天),30天以内的', '0.10%', '赎回时份额持有满30天以上(含30天)的', '0.00%']
+        # ['由于本基金最短持有期限为三年,赎回费率设置为零。', '0.00%', '对持续持有期少于7日的投资者收取不低于1.5%的赎回费。', '1.50%']
+        #  ['对持续持有期少于7日的投资者收取1.5%的赎回费并全额计入基金财产', '1.50%', '对于持续持有期大于等于7日的投资者不收取赎回费用。', '0.00%']
+        # print(b)
         for j, tem in enumerate(b):
             for i, num in enumerate(tem):
                 if num[-1] == "天":
                     num = int(num[:-1])
                 elif num[-1] == "月":
                     num = int(num[:-1]) * 30
+                elif num == ".5年":
+                    num = 183
                 else:
-                    num = int(num[:-1]) * 365
+                    num = int(float(num[:-1]) * 365)
                 b[j][i] = num
         if len(b[0]) == 1:  # 有时赎回费会写大于等于一天
             b[0].insert(0, 0)
@@ -774,6 +927,21 @@ class fundinfo(basicinfo):
             self.price = self.price.append(df, ignore_index=True, sort=True)
             return df
 
+    def get_holdings(self, year, season=None, month=None, category="stock"):
+        return get_fund_holdings(
+            self.code, year, season=season, month=month, category=category
+        )
+
+    def get_stock_holdings(self, year, season=None, month=None):
+        return get_fund_holdings(
+            self.code, year, season=season, month=month, category="stock"
+        )
+
+    def get_bond_holdings(self, year, season=None, month=None):
+        return get_fund_holdings(
+            self.code, year, season=season, month=month, category="bond"
+        )
+
 
 class indexinfo(basicinfo):
     """
@@ -803,6 +971,10 @@ class indexinfo(basicinfo):
             + date
             + "&fields=TCLOSE"
         )
+        if code.startswith("SH") and code[2:].isdigit():
+            code = "0" + code[2:]
+        elif code.startswith("SZ") and code[2:].isdigit():
+            code = "1" + code[2:]
         super().__init__(
             code, value_label=value_label, fetch=fetch, save=save, path=path, form=form
         )
@@ -975,6 +1147,8 @@ class mfundinfo(basicinfo):
     ):
         self._url = "http://fund.eastmoney.com/pingzhongdata/" + code + ".js"
         self.rate = 0
+        if code.startswith("M") and code[1:].isdigit():
+            code = code[1:]
         super().__init__(
             code,
             fetch=fetch,
@@ -992,10 +1166,12 @@ class mfundinfo(basicinfo):
 
         l = eval(
             re.match(
-                r".*Data_millionCopiesIncome = ([^;]*);.*", self._page.text
+                r"[\s\S]*Data_millionCopiesIncome = ([^;]*);[\s\S]*", self._page.text
             ).groups()[0]
         )
-        self.name = re.match(r".*fS_name = \"([^;]*)\";.*", self._page.text).groups()[0]
+        self.name = re.match(
+            r"[\s\S]*fS_name = \"([^;]*)\";[\s\S]*", self._page.text
+        ).groups()[0]
         tz_bj = dt.timezone(dt.timedelta(hours=8))
         datel = [
             dt.datetime.fromtimestamp(int(d[0]) / 1e3, tz=tz_bj).replace(tzinfo=None)
@@ -1016,6 +1192,8 @@ class mfundinfo(basicinfo):
             }
         )
         df = df[df["date"].isin(opendate)]
+        if len(df) == 0:
+            raise ParserFailure("no price table for %s" % self.code)
         df = df.reset_index(drop=True)
         self.price = df[df["date"] <= yesterdaydash()]
 

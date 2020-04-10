@@ -48,6 +48,7 @@ from xalpha.cons import (
     tz_bj,
     today_obj,
     region_trans,
+    _float,
 )
 from xalpha.provider import data_source
 from xalpha.exceptions import DataPossiblyWrong, ParserFailure
@@ -801,22 +802,6 @@ def _get_daily(
         df = df[df.date <= end_str]
         df = df[df.date >= start_str]
         return df
-
-
-def _float(n):
-    try:
-        n = n.replace(",", "")
-        if n.endswith("K") or n.endswith("k"):
-            n = float(n[:-1]) * 1000
-        elif n.endswith("M") or n.endswith("m"):
-            n = float(n[:-1]) * 1000 * 1000
-        elif n.endswith("G") or n.endswith("g") or n.endswith("B") or n.endswith("b"):
-            n = float(n[:-1]) * 1000 * 1000 * 1000
-        elif n == "-":
-            return 0
-    except AttributeError:
-        pass
-    return float(n)
 
 
 def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):

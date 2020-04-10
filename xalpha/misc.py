@@ -11,8 +11,8 @@ from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
-from xalpha.cons import rget, rget_json, today_obj, region_trans
-from xalpha.universal import lru_cache_time, _float
+from xalpha.cons import rget, rget_json, today_obj, region_trans, _float
+from xalpha.universal import lru_cache_time
 from xalpha.exceptions import ParserFailure
 
 # 该模块只是保存其他一些爬虫的函数，其接口很不稳定，不提供文档和测试，且随时增删，慎用！
@@ -136,3 +136,4 @@ def get_163_fundamentals(code, category="lrb"):
     df = pd.read_csv(url, encoding="gbk")
     df = df.set_index("报告日期")
     return df.T
+

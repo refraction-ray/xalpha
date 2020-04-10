@@ -405,6 +405,22 @@ def scale_dict(d, scale=1, ulimit=100, dlimit=50, aim=None):
     return d
 
 
+def _float(n):
+    try:
+        n = n.replace(",", "")
+        if n.endswith("K") or n.endswith("k"):
+            n = float(n[:-1]) * 1000
+        elif n.endswith("M") or n.endswith("m"):
+            n = float(n[:-1]) * 1000 * 1000
+        elif n.endswith("G") or n.endswith("g") or n.endswith("B") or n.endswith("b"):
+            n = float(n[:-1]) * 1000 * 1000 * 1000
+        elif n == "-":
+            return 0
+    except AttributeError:
+        pass
+    return float(n)
+
+
 def reconnect(tries=5, timeout=16):
     def robustify(f):
         @wraps(f)
