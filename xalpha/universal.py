@@ -38,7 +38,7 @@ except ImportError:
     except ImportError:
         pass
 
-from xalpha.info import basicinfo, fundinfo, mfundinfo
+from xalpha.info import basicinfo, fundinfo, mfundinfo, get_fund_holdings
 from xalpha.indicator import indicator
 from xalpha.cons import (
     rget,
@@ -737,8 +737,10 @@ def _get_daily(
             or code.startswith("000")
         ):
             df = _get_peb_range(code=code, start=start_str, end=end_str)
+        elif code.startswith("F"):
+            df = get_fund_peb_range(code=code, start=start, end=end)
         else:
-            df = get_stock_peb_range(code=code, start=start, end=end)
+            df = get_stock_peb_range(code=code, start=start, end=end, wrapper=True)
 
     elif _from == "iw":
         df = _get_index_weight_range(code=code, start=start_str, end=end_str)
@@ -817,7 +819,7 @@ def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
     r = rget_json(
         url.format(code=code),
         cookies={"xq_a_token": token},
-        headers={"user-agent": "Mozilla/5.0"},
+        headers={"user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4)"},
     )
     n = r["data"]["quote"]["name"]
     q = r["data"]["quote"]["current"]
@@ -839,7 +841,7 @@ def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
     )
     share = r["data"]["quote"]["total_shares"]
     fshare = r["data"]["quote"]["float_shares"]
-    volume = _float(r["data"]["quote"]["volume"])
+    volume = r["data"]["quote"]["volume"]
     return {
         "name": n,
         "current": q,
@@ -1140,8 +1142,8 @@ def get_rt(
             _from = "ttjj"
         elif len(code.split("/")) > 1:
             _from = "investing"
-        else:  # 默认不启用雪球实时，只做双重验证备份
-            _from = "sina"
+        else:  # 默认启用雪球实时，新浪纯指数行情不完整
+            _from = "xueqiu"
     if _from in ["cninvesting", "investing"]:
         try:
             return get_cninvesting_rt(code)
@@ -1548,7 +1550,7 @@ def _get_peb_range(code, start, end):  # 盈利，净资产，总市值
     return pd.DataFrame(data)
 
 
-def get_stock_peb_range(code, start, end):
+def get_stock_peb_range(code, start, end, wrapper=False):
     """
     获取股票历史 pe pb
 
@@ -1562,9 +1564,134 @@ def get_stock_peb_range(code, start, end):
     count = (today_obj() - dt.datetime.strptime(start, "%Y%m%d")).days
     df = get_historical_fromxq(code, count, full=True)
     df = df[["date", "pe", "pb", "ps"]]
-    df = df[df["date"] >= start]
-    df = df[df["date"] <= end]
+    if not wrapper:
+        df = df[df["date"] >= start]
+        df = df[df["date"] <= end]
     return df
+
+
+def ttjjcode(code):
+    """
+    将天天基金的持仓股票代码标准化
+
+    :param code: str.
+    :return: str.
+    """
+    if code.endswith(".HK"):
+        return "HK" + code[:-3]
+    elif code.endswith(".US"):
+        return code[:-3]
+    elif code.isdigit() and len(code) == 5:
+        return "HK" + code
+    elif code.isdigit() and len(code) == 6:
+        if code.startswith("1") or code.startswith("0") or code.startswith("3"):
+            return "SZ" + code
+        elif code.startswith("5") or code.startswith("6"):
+            return "SH" + code
+        else:
+            logger.warning("unrecognized code format %s" % code)
+            return "0"
+    else:
+        logger.info("not so sure about code format %s, taken as US stock" % code)
+        return code
+
+
+def get_fund_peb(code, date, threhold=0.3):
+    """
+    根据基金的股票持仓，获取对应日期的 pe，pb 估值
+
+    :param code: str. 基金代码
+    :param date:
+    :param threhold: float, default 0.3. 为了计算快速，占比小于千分之三的股票将舍弃
+    :return:
+    """
+    if code.startswith("F"):
+        code = code[1:]
+    date = date.replace("/", "").replace("-", "")
+    d = dt.datetime.strptime(date, "%Y%m%d")
+    if d.month > 3 and d.month < 8:
+        year = d.year - 1
+        season = 4
+    elif d.month <= 3:
+        year = d.year - 1
+        season = 2
+    else:
+        year = d.year
+        season = 2
+        # season 只选 2，4, 具有更详细的持仓信息
+    df = get_fund_holdings(code, year, season)
+    if df is None:
+        if season == 4:
+            season = 2
+        else:
+            year -= 1
+            season = 4
+        df = get_fund_holdings(code, year, season)
+    if df is None:
+        logger.warning("%s seems has no holdings data in this time %s" % (code, year))
+        return {"pe": None, "pb": None}
+    df = df[df["ratio"] >= threhold]
+    df["scode"] = df["code"].apply(ttjjcode)
+    df = df[df["scode"] != "0"]
+    if len(df) == 0:
+        return {"pe": None, "pb": None}
+
+    pel, pbl = [], []
+    for i, r in df.iterrows():
+        try:
+            fdf = get_daily("peb-" + r["scode"], end=date, prev=60)
+            if len(fdf) == 0:
+                # 已退市或改名
+                logger.warning("%s: 无法获取，可能已退市,当时休市或改名" % r["scode"])
+                pel.append(None)
+                pbl.append(None)
+            else:
+                fdf = fdf.iloc[-1]
+                pel.append(fdf["pe"])
+                pbl.append(fdf["pb"])
+        except (KeyError, TypeError, IndexError) as e:
+            logger.warning(
+                "%s: 获取历史估值出现问题: %s, 可能由于网站故障或股票代码非中美市场" % (r["scode"], e.args[0])
+            )
+            pel.append(None)
+            pbl.append(None)
+    df["pe"] = pel
+    df["pb"] = pbl
+    r = {}
+    pedf = df[~pd.isna(df["pe"])]
+    pbdf = df[~pd.isna(df["pb"])]
+    if len(pbdf) < 0.5 * len(df):  # 有时候会有个别标的有pb值
+        r["pb"] = None
+    else:
+        print(pbdf)
+        pbdf["b"] = pbdf["ratio"] / (pbdf["pb"] + 0.000001)
+        r["pb"] = pbdf.ratio.sum() / pbdf.b.sum()
+    if len(pedf) == 0:
+        r["pe"] = None
+    else:
+        pedf["e"] = pedf["ratio"] / (pedf["pe"] + 0.000001)
+        r["pe"] = pedf.ratio.sum() / pedf.e.sum()
+    return r
+
+
+def get_fund_peb_range(code, start, end):
+    """
+    获取一段时间的基金历史估值，每周五为频率
+
+    :param code:
+    :param start:
+    :param end:
+    :return:
+    """
+    if code.startswith("F"):
+        code = code[1:]
+    data = {"date": [], "pe": [], "pb": []}
+    for d in pd.date_range(start=start, end=end, freq="W-FRI"):
+        data["date"].append(d)
+        r = get_fund_peb(code, date=d.strftime("%Y-%m-%d"))
+        data["pe"].append(r["pe"])
+        data["pb"].append(r["pb"])
+    return pd.DataFrame(data)
 
 
 def set_backend(**ioconf):

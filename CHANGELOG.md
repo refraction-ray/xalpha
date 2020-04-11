@@ -1,7 +1,8 @@
 # Changelog
 ## Unreleased
 ### added
-* get_rt 默认改为新浪源，A 股标的增加买卖前5手数据
+* get_rt 新浪源，A 股标的增加买卖前5手数据，可通过添加选项 _from="sina" 调用
+* 增加根据持仓的基金历史估值分析，同时使 PEBHistory 可以 dispatch 到指数，申万行业，个股和基金估值系统
 ### fixed
 * 修复 get_peb 的分流
 

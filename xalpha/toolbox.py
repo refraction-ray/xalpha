@@ -76,7 +76,9 @@ set_holdings()
 
 
 def _set_display_notebook():
-    """Initialize DataTable mode for pandas DataFrame represenation."""
+    """
+    Initialize DataTable mode for pandas DataFrame represenation.
+    """
     from IPython.core.display import display, Javascript
 
     display(
@@ -129,7 +131,30 @@ def set_display(env=""):
         raise ParserFailure("unknown env %s" % env)
 
 
-class PEBHistory:
+def PEBHistory(code, start=None, end=None):
+    """
+    历史估值分析工具箱
+
+    :param code: str.
+        1. SH000***, SZ399***, 指数历史估值情况，第一原理计算，需要聚宽数据源
+        2. F******, 基金历史估值情况，根据股票持仓，第一原理计算
+        3. 8*****, 申万行业估值数据，需要聚宽数据源
+        4. 沪深港美股票代码，个股历史估值数据
+    :param start: str, %Y%m%d, 默认起点随着标的类型不同而不同
+    :param end: str, 仅限于 debug，强烈不建议设定，默认到昨天
+    :return: some object of PEBHistory class
+    """
+    if code.startswith("SH000") or code.startswith("SZ399"):
+        return IndexPEBHistory(code, start, end)
+    elif code.startswith("F"):
+        return FundPEBHistory(code, start, end)
+    elif code.startswith("8"):
+        return SWPEBHistory(code, start, end)
+    else:
+        return StockPEBHistory(code, start, end)
+
+
+class IndexPEBHistory:
     """
     对于指数历史 PE PB 的封装类
     """
@@ -286,16 +311,19 @@ class PEBHistory:
             ),
         )
         print("%s%s估值情况\n" % (self.title, self.name))
-        if dt.datetime.strptime(self.start, "%Y-%m-%d") > dt.datetime(2015, 1, 1):
-            print("(历史数据较少，仅供参考)\n")
-        #         self.percentile()
+        # if dt.datetime.strptime(self.start, "%Y-%m-%d") > dt.datetime(2015, 1, 1):
+        #     print("(历史数据较少，仅供参考)\n")
         print("现在 PE 绝对值 %s, 相对分位 %s%%，距离最低点 %s %%\n" % result[0])
         print("现在 PB 绝对值 %s, 相对分位 %s%%，距离最低点 %s %%\n" % result[1])
         if return_tuple:
             return result
 
 
-class StockPEBHistory(PEBHistory):
+class StockPEBHistory(IndexPEBHistory):
+    """
+    个股历史估值封装
+    """
+
     def __init__(self, code, start=None, end=None):
         """
 
@@ -317,8 +345,29 @@ class StockPEBHistory(PEBHistory):
         self._gen_percentile()
 
 
-class SWPEBHistory(PEBHistory):
+class FundPEBHistory(IndexPEBHistory):
     """
+    基金历史估值封装
+    """
+
+    def __init__(self, code, start=None, end=None):
+        self.code = code
+        self.scode = code
+        if not end:
+            end = (dt.datetime.now() - dt.timedelta(days=1)).strftime("%Y-%m-%d")
+        if not start:
+            start = "2016-01-01"  # 基金历史通常比较短
+        self.start = start
+        self.df = xu.get_daily("peb-" + code, start=start, end=end)
+        self.name = get_rt(code)["name"]
+        self.title = "基金"
+        self.ratio = None
+        self._gen_percentile()
+
+
+class SWPEBHistory(IndexPEBHistory):
+    """
+    申万行业历史估值封装。
     申万一级行业指数列表：
     https://www.hysec.com/hyzq/hy/detail/detail.jsp?menu=4&classid=00000003001200130002&firClassid=000300120013&twoClassid=0003001200130002&threeClassid=0003001200130002&infoId=3046547
     二三级行业指数也支持

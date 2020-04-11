@@ -211,6 +211,8 @@ def get_fund_holdings(code, year="", season="", month="", category="jjcc"):
         category = "zqcc"
     else:
         raise ParserFailure("unrecognized category %s" % category)
+    if code.startswith("F"):
+        code = code[1:]
     r = rget(
         "http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type={category}&code={code}&topline=10&\
 year={year}&month={month}".format(

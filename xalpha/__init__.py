@@ -36,6 +36,8 @@ from xalpha.provider import show_providers, set_proxy
 from xalpha.toolbox import (
     PEBHistory,
     Compare,
+    IndexPEBHistory,
+    FundPEBHistory,
     SWPEBHistory,
     StockPEBHistory,
     QDIIPredict,
