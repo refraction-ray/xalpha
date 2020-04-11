@@ -122,6 +122,7 @@ def get_historical_fromxq(code, count, full=False):
     url = "https://stock.xueqiu.com/v5/stock/chart/kline.json?symbol={code}&begin={tomorrow}&period=day&type=before&count=-{count}"
     if full:
         url += "&indicator=kline,pe,pb,ps,pcf,market_capital,agt,ggt,balance"
+    # pe 是 TTM 数据
     r = rget_json(
         url.format(code=code, tomorrow=int(tomorrow_ts() * 1000), count=count),
         cookies={"xq_a_token": get_token()},
@@ -729,7 +730,12 @@ def _get_daily(
         df = get_fund(code)
 
     elif _from == "peb":
-        if code.startswith("000") or code.startswith("399"):
+        if (
+            code.startswith("SH000")
+            or code.startswith("SZ399")
+            or code.startswith("399")
+            or code.startswith("000")
+        ):
             df = _get_peb_range(code=code, start=start_str, end=end_str)
         else:
             df = get_stock_peb_range(code=code, start=start, end=end)
@@ -831,6 +837,9 @@ def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
     timestr = dt.datetime.fromtimestamp(r["data"]["quote"]["time"] / 1000).strftime(
         "%Y-%m-%d %H:%M:%S"
     )
+    share = r["data"]["quote"]["total_shares"]
+    fshare = r["data"]["quote"]["float_shares"]
+    volume = _float(r["data"]["quote"]["volume"])
     return {
         "name": n,
         "current": q,
@@ -839,6 +848,9 @@ def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
         "currency": currency,
         "market": market,  # HK, US, CN
         "time": timestr,
+        "totshare": share,
+        "floatshare": fshare,
+        "volume": volume,
     }
 
 
@@ -937,19 +949,25 @@ def get_rt_from_sina(code):
             d["percent"] = round(float(l[8]), 2)
             d["market"] = "HK"
             d["time"] = l[17] + " " + l[18]
-        else:
+            d["current_ext"] = None
+
+        else:  # A 股
             d["current"] = float(l[3])
             d["currency"] = "CNY"
             d["percent"] = round((float(l[3]) / float(l[2]) - 1) * 100, 2)
             d["market"] = "CN"
             d["time"] = l[-4] + " " + l[-3]
-        d["current_ext"] = None
+            for i in range(10, 19)[::2]:
+                d["buy" + str(int((i - 8) / 2))] = (l[i + 1], l[i])
+            for i in range(20, 29)[::2]:
+                d["sell" + str(int((i - 18) / 2))] = (l[i + 1], l[i])
+            d["current_ext"] = None
 
     else:
         d["currency"] = "USD"
         d["current"] = float(l[1])
         d["percent"] = float(l[2])
-        d["current_ext"] = None
+        d["current_ext"] = _float(l[21]) if _float(l[21]) > 0 else None
         d["market"] = "US"
         d["time"] = l[3]
     return d
@@ -1122,8 +1140,8 @@ def get_rt(
             _from = "ttjj"
         elif len(code.split("/")) > 1:
             _from = "investing"
-        else:  # 默认不启用新浪实时，只做双重验证备份
-            _from = "xueqiu"
+        else:  # 默认不启用雪球实时，只做双重验证备份
+            _from = "sina"
     if _from in ["cninvesting", "investing"]:
         try:
             return get_cninvesting_rt(code)
@@ -1137,17 +1155,23 @@ def get_rt(
         r2 = get_rt_from_sina(code)
         if abs(r1["current"] / r2["current"] - 1) > double_check_threhold:
             raise DataPossiblyWrong("realtime data unmatch for %s" % code)
-        return r1
+        return r2
     elif _from in ["xueqiu", "xq", "snowball"]:
         try:
             return get_xueqiu_rt(code, token=get_token())
-        except Exception as e:  # 默认雪球实时引入备份机制
+        except (IndexError, ValueError, AttributeError, TypeError) as e:  # 默认雪球实时引入备份机制
             logging.warning(
                 "Fails due to %s, now trying backup data source from sina" % e.args[0]
             )
             return get_rt_from_sina(code)
     elif _from in ["sina", "sn", "xinlang"]:
-        return get_rt_from_sina(code)
+        try:
+            return get_rt_from_sina(code)
+        except (IndexError, ValueError, AttributeError, TypeError) as e:  # 默认雪球实时引入备份机制
+            logging.warning(
+                "Fails due to %s, now trying backup data source from xueqiu" % e.args[0]
+            )
+            return get_xueqiu_rt(code, token=get_token())
     elif _from in ["ttjj"]:
         return get_rt_from_ttjj(code)
     elif _from in ["FT", "ft", "FTI"]:

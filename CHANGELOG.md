@@ -1,5 +1,9 @@
 # Changelog
 ## Unreleased
+### added
+* get_rt 默认改为新浪源，A 股标的增加买卖前5手数据
+### fixed
+* 修复 get_peb 的分流
 
 ## v0.8.7 - 2020.04.10
 ### added
