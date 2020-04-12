@@ -7,7 +7,7 @@ xalpha
 [![codecov](https://codecov.io/gh/refraction-ray/xalpha/branch/master/graph/badge.svg)](https://codecov.io/gh/refraction-ray/xalpha)
 [![license](https://img.shields.io/:license-mit-blue.svg)](https://badges.mit-license.org/)
 
-**国内基金投资的全流程管理**
+**基金投资的全流程管理**
 
 场外基金的信息与净值获取，精确到分的投资账户记录整合分析与丰富可视化，简单的策略回测以及根据预设策略的定时投资提醒。尤其适合资金反复进出的定投型和网格型投资的概览与管理分析。
 
@@ -36,9 +36,11 @@ xa.get_rt("commodities/crude-oil") # 原油期货实时数据
 xa.get_rt("HK00700", double_check=True) # 双重验证高稳定性支持的实时数据
 ```
 
-一行拿到指数的历史估值和即时估值分析（需要聚宽数据，本地试用申请或直接在聚宽云平台运行）
+一行拿到指数，行业，基金和个股的历史估值和即时估值分析（指数部分需要聚宽数据，本地试用申请或直接在聚宽云平台运行）
+
 ```python
 xa.PEBHistory("SH000990").summary()
+xa.PEBHistory("F100032").v()
 ```
 
 xalpha 不止如此，更多特性，欢迎探索。不只是数据，更是工具！

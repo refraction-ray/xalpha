@@ -1663,7 +1663,6 @@ def get_fund_peb(code, date, threhold=0.3):
     if len(pbdf) < 0.5 * len(df):  # 有时候会有个别标的有pb值
         r["pb"] = None
     else:
-        print(pbdf)
         pbdf["b"] = pbdf["ratio"] / (pbdf["pb"] + 0.000001)
         r["pb"] = pbdf.ratio.sum() / pbdf.b.sum()
     if len(pedf) == 0:

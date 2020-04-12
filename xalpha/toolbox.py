@@ -10,6 +10,7 @@ import pandas as pd
 from collections import deque
 from functools import wraps, lru_cache
 import logging
+from scipy import stats
 
 from xalpha.cons import (
     opendate,
@@ -20,9 +21,11 @@ from xalpha.cons import (
     tz_bj,
     holidays,
 )
+from xalpha.info import get_fund_holdings
 from xalpha.universal import (
     get_rt,
     get_bar,
+    ttjjcode,
     _convert_code,
     _inverse_convert_code,
     fetch_backend,
@@ -425,6 +428,89 @@ class SWPEBHistory(IndexPEBHistory):
         self._gen_percentile()
 
 
+class TEBHistory:
+    """
+    指数总盈利和总净资产变化的分析工具箱
+    """
+
+    def __init__(self, code, start=None, end=None):
+        """
+
+        :param code: str. 指数代码，eg. SH000016
+        :param start:
+        :param end:
+        """
+        df = xu.get_daily("teb-" + code, start=start, end=end)
+        df["e"] = pd.to_numeric(df["e"])
+        df["b"] = pd.to_numeric(df["b"])
+        df["lnb"] = df["b"].apply(lambda s: np.log(s))
+        df["lne"] = df["e"].apply(lambda s: np.log(s))
+        df["roe"] = df["e"] / df["b"] * 100
+        df["date_count"] = (df["date"] - df["date"].iloc[0]).apply(
+            lambda s: int(s.days)
+        )
+        self.df = df
+        self.fit(verbose=False)
+
+    def fit(self, verbose=True):
+        """
+        fit exponential trying find annualized increase
+
+        :param verbose: if True (default), print debug info of linear regression
+        :return:
+        """
+        df = self.df
+        slope_b, intercept_b, r_b, p_b, std_err_b = stats.linregress(
+            df["date_count"], df["lnb"]
+        )
+        slope_e, intercept_e, r_e, p_e, std_err_e = stats.linregress(
+            df["date_count"], df["lne"]
+        )
+        if verbose:
+            print("B fit", slope_b, intercept_b, r_b, p_b, std_err_b)
+            print("E fit", slope_e, intercept_e, r_e, p_e, std_err_e)
+        self.slope_b = slope_b
+        self.intercept_b = intercept_b
+        self.slope_e = slope_e
+        self.intercept_e = intercept_e
+
+    def result(self):
+        """
+
+        :return: Dict[str, float]. 返回指数总净资产和净利润的年均增速
+        （拟合平滑意义，而非期末除以期初再开方，更好减少时间段两端极端情形的干扰）
+        """
+        return {
+            "b_increase_percent": round((np.exp(365 * self.slope_b) - 1) * 100, 2),
+            "e_increase_percent": round((np.exp(365 * self.slope_e) - 1) * 100, 2),
+        }
+
+    def v(self, y="lne"):
+        """
+        总资产或总利润与拟合曲线的可视化
+
+        :param y: str. one of lne, lnb, e, b, roe
+        :return:
+        """
+        df = self.df
+        if y == "roe":
+            return df.plot(x="date", y="roe")
+        fitx = np.arange(0, df.iloc[-1]["date_count"], 10)
+        if y == "lne":
+            fity = self.intercept_e + self.slope_e * fitx
+        elif y == "lnb":
+            fity = self.intercept_b + self.slope_b * fitx
+        elif y == "e":
+            fity = np.exp(self.intercept_e + self.slope_e * fitx)
+        elif y == "b":
+            fity = np.exp(self.intercept_b + self.slope_b * fitx)
+        else:
+            raise ParserFailure("Unrecogized y %s" % y)
+        ax = df.plot(x="date_count", y=y)
+        ax.plot(fitx, fity)
+        return ax
+
+
 class Compare:
     """
     将不同金融产品同起点归一化比较
@@ -793,6 +879,41 @@ def evaluate_fluctuation(hdict, date, lastday=None, _check=None):
     remain = 100 - tot
     price += remain / 100
     return (price - 1) * 100
+
+
+def get_holdings_dict(code, aim=95):
+    """
+    通过天天基金的股票持仓数据来生成实时预测所需的持仓字典，不保证稳定性和可靠性以及 API 的连续性，慎用
+
+    :param code:
+    :param aim:
+    :return:
+    """
+    df = get_fund_holdings(code)
+    if df.ratio.sum() < 60:
+        d = dt.datetime.now()
+        if d.month > 3 and d.month < 8:
+            year = d.year - 1
+            season = 4
+        elif d.month <= 3:
+            year = d.year - 1
+            season = 2
+        else:
+            year = d.year
+            season = 2
+        # season 只选 2，4, 具有更详细的持仓信息
+        df = get_fund_holdings(code, year, season)
+        if df is None:
+            if season == 4:
+                season = 2
+            else:
+                year -= 1
+                season = 4
+            df = get_fund_holdings(code, year, season)
+    df["scode"] = df["code"].apply(ttjjcode)
+    d = pd.Series(df.ratio.values, index=df.scode).to_dict()
+    d = scale_dict(d, aim=aim)
+    return d
 
 
 class RTPredict:
