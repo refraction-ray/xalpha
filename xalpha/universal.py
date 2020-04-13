@@ -1785,18 +1785,19 @@ def get_teb(code, date):
     df = get_fundamentals(query(valuation).filter(valuation.code.in_(sl)), date=date)
     df["e"] = df["market_cap"] / df["pe_ratio"]
     df["b"] = df["market_cap"] / df["pb_ratio"]
-    return {"e": df["e"].sum(), "b": df["b"].sum()}  # 亿人民币
+    return {"e": df["e"].sum(), "b": df["b"].sum(), "m": df["market_cap"].sum()}  # 亿人民币
 
 
-def get_teb_range(code, start, end):
+def get_teb_range(code, start, end, freq="W-FRI"):
     if len(code.split(".")) != 2:
         code = _inverse_convert_code(code)
-    data = {"date": [], "e": [], "b": []}
-    for d in pd.date_range(start, end, freq="W-FRI"):
+    data = {"date": [], "e": [], "b": [], "m": []}
+    for d in pd.date_range(start, end, freq=freq):
         data["date"].append(d)
         r = get_teb(code, d.strftime("%Y-%m-%d"))
         data["e"].append(r["e"])
         data["b"].append(r["b"])
+        data["m"].append(r["m"])
     df = pd.DataFrame(data)
     return df
 

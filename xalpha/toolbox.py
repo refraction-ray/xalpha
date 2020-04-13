@@ -753,10 +753,10 @@ def is_on(date, market="CN", no_trading_days=None):
         code = "indices/hang-sen-40"
     else:
         logger.warning(
-            "unknown oversea market %s, assuming %s is not a holiday"
+            "unknown oversea market %s, assuming %s follows US holiday pattern"
             % (market, date_dash)
-        )
-        return True
+        )  # not sure which last resort is the best, but make no huge difference anyhow
+        code = "indices/us-spx-500"
     return _is_on(code, date)
 
 
