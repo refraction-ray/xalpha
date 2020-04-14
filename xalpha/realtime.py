@@ -9,10 +9,9 @@ from email.header import Header
 from email.mime.text import MIMEText
 from email.utils import formataddr, parseaddr
 from re import match
-
 import pandas as pd
 
-from xalpha.cons import today, rget
+from xalpha.cons import today_obj, rget
 from xalpha.info import fundinfo
 from xalpha.trade import trade
 
@@ -138,7 +137,7 @@ class review:
     :param date: object of datetime, check date, today is prefered, date other than is not guaranteed
     """
 
-    def __init__(self, policylist, namelist=None, date=today()):
+    def __init__(self, policylist, namelist=None, date=today_obj()):
         self.warn = []
         self.message = []
         self.policylist = policylist

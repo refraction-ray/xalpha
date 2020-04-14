@@ -28,33 +28,34 @@ from xalpha import __path__
 logger = logging.getLogger(__name__)
 
 # date obj of today
-today = lambda: dt.datetime.combine(dt.date.today(), dt.time.min)
+# today = lambda: dt.datetime.combine(dt.date.today(), dt.time.min)
 
 tz_bj = dt.timezone(dt.timedelta(hours=8))
 
 
 def today_obj():
+    """
+    today obj in beijing timezone with no tzinfo
+
+    :return: datetime.datetime
+    """
     now = dt.datetime.now(tz=tz_bj)
     return now.replace(hour=0, minute=0, second=0, microsecond=0).replace(tzinfo=None)
 
 
+# datetime obj for yesterdate date with time set to be 0:0:0
+yesterdayobj = lambda: (dt.datetime.now(tz_bj).replace(tzinfo=None) - dt.timedelta(1))
+
 # string for yesterday, only used for indexinfo url
-yesterday = lambda: dt.datetime.strftime(
-    (dt.datetime.now() - dt.timedelta(1)), "%Y%m%d"
-)
+yesterday = lambda: dt.datetime.strftime(yesterdayobj(), "%Y%m%d")
 
 # string for yesterday with dash
-yesterdaydash = lambda: dt.datetime.strftime(
-    (dt.datetime.now() - dt.timedelta(1)), "%Y-%m-%d"
-)
+yesterdaydash = lambda: dt.datetime.strftime(yesterdayobj(), "%Y-%m-%d")
 
-# datetime obj for yesterdate date with time set to be 0:0:0
-yesterdayobj = lambda: dt.datetime.strptime(yesterdaydash(), "%Y-%m-%d")
 
 # list: all the trade date of domestic stock market in the form of string
 caldate = pd.read_csv(os.path.join(__path__[0], "caldate.csv"))
 opendate = list(caldate[caldate["is_open"] == 1]["cal_date"])
-# directly use the tushare API instead of import tushare package for simplicity
 # opendate = list(ts.trade_cal()[ts.trade_cal()['isOpen']==1]['calendarDate'])
 
 # fund code list which always round down for the purchase share approximation
@@ -378,7 +379,21 @@ def convert_date(date):
         return date
 
 
+def _date_check(dtobj, check=False):
+    if not isinstance(dtobj, dt.datetime):
+        dtobj = dt.datetime.strptime(
+            dtobj.replace("/", "").replace("-", ""), "%Y-%m-%d"
+        )
+    if check and (dtobj.year > 2020 or dtobj.year < 1991):
+        # TODO: remember change 2020 every year!
+        raise ValueError(
+            "date goes beyond market range: %s" % dtobj.strftime("%Y-%m-%d")
+        )
+    return dtobj
+
+
 def next_onday(dtobj):
+    dtobj = _date_check(dtobj, check=True)
     dtobj += dt.timedelta(1)
     while dtobj.strftime("%Y-%m-%d") not in opendate:
         dtobj += dt.timedelta(1)
@@ -386,6 +401,7 @@ def next_onday(dtobj):
 
 
 def last_onday(dtobj):
+    dtobj = _date_check(dtobj, check=True)
     dtobj -= dt.timedelta(1)
     while dtobj.strftime("%Y-%m-%d") not in opendate:
         dtobj -= dt.timedelta(1)
@@ -552,6 +568,6 @@ holdings["501018"] = {
     "etfs/united-states-oil-fund": 9.63,
 }
 holdings["501018rt"] = {
-    "commodities/brent-oil": 40 * 0.9,
-    "commodities/crude-oil": 60 * 0.9,
+    "commodities/brent-oil": {"weight": 49, "time": -1},
+    "commodities/crude-oil": {"weight": 45, "time": 4},
 }

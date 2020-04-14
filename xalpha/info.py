@@ -24,7 +24,7 @@ from xalpha.cons import (
     yesterday,
     yesterdaydash,
     yesterdayobj,
-    today,
+    today_obj,
     rget,
     _float,
 )
@@ -875,7 +875,7 @@ class fundinfo(basicinfo):
         con = rget(self._updateurl)
         soup = BeautifulSoup(con.text, "lxml")
         items = soup.findAll("td")
-        if dt.datetime.strptime(str(items[0].string), "%Y-%m-%d") == today():
+        if dt.datetime.strptime(str(items[0].string), "%Y-%m-%d") == today_obj():
             diffdays += 1
         if diffdays <= 10:
             self._updateurl = (
@@ -1291,7 +1291,7 @@ class mfundinfo(basicinfo):
         con = rget(self._updateurl)
         soup = BeautifulSoup(con.text, "lxml")
         items = soup.findAll("td")
-        if dt.datetime.strptime(str(items[0].string), "%Y-%m-%d") == today():
+        if dt.datetime.strptime(str(items[0].string), "%Y-%m-%d") == today_obj():
             diffdays += 1
         if diffdays <= 10:
             # caution: there may be today data!! then a day gap will be in table

@@ -722,8 +722,12 @@ def is_on(date, market="CN", no_trading_days=None):
     :param market: str. CN, JP, HK, US, UK, CH, HK, DE
     :return: bool.
     """
-
-    date_obj = dt.datetime.strptime(date.replace("-", "").replace("/", ""), "%Y%m%d")
+    if not isinstance(date, dt.datetime):
+        date_obj = dt.datetime.strptime(
+            date.replace("-", "").replace("/", ""), "%Y%m%d"
+        )
+    else:
+        date_obj = date
     if date_obj.weekday() in [5, 6]:  # 周末休市
         # 注意部分中东市场周日开市，暂时涉及不到
         return False

@@ -46,8 +46,8 @@ from xalpha.cons import (
     rget_json,
     rpost_json,
     tz_bj,
-    today_obj,
     region_trans,
+    today_obj,
     _float,
 )
 from xalpha.provider import data_source
@@ -426,8 +426,7 @@ def get_historical_fromsp(code, start=None, end=None, region="us", **kws):
     else:
         col = "1"
     start_obj = dt.datetime.strptime(start, "%Y%m%d")
-    today_obj = dt.datetime.now()
-    fromnow = (today_obj - start_obj).days
+    fromnow = (today_obj() - start_obj).days
     if fromnow < 300:
         flag = "one"
     elif fromnow < 1000:
@@ -472,8 +471,7 @@ def get_historical_frombb(code, start=None, end=None, **kws):
         code = code[3:]
     # end_obj = dt.datetime.strptime(end, "%Y%m%d")
     start_obj = dt.datetime.strptime(start, "%Y%m%d")
-    today_obj = dt.datetime.now()
-    fromnow = (today_obj - start_obj).days
+    fromnow = (today_obj() - start_obj).days
     if fromnow < 20:
         years = "1_MONTH"
     elif fromnow < 300:
@@ -554,8 +552,7 @@ def get_historical_fromyh(code, start=None, end=None):
     if code.startswith("YH-"):
         code = code[3:]
     start_obj = dt.datetime.strptime(start, "%Y%m%d")
-    today_obj = dt.datetime.now()
-    fromnow = (today_obj - start_obj).days
+    fromnow = (today_obj() - start_obj).days
     if fromnow < 20:
         range_ = "1mo"
     elif fromnow < 50:
