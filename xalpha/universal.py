@@ -1291,7 +1291,7 @@ def cachedio(**ioconf):
                 code = args[0]
             else:
                 code = kws.get("code")
-            date = ioconf.get("date", "date")
+            date = ioconf.get("date", "date")  # 没利用上这个栏的名字变化
             precached = ioconf.get("precached", None)
             precached = kws.get("precached", precached)
             key = kws.get("key", code)
@@ -1324,10 +1324,13 @@ def cachedio(**ioconf):
             start_str = start_obj.strftime("%Y%m%d")
             end_str = end_obj.strftime("%Y%m%d")
             backend = ioconf.get("backend")
+            backend = kws.get("backend", backend)
             refresh = ioconf.get("refresh", False)
             refresh = kws.get("refresh", refresh)
-            fetchonly = kws.get("fetchonly", False)
+            fetchonly = ioconf.get("fetchonly", False)
+            fetchonly = kws.get("fetchonly", fetchonly)
             path = ioconf.get("path")
+            path = kws.get("path", path)
             kws["start"] = start_str
             kws["end"] = end_str
             if not backend:
