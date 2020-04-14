@@ -187,6 +187,8 @@ class mul:
 
         return summarydf[columns].sort_values(by="基金现值", ascending=False)
 
+    summary = combsummary
+
     def _mergecftb(self):
         """
         merge the different cftable for different funds into one table

@@ -1152,8 +1152,8 @@ class QDIIPredict:
                 while last_date_obj < cday:  # 前天净值数据还没更新
                     # 是否存在部分 QDII 在 A 股交易日，美股休市日不更新净值的情形？
                     if (
-                        cday.strftime("%Y-%m-%d") not in gap_info[self.fcode]
-                    ) and is_on(cday, "US", no_trading_days):
+                        cday.strftime("%Y-%m-%d") not in gap_info.get(self.fcode, [])
+                    ) and is_on(cday.strftime("%Y-%m-%d"), "US", no_trading_days):
                         # 这里检查比较宽松，只要当天美股休市，就可以认为确实基金数据不存在而非未更新
                         self.t1_type = "前日未出"
                         raise DateMismatch(
