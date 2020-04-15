@@ -624,6 +624,31 @@ def get_historical_fromzzindex(code, start, end):
     return df[["date", "close"]]
 
 
+def get_historical_fromycharts_nav(code, start, end):
+    params = {
+        "securities": "include:true,id:{code},,".format(code=code),
+        "calcs": "include:true,id:net_asset_value,,",
+        "startDate": start, # %m/%d/%Y
+        "endDate": end,  # %m/%d/%Y
+    }
+    r = rget_json(
+        "https://ycharts.com/charts/fund_data.json",
+        params=params,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4)\
+                AppleWebKit/537.36 (KHTML, like Gecko)",
+            "Host": "ycharts.com",
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": "https://ycharts.com/companies/{code}/chart/".format(code=code),
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+        },
+    )
+    df = pd.DataFrame(data=r["chart_data"][0][0]["raw_data"], columns=["timestamp", "close"])
+    df["date"] = (df["timestamp"]).apply(ts2pdts) # reset hours to zero
+    return df[["date", "close"]]
+
+
 @data_source("jq")
 def get_macro(table, start, end, datecol="stat_year"):
     df = macro.run_query(
@@ -740,6 +765,9 @@ def _get_daily(
             _from = "SPC"
         elif code.startswith("ZZ") and code[4:].isdigit():  # 注意中证系列指数的代码里可能包含字母！
             _from = "ZZ"
+        elif code.startswith("NAV:"):
+            _from = "ycharts_nav"
+            code = code.split(":")[1]
         elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             # peb-000807.XSHG
             _from = code.split("-")[0]
@@ -794,6 +822,9 @@ def _get_daily(
 
     elif _from == "ZZ":
         df = get_historical_fromzzindex(code, start=start, end=end)
+
+    elif _from == "ycharts_nav":
+        df = get_historical_fromycharts_nav(code, start=start_obj.strftime("%m/%d/%Y"), end=end_obj.strftime("%m/%d/%Y"))
 
     elif _from == "sw":
         df = get_sw_from_jq(code, start=start, end=end)
