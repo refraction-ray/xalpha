@@ -575,6 +575,43 @@ class Compare:
         return self.totdf.iloc[:, 1:].pct_change().corr()
 
 
+class OverPriced:
+    """
+    ETF 或 LOF 历史折溢价情况分析
+    """
+
+    def __init__(self, code, start=None, end=None, prev=None):
+        """
+
+        :param code: str. eg SH501018, SZ160416
+        :param start: date range format is the same as xa.get_daily
+        :param end:
+        :param prev:
+        """
+        self.code = code
+        df1 = xu.get_daily("F" + self.code[2:], start=start, end=end, prev=prev)
+        df2 = xu.get_daily(self.code, start=start, end=end, prev=prev)
+        df1 = df1.merge(df2, on="date", suffixes=("_F", "_" + code[:2]))
+        df1["diff_rate"] = (
+            (df1["close_" + code[:2]] - df1["close_F"]) / df1["close_F"] * 100
+        )
+        self.df = df1
+
+    def v(self, hline):
+        """
+
+        :param hline: Union[float, List[float]], several horizental lines for assistance
+        :return:
+        """
+        ax = self.df.plot(x="date", y="diff_rate")
+        if isinstance(hline, float):
+            ax.axhline(hline, c="red")
+        else:
+            for h in hline:
+                ax.axhline(h, c="red")
+        return ax
+
+
 #########################
 # netvalue prediction   #
 #########################

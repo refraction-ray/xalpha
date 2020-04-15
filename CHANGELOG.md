@@ -5,6 +5,7 @@
 * 增加根据持仓的基金历史估值分析，同时使 PEBHistory 可以 dispatch 到指数，申万行业，个股和基金估值系统
 * 工具箱增加 TEBHistory 可以估算拟合指数的资产和利润增速并可视化
 * get_daily 增加中证指数源
+* 增加 Overpriced 类工具，可以观察基金历史折溢价情况并分析
 ### fixed
 * 修复 get_peb 的分流
 * 继续完善QDII净值预测的跨市场逻辑处理

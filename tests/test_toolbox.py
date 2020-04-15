@@ -18,6 +18,10 @@ def test_stock_peb():
     h.summary()
 
 
+def test_overpriced():
+    xa.OverPriced("SZ161815", prev=360).v([-1.5, 3.5])
+
+
 @pytest.mark.local
 def test_set_display():
     xa.set_display("notebook")
