@@ -590,6 +590,40 @@ def get_historical_fromyh(code, start=None, end=None):
     return df
 
 
+def get_historical_fromzzindex(code, start, end):
+    if code.startswith("ZZ"):
+        code = code[2:]
+    start_obj = dt.datetime.strptime(start, "%Y%m%d")
+    fromnow = (today_obj() - start_obj).days
+    if fromnow < 20:
+        flag = "1%E4%B8%AA%E6%9C%88"
+    elif fromnow < 60:
+        flag = "3%E4%B8%AA%E6%9C%88"  # 个月
+    elif fromnow < 200:
+        flag = "1%E5%B9%B4"  # 年
+    else:
+        flag = "5%E5%B9%B4"
+    r = rget_json(
+        "http://www.csindex.com.cn/zh-CN/indices/index-detail/\
+{code}?earnings_performance={flag}&data_type=json".format(
+            code=code, flag=flag
+        ),
+        headers={
+            "Host": "www.csindex.com.cn",
+            "Referer": "http://www.csindex.com.cn/zh-CN/indices/index-detail/{code}".format(
+                code=code
+            ),
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36",
+            "X-Requested-With": "XMLHttpRequest",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+        },
+    )
+    df = pd.DataFrame(r)
+    df["date"] = pd.to_datetime(df["tradedate"])
+    df["close"] = df["tclose"]
+    return df[["date", "close"]]
+
+
 @data_source("jq")
 def get_macro(table, start, end, datecol="stat_year"):
     df = macro.run_query(
@@ -659,6 +693,8 @@ def _get_daily(
 
             18. 形如 mcy-MAC_AREA_UNEMPLOY 格式的数据，返回相应的宏观数据，需要聚宽数据源。mcy，mcq，mcm 代表年度，季度和月度的数据，code 为表名，可以参考 https://www.joinquant.com/help/api/help?name=macroData
 
+            19. 形如 ZZ000905，ZZH30533 的代码，代表中证官网的指数，ZZ 之后接指数代码，注意有些指数代码里可能包含 H，历史数据最大到近五年。
+
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
     :param prev: Optional[int], default 365. If start is not specified, start = end-prev.
@@ -687,7 +723,7 @@ def _get_daily(
         start_obj = dstr2dobj(start)
 
     if not _from:
-        if code.startswith("SH") or code.startswith("SZ"):
+        if (code.startswith("SH") or code.startswith("SZ")) and code[2:].isdigit():
             _from = "xueqiu"
         elif code.endswith("/CNY") or code.startswith("CNY/"):
             _from = "zjj"
@@ -702,6 +738,8 @@ def _get_daily(
             _from = "SP"
         elif code.startswith("SPC") and code[3:].split(".")[0].isdigit():
             _from = "SPC"
+        elif code.startswith("ZZ") and code[4:].isdigit():  # 注意中证系列指数的代码里可能包含字母！
+            _from = "ZZ"
         elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             # peb-000807.XSHG
             _from = code.split("-")[0]
@@ -753,6 +791,9 @@ def _get_daily(
 
     elif _from == "BB":
         df = get_historical_frombb(code, start=start, end=end)
+
+    elif _from == "ZZ":
+        df = get_historical_fromzzindex(code, start=start, end=end)
 
     elif _from == "sw":
         df = get_sw_from_jq(code, start=start, end=end)

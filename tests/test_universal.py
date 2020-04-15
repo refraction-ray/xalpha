@@ -188,3 +188,7 @@ def test_cache_time():
 
 def test_get_ttjj():
     assert xa.get_rt("F501018")["name"] == "南方原油A"
+
+
+def test_get_zzindex():
+    assert len(xa.get_daily("ZZH30533")) > 100

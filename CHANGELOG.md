@@ -4,6 +4,7 @@
 * get_rt 新浪源，A 股标的增加买卖前5手数据，可通过添加选项 _from="sina" 调用
 * 增加根据持仓的基金历史估值分析，同时使 PEBHistory 可以 dispatch 到指数，申万行业，个股和基金估值系统
 * 工具箱增加 TEBHistory 可以估算拟合指数的资产和利润增速并可视化
+* get_daily 增加中证指数源
 ### fixed
 * 修复 get_peb 的分流
 * 继续完善QDII净值预测的跨市场逻辑处理
