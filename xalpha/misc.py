@@ -8,6 +8,7 @@ import pandas as pd
 import datetime as dt
 import logging
 from bs4 import BeautifulSoup
+from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
@@ -136,3 +137,12 @@ def get_163_fundamentals(code, category="lrb"):
     df = pd.read_csv(url, encoding="gbk")
     df = df.set_index("报告日期")
     return df.T
+
+
+@lru_cache()
+def get_ttjj_suggestions(keyword):
+    url = "http://fundsuggest.eastmoney.com/FundSearch/api/FundSearchAPI.ashx?callback=&m=1&key={key}".format(
+        key=keyword
+    )
+    r = rget_json(url)
+    return r["Datas"]

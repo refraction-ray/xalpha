@@ -197,3 +197,4 @@ def test_vinfo():
     t = xa.trade(hs300, st)
     t.dailyreport()
     assert len(t.cftable) == 2
+    yy = xa.vinfo("ZZ931152")

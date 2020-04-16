@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### fixed
+* 中证数据源 dataframe close 列保证是 float
 
 ## v0.8.8 - 2020.04.16
 ### added

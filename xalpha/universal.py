@@ -620,7 +620,7 @@ def get_historical_fromzzindex(code, start, end):
     )
     df = pd.DataFrame(r)
     df["date"] = pd.to_datetime(df["tradedate"])
-    df["close"] = df["tclose"]
+    df["close"] = df["tclose"].apply(_float)
     return df[["date", "close"]]
 
 
@@ -2073,6 +2073,7 @@ class vinfo(basicinfo, indicator):
         self.start = start  # None is one year ago
         self.end = end  # None is yesterday
         df = get_daily(code, start=start, end=end)
+        df[col] = pd.to_numeric(df[col])  # in case the col is not float
         df["totvalue"] = df[col]
         df["netvalue"] = df[col] / df.iloc[0][col]
         self.price = df
