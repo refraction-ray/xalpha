@@ -1618,6 +1618,7 @@ def ttjjcode(code):
     :param code: str.
     :return: str.
     """
+    code = code.strip()
     if code.endswith(".HK"):
         return "HK" + code[:-3]
     elif code.endswith(".US"):

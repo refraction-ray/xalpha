@@ -18,7 +18,7 @@ from xalpha.exceptions import ParserFailure
 # 该模块只是保存其他一些爬虫的函数，其接口很不稳定，不提供文档和测试，且随时增删，慎用！
 
 
-@lru_cache_time(ttl=7200, maxsize=64)
+@lru_cache_time(ttl=600, maxsize=64)
 def get_ri_status(suburl=None):
     if not suburl:
         suburl = "m=cb&a=cb_all"  # 可转债

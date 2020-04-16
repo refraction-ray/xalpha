@@ -106,7 +106,7 @@ def _set_display_notebook():
         script += """
                 require(["DT"], function(DT) {$(document).ready( () => {
                     // Turn existing table into datatable
-                    $(element).find("table.dataframe").DataTable();
+                    $(element).find("table.dataframe").DataTable({'scrollX': '100%'});
                     })
                 });
         """

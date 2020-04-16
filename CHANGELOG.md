@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.8.8 - 2020.04.16
 ### added
 * get_rt 新浪源，A 股标的增加买卖前5手数据，可通过添加选项 _from="sina" 调用
 * 增加根据持仓的基金历史估值分析，同时使 PEBHistory 可以 dispatch 到指数，申万行业，个股和基金估值系统
