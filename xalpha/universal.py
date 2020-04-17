@@ -624,6 +624,31 @@ def get_historical_fromzzindex(code, start, end):
     return df[["date", "close"]]
 
 
+def get_historical_fromgzindex(code, start, end):
+    if code.startswith("GZ"):
+        code = code[2:]
+    start = start[:4] + "-" + start[4:6] + "-" + start[6:]
+    end = end[:4] + "-" + end[4:6] + "-" + end[6:]
+    params = {
+        "indexCode": code,
+        "startDate": start,
+        "endDate": end,
+        "frequency": "Day",
+    }
+
+    r = rget_json(
+        "http://hq.cnindex.com.cn/market/market/getIndexDailyDataWithDataFormat",
+        params=params,
+    )
+    df = pd.DataFrame(r["data"]["data"], columns=r["data"]["item"])
+
+    df["date"] = pd.to_datetime(df["timestamp"])
+    df = df[["date", "close", "open", "low", "high", "percent", "amount", "volume"]]
+    # TODO: 是否有这些列不全的国证指数？
+    df = df[::-1]
+    return df
+
+
 @data_source("jq")
 def get_macro(table, start, end, datecol="stat_year"):
     df = macro.run_query(
@@ -695,6 +720,8 @@ def _get_daily(
 
             19. 形如 ZZ000905，ZZH30533 的代码，代表中证官网的指数，ZZ 之后接指数代码，注意有些指数代码里可能包含 H，历史数据最大到近五年。
 
+            20. 形如 GZB30018, GZ399299 格式的数据，代表国证系列指数， GZ 之后接指数代码，代码可能包含更多字母。
+
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
     :param prev: Optional[int], default 365. If start is not specified, start = end-prev.
@@ -740,6 +767,8 @@ def _get_daily(
             _from = "SPC"
         elif code.startswith("ZZ") and code[4:].isdigit():  # 注意中证系列指数的代码里可能包含字母！
             _from = "ZZ"
+        elif code.startswith("GZ") and code[-3:].isdigit():  # 注意国证系列指数的代码里可能包含多个字母！
+            _from = "GZ"
         elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             # peb-000807.XSHG
             _from = code.split("-")[0]
@@ -794,6 +823,9 @@ def _get_daily(
 
     elif _from == "ZZ":
         df = get_historical_fromzzindex(code, start=start, end=end)
+
+    elif _from == "GZ":
+        df = get_historical_fromgzindex(code, start=start, end=end)
 
     elif _from == "sw":
         df = get_sw_from_jq(code, start=start, end=end)

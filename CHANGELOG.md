@@ -2,6 +2,7 @@
 ## Unreleased
 ### fixed
 * 中证数据源 dataframe close 列保证是 float
+* 增加国证指数数据源
 
 ## v0.8.8 - 2020.04.16
 ### added
