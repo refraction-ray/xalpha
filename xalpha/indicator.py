@@ -563,6 +563,8 @@ def plot_kline(df, rendered=True, col=""):
 
     if "volume" in df.columns:
         vl = list(df["volume"])
+    elif "amount" in df.columns:
+        vl = list(df["amount"])
     else:
         vl = [0 for _ in range(len(df))]
     bar = (

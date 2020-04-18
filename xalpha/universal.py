@@ -590,7 +590,15 @@ def get_historical_fromyh(code, start=None, end=None):
     return df
 
 
-def get_historical_fromzzindex(code, start, end):
+def get_historical_fromzzindex(code, start, end=None):
+    """
+    中证指数源
+
+    :param code:
+    :param start:
+    :param end:
+    :return:
+    """
     if code.startswith("ZZ"):
         code = code[2:]
     start_obj = dt.datetime.strptime(start, "%Y%m%d")
@@ -625,6 +633,14 @@ def get_historical_fromzzindex(code, start, end):
 
 
 def get_historical_fromgzindex(code, start, end):
+    """
+    国证指数源
+
+    :param code:
+    :param start:
+    :param end:
+    :return:
+    """
     if code.startswith("GZ"):
         code = code[2:]
     start = start[:4] + "-" + start[4:6] + "-" + start[6:]
@@ -646,6 +662,37 @@ def get_historical_fromgzindex(code, start, end):
     df = df[["date", "close", "open", "low", "high", "percent", "amount", "volume"]]
     # TODO: 是否有这些列不全的国证指数？
     df = df[::-1]
+    return df
+
+
+def get_historical_fromesunny(code, start=None, end=None):
+    """
+    易盛商品指数
+
+    :param code: eg. ESCI000201
+    :param start: just placeholder
+    :param end: just placeholder
+    :return:
+    """
+    # code
+    if code.startswith("ESCI"):
+        code = code[4:] + ".ESCI"
+    r = rget(
+        "http://www.esunny.com.cn/chartES/csv/shareday/day_易盛指数_{code}.es".format(
+            code=code
+        )
+    )
+    data = []
+    for l in r.text.split("\n"):
+        row = [s.strip() for s in l.split("|")]  # 开 高 低 收 结
+        if len(row) > 1:
+            data.append(row[:7])
+    df = pd.DataFrame(
+        data, columns=["date", "open", "high", "low", "close", "settlement", "amount"]
+    )
+    df["date"] = pd.to_datetime(df["date"])
+    for c in ["open", "high", "low", "close", "settlement", "amount"]:
+        df[c] = df[c].apply(_float)
     return df
 
 
@@ -722,6 +769,8 @@ def _get_daily(
 
             20. 形如 GZB30018, GZ399299 格式的数据，代表国证系列指数， GZ 之后接指数代码，代码可能包含更多字母。
 
+            21. 形如 ESCI000201 格式的数据，易盛商品指数系列，参考 http://www.esunny.com.cn/index.php?a=lists&catid=60。
+
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
     :param prev: Optional[int], default 365. If start is not specified, start = end-prev.
@@ -769,6 +818,8 @@ def _get_daily(
             _from = "ZZ"
         elif code.startswith("GZ") and code[-3:].isdigit():  # 注意国证系列指数的代码里可能包含多个字母！
             _from = "GZ"
+        elif code.startswith("ESCI") and code[4:].isdigit():
+            _from = "ES"
         elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             # peb-000807.XSHG
             _from = code.split("-")[0]
@@ -826,6 +877,9 @@ def _get_daily(
 
     elif _from == "GZ":
         df = get_historical_fromgzindex(code, start=start, end=end)
+
+    elif _from == "ES":
+        df = get_historical_fromesunny(code, start=start, end=end)
 
     elif _from == "sw":
         df = get_sw_from_jq(code, start=start, end=end)
