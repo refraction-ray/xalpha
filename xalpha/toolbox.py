@@ -1282,6 +1282,8 @@ class QDIIPredict:
         else:
             if code not in self.bar_cache:
                 funddf = get_bar(code, prev=168, interval="3600")  ## 获取小时线
+                ## 这里的和基准比较，对于原油主力合约换仓日，将产生大幅异动，造成实时数据完全失真
+                ## TODO: 暂时没想到好的克服换仓日实时数据异常的办法
                 ## 注意对于国内超长假期，prev 可能还不够
                 if self.now.hour > 6:  # 昨日美国市场收盘才正常，才缓存参考小时线
                     self.bar_cache[code] = funddf

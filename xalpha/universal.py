@@ -1448,19 +1448,27 @@ def cachedio(**ioconf):
             precached = kws.get("precached", precached)
             key = kws.get("key", code)
             key = key.replace("/", " ")
+            defaultend = ioconf.get("defaultend", today_obj)
+            defaultend = ioconf.get("default_end", defaultend)
+            defaultprev = ioconf.get("defaultprev", 365)
+            defaultprev = ioconf.get("default_prev", defaultprev)
+            if isinstance(defaultend, str):
+                defaultend = defaultend.replace("/", "").replace("-", "")
+                defaultend = dt.datetime.strptime(defaultend, "%Y%m%d")
+            if callable(defaultend):
+                defaultend = defaultend()
             start = kws.get("start", None)
             end = kws.get("end", None)
             prev = kws.get("prev", None)
             prefix = ioconf.get("prefix", "")
             key = prefix + key
-            # print("xdebug: %s" % ioconf.get("backend", "no"))
             if precached:
                 precached = precached.replace("/", "").replace("-", "")
                 precached_obj = dt.datetime.strptime(precached, "%Y%m%d")
             if not prev:
-                prev = 365
+                prev = defaultprev
             if not end:
-                end_obj = today_obj()
+                end_obj = defaultend
             else:
                 end_obj = dt.datetime.strptime(
                     end.replace("/", "").replace("-", ""), "%Y%m%d"
@@ -1480,7 +1488,9 @@ def cachedio(**ioconf):
             refresh = ioconf.get("refresh", False)
             refresh = kws.get("refresh", refresh)
             fetchonly = ioconf.get("fetchonly", False)
+            fetchonly = ioconf.get("fetch_only", fetchonly)
             fetchonly = kws.get("fetchonly", fetchonly)
+            fetchonly = kws.get("fetch_only", fetchonly)
             path = ioconf.get("path")
             path = kws.get("path", path)
             kws["start"] = start_str
