@@ -386,8 +386,31 @@ def get_fund(code):
         df["netvalue"] = df["totvalue"]
     elif code[0] == "M":
         df = mfundinfo(code[1:], path="nobackend").price
+    else:
+        raise ParserFailure("Unknown fund code %s" % code)
     df["close"] = df["netvalue"]
     return df[["date", "close"]]
+
+
+def get_portfolio_fromttjj(code, start=None, end=None):
+    startobj = dt.datetime.strptime(start, "%Y%m%d")
+    endobj = dt.datetime.strptime(end, "%Y%m%d")
+    if (endobj - startobj).days < 90:
+        return None  # note start is always 1.1 4.1 7.1 10.1 in incremental updates
+    if code.startswith("F"):
+        code = code[1:]
+    r = rget("http://fundf10.eastmoney.com/zcpz_{code}.html".format(code=code))
+    s = BeautifulSoup(r.text, "lxml")
+    table = s.find("table", class_="tzxq")
+    df = pd.read_html(str(table))[0]
+    df["date"] = pd.to_datetime(df["报告期"])
+    df["stock_ratio"] = df["股票占净比"].replace("---", "0%").apply(lambda s: _float(s[:-1]))
+    df["bond_ratio"] = df["债券占净比"].replace("---", "0%").apply(lambda s: _float(s[:-1]))
+    df["cash_ratio"] = df["现金占净比"].replace("---", "0%").apply(lambda s: _float(s[:-1]))
+    #     df["dr_ratio"] = df["存托凭证占净比"].replace("---", "0%").apply(lambda s: xa.cons._float(s[:-1]))
+    df["assets"] = df["净资产（亿元）"]
+    df = df[::-1]
+    return df[["date", "stock_ratio", "bond_ratio", "cash_ratio", "assets"]]
 
 
 # this is the most elegant approach to dispatch get_daily, the definition can be such simple
@@ -542,7 +565,7 @@ get-historical-prices?startDate={start}&endDate={end}&symbol={code}".format(
 
 def get_historical_fromyh(code, start=None, end=None):
     """
-    雅虎财经数据源，支持数据丰富，不限于美股。但存在部分历史数据确实 NAN 或者周末进入交易日的现象，可能数据需要进一步清洗和处理。
+    雅虎财经数据源，支持数据丰富，不限于美股。但存在部分历史数据缺失 NAN 或者周末进入交易日的现象，可能数据需要进一步清洗和处理。
 
     :param code:
     :param start:
@@ -771,11 +794,13 @@ def _get_daily(
 
             21. 形如 ESCI000201 格式的数据，易盛商品指数系列，参考 http://www.esunny.com.cn/index.php?a=lists&catid=60。
 
+            22. 形如 pt-F100032 格式的数据，返回指定基金每季度股票债券和现金的持仓比例
+
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
     :param prev: Optional[int], default 365. If start is not specified, start = end-prev.
     :param _from: Optional[str]. 一般用户不需设定该选项。can be one of "xueqiu", "zjj", "investing", "tiantianjijin". Only used for debug to
-        enfore data source. For common use, _from can be chosed automatically based on code in the run time.
+        enforce data source. For common use, _from can be chosed automatically based on code in the run time.
     :param wrapper: bool. 一般用户不需设定该选项。
     :param handler: bool. Default True. 若为 False，则 handler 钩子失效，用于钩子函数中的嵌套。
     :return: pd.Dataframe.
@@ -886,6 +911,9 @@ def _get_daily(
 
     elif _from == "teb":
         df = get_teb_range(code, start=start, end=end)
+
+    elif _from in ["pt", "portfolio"]:
+        df = get_portfolio_fromttjj(code, start=start, end=end)
 
     elif _from == "YH":
         df = get_historical_fromyh(code, start=start, end=end)
