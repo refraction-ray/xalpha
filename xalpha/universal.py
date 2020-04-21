@@ -719,6 +719,36 @@ def get_historical_fromesunny(code, start=None, end=None):
     return df
 
 
+def get_historical_fromycharts(code, start, end, category, metric):
+    params = {
+        "securities": "include:true,id:{code},,".format(code=code),
+        "calcs": "include:true,id:{metric},,".format(metric=metric),
+        "startDate": start,  # %m/%d/%Y
+        "endDate": end,  # %m/%d/%Y
+        "zoom": "custom",
+    }
+    r = rget_json(
+        "https://ycharts.com/charts/fund_data.json",
+        params=params,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4)\
+                AppleWebKit/537.36 (KHTML, like Gecko)",
+            "Host": "ycharts.com",
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": "https://ycharts.com/{category}/{code}/chart/".format(
+                category=category, code=code
+            ),
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+        },
+    )
+    df = pd.DataFrame(
+        data=r["chart_data"][0][0]["raw_data"], columns=["timestamp", "close"]
+    )
+    df["date"] = (df["timestamp"]).apply(ts2pdts)
+    return df[["date", "close"]]
+
+
 @data_source("jq")
 def get_macro(table, start, end, datecol="stat_year"):
     df = macro.run_query(
@@ -748,7 +778,7 @@ def _get_daily(
 ):
     """
     universal fetcher for daily historical data of literally everything has a value in market.
-    数据来源包括天天基金，雪球，英为财情，外汇局官网，聚宽，标普官网，bloomberg，雅虎财经等。
+    数据来源包括天天基金，雪球，英为财情，外汇局官网，聚宽，标普官网，bloomberg，雅虎财经，ycharts等。
 
     :param code: str.
 
@@ -795,6 +825,10 @@ def _get_daily(
             21. 形如 ESCI000201 格式的数据，易盛商品指数系列，参考 http://www.esunny.com.cn/index.php?a=lists&catid=60。
 
             22. 形如 pt-F100032 格式的数据，返回指定基金每季度股票债券和现金的持仓比例
+
+            23. 形如 yc-companies/DBP，yc-companies/DBP/price 格式的数据，返回ycharts股票、ETF数据，对应网页 https://ycharts.com/companies/DBP/price，最后部分为数据含义，默认price，可选：net_asset_value（仅ETF可用）、total_return_price、total_return_forward_adjusted_price、average_volume_30，历史数据限制五年内。
+
+            24. 形如 yc-indices/^SPGSCICO，yc-indices/^SPGSCICO/level 格式的数据，返回ycharts指数数据，对应网页 https://ycharts.com/indices/%5ESPGSCICO/level，最后部分为数据含义，默认level，可选：total_return_forward_adjusted_price，历史数据限制五年内。
 
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
@@ -845,6 +879,18 @@ def _get_daily(
             _from = "GZ"
         elif code.startswith("ESCI") and code[4:].isdigit():
             _from = "ES"
+        elif code.startswith("yc-companies/") or code.startswith("yc-indices/"):
+            _from = "ycharts"
+            params = code.split("/")
+            code = params[1]
+            category = params[0].split("-")[1]
+            if len(params) == 3:
+                metric = params[2]
+            else:
+                if category == "companies":
+                    metric = "price"
+                elif category == "indices":
+                    metric = "level"
         elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             # peb-000807.XSHG
             _from = code.split("-")[0]
@@ -905,6 +951,15 @@ def _get_daily(
 
     elif _from == "ES":
         df = get_historical_fromesunny(code, start=start, end=end)
+
+    elif _from == "ycharts":
+        df = get_historical_fromycharts(
+            code,
+            start=start_obj.strftime("%m/%d/%Y"),
+            end=end_obj.strftime("%m/%d/%Y"),
+            category=category,
+            metric=metric,
+        )
 
     elif _from == "sw":
         df = get_sw_from_jq(code, start=start, end=end)
