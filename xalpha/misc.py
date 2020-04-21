@@ -7,6 +7,8 @@ import re
 import pandas as pd
 import datetime as dt
 import logging
+import numpy as np
+from scipy import stats
 from bs4 import BeautifulSoup
 from functools import lru_cache
 
@@ -146,3 +148,34 @@ def get_ttjj_suggestions(keyword):
     )
     r = rget_json(url)
     return r["Datas"]
+
+
+## some small tools and calculators
+
+
+def BlackScholes(S, K, t, v, r=0.03, CallPutFlag="C"):
+    """
+    BS option pricing calculator
+
+    :param S: current stock price
+    :param K: stricking price
+    :param t: Time until option exercise (years to maturity)
+    :param r: risk-free interest rate (by year)
+    :param v: Variance(volitility) of annual increase
+    :param CallPutFlag: "C" or "P", default call option
+    :return:
+    """
+    # function modified from https://github.com/boyac/pyOptionPricing
+
+    def CND(X):
+        return stats.norm.cdf(X)
+
+    d1 = (np.log(S / K) + (r + (v ** 2) / 2) * t) / (v * np.sqrt(t))
+    d2 = d1 - v * np.sqrt(t)
+
+    if CallPutFlag in ["c", "C"]:
+        return S * CND(d1) - K * np.exp(-r * t) * CND(d2)  # call option
+    elif CallPutFlag in ["p", "P"]:
+        return K * np.exp(-r * t) * CND(-d2) - S * CND(-d1)  # put option
+    else:
+        raise ValueError("Unknown CallPutFlag %s" % CallPutFlag)
