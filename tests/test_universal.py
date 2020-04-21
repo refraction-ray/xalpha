@@ -193,7 +193,15 @@ def test_get_ttjj():
 def test_get_zzindex():
     assert len(xa.get_daily("ZZH30533")) > 100
 
-def test_get_ycharts_nav():
-    d = xa.get_daily(code="NAV:DBP", start="20200401", end="20200402")
+def test_get_ycharts():
+    d = xa.get_daily(code="yc-companies/DBP", start="20200401", end="20200402")
+    assert d.iloc[0]["close"] == 41.04
+
+    d = xa.get_daily(code="yc-companies/DBP/net_asset_value", start="20200401", end="20200402")
     assert d.iloc[0]["close"] == 40.7144
-    assert d.iloc[1]["close"] == 42.0188
+
+    d = xa.get_daily(code="yc-indices/^SPGSCICO", start="20200401", end="20200402")
+    assert d.iloc[0]["close"] == 111.312
+
+    d = xa.get_daily(code="yc-indices/^SPGSCICO/total_return_forward_adjusted_price", start="20200401", end="20200402")
+    assert d.iloc[0]["close"] == 169.821
