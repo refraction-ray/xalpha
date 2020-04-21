@@ -207,3 +207,23 @@ def test_get_gzindex():
 def test_get_es():
     df = xa.get_daily("ESCI000302", start="20190419", end="2019/04/22")
     assert round(df.iloc[-1]["settlement"], 2) == 1074.80
+
+
+def test_get_ycharts():
+    d = xa.get_daily(code="yc-companies/DBP", start="20200401", end="20200402")
+    assert d.iloc[0]["close"] == 41.04
+
+    d = xa.get_daily(
+        code="yc-companies/DBP/net_asset_value", start="20200401", end="20200402"
+    )
+    assert d.iloc[0]["close"] == 40.7144
+
+    d = xa.get_daily(code="yc-indices/^SPGSCICO", start="20200401", end="20200402")
+    assert d.iloc[0]["close"] == 111.312
+
+    d = xa.get_daily(
+        code="yc-indices/^SPGSCICO/total_return_forward_adjusted_price",
+        start="20200401",
+        end="20200402",
+    )
+    assert d.iloc[0]["close"] == 169.821
