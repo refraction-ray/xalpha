@@ -634,22 +634,19 @@ def get_historical_fromycharts(code, start, end, category, metric):
     }
     r = rget_json(
         "https://ycharts.com/charts/fund_data.json",
-        #"http://localhost:8888/debug",
-        #"https://ycharts.com/charts/fund_data.json?securities=include%3Atrue%2Cid%3ADBP%2C%2C&calcs=include%3Atrue%2Cid%3Aclose_price%2C%2C&startDate=04%2F01%2F2020&endDate=04%2F04%2F2020",
         params=params,
         headers={
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4)\
                 AppleWebKit/537.36 (KHTML, like Gecko)",
-            #"Host": "ycharts.com",
+            "Host": "ycharts.com",
             "X-Requested-With": "XMLHttpRequest",
             "Referer": "https://ycharts.com/{category}/{code}/chart/".format(category=category, code=code),
             "Sec-Fetch-Mode": "cors",
-            #"Sec-Fetch-Site": "same-origin",
-            "Sec-Fetch-Site": "cross-site",
+            "Sec-Fetch-Site": "same-origin",
         },
     )
     df = pd.DataFrame(data=r["chart_data"][0][0]["raw_data"], columns=["timestamp", "close"])
-    df["date"] = (df["timestamp"]).apply(ts2pdts) # reset hours to zero
+    df["date"] = (df["timestamp"]).apply(ts2pdts)
     return df[["date", "close"]]
 
 
