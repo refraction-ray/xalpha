@@ -227,3 +227,5 @@ def test_get_ycharts():
         end="20200402",
     )
     assert d.iloc[0]["close"] == 169.821
+
+    assert xa.get_rt("yc-companies/DBO")["currency"] == "USD"

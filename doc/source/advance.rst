@@ -59,6 +59,9 @@ precached 可以不设，若设置为 %Y%m%d 的时间字符串格式，则代�
 
 而对于另一些数据，我们不希望去更新，只希望使用缓存的数据，即使其日期不全（可能是由于节假日造成的错觉），这时可以添加 fetchonly 选项，也即 ``xa.get_daily(code, fetchonly=True)``.
 
+get_daily 不指定起止时间的时候，默认采用 end=today, prev=365, 这两个的行为也可以通过 ``defaultend=`` 和 ``defaultprev=`` 在 ``xa.set_backend`` 设置。其中 defaultend
+可以是日期字符串或日期对象或返回日期对象的函数。
+
 
 数据本地化
 -------------

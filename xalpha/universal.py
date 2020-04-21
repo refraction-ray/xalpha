@@ -1247,6 +1247,26 @@ def get_rt_from_ft(code, _type="indices"):
     return d
 
 
+def get_rt_from_ycharts(code):
+    if code.startswith("yc-"):
+        code = code[3:]
+    url = "https://ycharts.com/" + code
+    r = rget(url)
+    s = BeautifulSoup(r.text, "lxml")
+    qdiv = s.select("div[class=quoteData]")  # current
+    spans = [s for s in qdiv[0].contents if s != "\n" and s.contents]
+    d = {}
+    d["name"] = s.select("h1,h3[class=securityName]")[0].text.strip()
+    d["current"], d["percent"], d["currency"] = (
+        _float(spans[0].string),  # current,
+        _float(spans[1].contents[-1].string[:-1]),  # percent
+        spans[-1].string,  # currency
+    )
+    d["time"] = s.select("span[class*=quoteDate]")[0].string
+    d["market"] = None
+    return d
+
+
 @lru_cache_time(ttl=300, maxsize=512)
 def get_newest_netvalue(code):
     """
@@ -1342,7 +1362,9 @@ def get_rt(
     if not _from:
         # if code.startswith("HK") and code[2:].isdigit():
         #     _from = "xueqiu"
-        if len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
+        if code.startswith("yc-"):
+            _from = "ycharts"
+        elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             _from = code.split("-")[0]
             code = "-".join(code.split("-")[1:])
         elif code.startswith("F") and code[1:].isdigit():
@@ -1397,6 +1419,8 @@ def get_rt(
         return get_rt_from_ft(code, _type="commodities")
     elif _from in ["INA"]:  # investing app
         return get_cninvesting_rt(code, app=True)
+    elif _from in ["yc", "ycharts"]:
+        return get_rt_from_ycharts(code)
     else:
         raise ParserFailure("unrecoginzed _from for %s" % _from)
 
