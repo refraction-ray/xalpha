@@ -2,6 +2,7 @@
 ## Unreleased
 ### fixed
 * 中证数据源 dataframe close 列保证是 float
+* 增加了原油期货交割日带来的QDII实时预测困难解决
 ### added
 * 增加国证指数数据源
 * 增加易盛商品指数系列数据源

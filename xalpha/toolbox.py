@@ -1277,13 +1277,29 @@ class QDIIPredict:
             funddf = xu.get_daily(code)  ## 获取股指现货日线
             return funddf[funddf["date"] <= last_onday(self.today)].iloc[-1][
                 "close"
-            ]  # 日期是按当地时间
+            ]  # 日线日期是按当地时间
         # TODO: check it is indeed date of last_on(today)
         else:
             if code not in self.bar_cache:
+                if code in [
+                    "commodities/brent-oil",
+                    "commodities/crude-oil",
+                ]:  # 对原油期货展期时特殊处理
+                    involvedays = [
+                        s.strftime("%Y/%m/%d")
+                        for s in pd.date_range(last_onday(self.today), self.today)
+                    ]
+                    # 对于英为是在展期日开盘还是收盘改变主力合约，暂时不确定，因此两端都算了进来
+                    if get_rt(code)["rollover"] in involvedays:
+                        # 可能实时牵涉到展期日，将该油的预测部分切换到另一只做近似
+                        # 其实对于升水不严重的时候，这一切换也不一定有正效果
+                        # 但对于升水严重的市场，可以防止实时预测的严重偏离
+                        # 对于展期交割时实时预测的逻辑正确性与稳定性，还需要进一步实盘验证
+                        if code.endswith("brent-oil"):
+                            code = "commodities/crude-oil"
+                        else:
+                            code = "commodities/brent-oil"
                 funddf = get_bar(code, prev=168, interval="3600")  ## 获取小时线
-                ## 这里的和基准比较，对于原油主力合约换仓日，将产生大幅异动，造成实时数据完全失真
-                ## TODO: 暂时没想到好的克服换仓日实时数据异常的办法
                 ## 注意对于国内超长假期，prev 可能还不够
                 if self.now.hour > 6:  # 昨日美国市场收盘才正常，才缓存参考小时线
                     self.bar_cache[code] = funddf

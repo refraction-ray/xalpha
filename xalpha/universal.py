@@ -1122,7 +1122,7 @@ def get_cninvesting_rt(suburl, app=False):
         if span.find("a") and span.find("a")["href"].startswith("/markets"):
             market = span.string
     market = region_trans.get(market, market)
-    return {
+    d = {
         "name": name,
         "current": q,
         "current_ext": q_ext,
@@ -1131,6 +1131,14 @@ def get_cninvesting_rt(suburl, app=False):
         "percent": percent,
         "market": market,
     }
+
+    if suburl.startswith("commodities"):  # 商品期货展期日
+        try:
+            d["rollover"] = s.select("span[class*=float_lang_base_2]")[10].string
+        except (ValueError, IndexError, AttributeError):
+            logger.warning("%s cannot extract rollover date" % suburl)
+            # in case some commodities with strong page structure
+    return d
 
 
 def get_rt_from_sina(code):
