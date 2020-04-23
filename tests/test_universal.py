@@ -203,6 +203,9 @@ def test_get_gzindex():
     df = xa.get_daily("GZB30018", start="20200202", end="20200204")
     assert round(df.iloc[-1]["close"], 1) == 107.4
 
+def test_get_hzindex():
+    assert len(xa.get_daily("HZ999002")) > 100
+
 
 def test_get_es():
     df = xa.get_daily("ESCI000302", start="20190419", end="2019/04/22")

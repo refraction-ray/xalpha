@@ -687,6 +687,30 @@ def get_historical_fromgzindex(code, start, end):
     df = df[::-1]
     return df
 
+def get_historical_fromhzindex(code, start, end):
+    """
+    华证指数源
+
+    :param code:
+    :param start:
+    :param end:
+    :return:
+    """
+    if code.startswith("HZ"):
+        code = code[2:]
+
+    r = rget_json(
+        "http://www.chindices.com/index/values.val?code={code}".format(
+            code= code
+        )
+    )
+    df = pd.DataFrame(r["data"])
+    df["date"] = pd.to_datetime(df["date"])
+    df = df[["date", "price", "pctChange"]]
+    df.rename(columns={"price":"close", "pctChange": "percent"}, inplace=True)
+    df = df[::-1]
+    return df
+
 
 def get_historical_fromesunny(code, start=None, end=None):
     """
@@ -829,6 +853,8 @@ def _get_daily(
             23. 形如 yc-companies/DBP，yc-companies/DBP/price 格式的数据，返回ycharts股票、ETF数据，对应网页 https://ycharts.com/companies/DBP/price，最后部分为数据含义，默认price，可选：net_asset_value（仅ETF可用）、total_return_price、total_return_forward_adjusted_price、average_volume_30，历史数据限制五年内。
 
             24. 形如 yc-indices/^SPGSCICO，yc-indices/^SPGSCICO/level 格式的数据，返回ycharts指数数据，对应网页 https://ycharts.com/indices/%5ESPGSCICO/level，最后部分为数据含义，默认level，可选：total_return_forward_adjusted_price，历史数据限制五年内。
+
+            25. 形如 HZ999001 HZ999005 格式的数据，代表了华证系列指数 http://www.chindices.com/indicator.html#
 
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
