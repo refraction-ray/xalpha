@@ -847,7 +847,7 @@ def daily_increment(code, date, lastday=None, _check=False):
         ratio = tds.iloc[-1]["close"] / tds.iloc[-2]["close"]
     else:
         tds2 = tds[tds["date"] <= lastday]
-        # 未考虑连 lastday 的数据数据源都没更新的情形，这种可能极小
+        # 未考虑检查连 lastday 的数据数据源都没更新的情形，这种可能极小
         ratio = tds.iloc[-1]["close"] / tds2.iloc[-1]["close"]
     return ratio
 
@@ -862,6 +862,7 @@ def _smooth_pos(r, e, o):
     :return:
     """
     pos = r / e
+    o = (0.92 + o) / 2  # 抑制季报异常的仓位基准
     if pos <= 0:
         return o
     if pos > 1:
@@ -869,7 +870,7 @@ def _smooth_pos(r, e, o):
     elif pos < 0.5:
         pos = pos ** 0.6
 
-    if abs(r) < 0.6:
+    if abs(r) < 0.6:  # 实际波动小时参考意义有限，进行削弱
         pos = (pos + (3 - 5 * abs(r)) * o) / (4 - 5 * abs(r))
 
     return pos
@@ -896,14 +897,15 @@ def error_catcher(f):
     return wrapper
 
 
-def evaluate_fluctuation(hdict, date, lastday=None, _check=None):
+def evaluate_fluctuation(hdict, date, lastday=None, _check=None, warning_threhold=None):
     """
     分析资产组合 hdict 的涨跌幅，全部兑换成人民币考虑
 
     :param hdict:
     :param date:
     :param lastday:
-    :param _check:
+    :param _check: bool, ensure date source has been updated, otherwise throw DataMismatch error
+    :param warning_threhold: float>1, 异常检查阈值，若为 2, 则代表单日涨到2或跌倒1/2以外被舍弃
     :return:
     """
     price = 0
@@ -911,6 +913,18 @@ def evaluate_fluctuation(hdict, date, lastday=None, _check=None):
 
     for fundid, percent in hdict.items():
         ratio = daily_increment(fundid, date, lastday, _check)
+        if warning_threhold:
+            if isinstance(warning_threhold, tuple):
+                pass
+            else:
+                warning_threhold = (warning_threhold, 1 / warning_threhold)  # 上界， 下界
+            # 额外检查，防止误算大幅分红和拆合股等为本身的价格变化，对于变化幅度小的拆合股与分红无法区别与价格变化
+            if ratio > warning_threhold[0] or ratio < warning_threhold[1]:
+                logger.warning(
+                    "%s has abnormal daily increment beyond warning_threhold %s"
+                    % (fundid, warning_threhold)
+                )
+                ratio = 1  # 直接重置
         exchange = 1
         currency = get_currency_code(fundid)
         if currency:
@@ -1230,7 +1244,11 @@ class QDIIPredict:
             self.t1_delta = (
                 1
                 + evaluate_fluctuation(
-                    hdict, yesterday_str, lastday=last_date, _check=True
+                    hdict,
+                    yesterday_str,
+                    lastday=last_date,
+                    _check=True,
+                    warning_threhold=(2.5, 0.05),
                 )
                 / 100
             )
@@ -1277,13 +1295,29 @@ class QDIIPredict:
             funddf = xu.get_daily(code)  ## 获取股指现货日线
             return funddf[funddf["date"] <= last_onday(self.today)].iloc[-1][
                 "close"
-            ]  # 日期是按当地时间
+            ]  # 日线日期是按当地时间
         # TODO: check it is indeed date of last_on(today)
         else:
             if code not in self.bar_cache:
+                if code in [
+                    "commodities/brent-oil",
+                    "commodities/crude-oil",
+                ]:  # 对原油期货展期时特殊处理
+                    involvedays = [
+                        s.strftime("%Y/%m/%d")
+                        for s in pd.date_range(last_onday(self.today), self.today)
+                    ]
+                    # 对于英为是在展期日开盘还是收盘改变主力合约，暂时不确定，因此两端都算了进来
+                    if get_rt(code)["rollover"] in involvedays:
+                        # 可能实时牵涉到展期日，将该油的预测部分切换到另一只做近似
+                        # 其实对于升水不严重的时候，这一切换也不一定有正效果
+                        # 但对于升水严重的市场，可以防止实时预测的严重偏离
+                        # 对于展期交割时实时预测的逻辑正确性与稳定性，还需要进一步实盘验证
+                        if code.endswith("brent-oil"):
+                            code = "commodities/crude-oil"
+                        else:
+                            code = "commodities/brent-oil"
                 funddf = get_bar(code, prev=168, interval="3600")  ## 获取小时线
-                ## 这里的和基准比较，对于原油主力合约换仓日，将产生大幅异动，造成实时数据完全失真
-                ## TODO: 暂时没想到好的克服换仓日实时数据异常的办法
                 ## 注意对于国内超长假期，prev 可能还不够
                 if self.now.hour > 6:  # 昨日美国市场收盘才正常，才缓存参考小时线
                     self.bar_cache[code] = funddf
@@ -1305,6 +1339,24 @@ class QDIIPredict:
         :param return_date: bool, default True. return tuple, the second one is date in the format %Y%m%d
         :return: float
         """
+        ###########
+        # 这里还没有考虑海外标的的拆股合股以及分红的处理逻辑，这些商品基金如果说分红还不太多的话，拆合股可能比较频繁
+        # 特别是对于杠杆油基。 英为的数据方面，基金拆合股之后，全部历史数据变化，相当于前复权。
+        # 也就是说如果不缓存日线数据的话，预测没有任何问题。但是日线数据我们总是倾向于缓存，这样我们还有个刷新掉最后一天缓存的逻辑在，
+        # 也就是说如果开缓存但预测是 positions=False, 不用浮动仓位的话，预测也没任何问题。
+        # 但一旦开了浮动仓位预测，拆合股会贡献一个巨大的涨跌幅，这会导致对应日期的即时未平滑仓位变小（因为基金实际涨幅跟不上这个异常涨跌幅）
+        # 最终导致 T-1 日仓位预测偏小，从而低估当日的涨跌幅，但应该不会出现方向性的问题。在这里没出现严重错误的原因是，
+        # 刷新掉最后一日缓存的逻辑和英为历史数据自动变化前复权。
+        # 至于分红，暂时没有样例观察英为如何处理价格，是否会前复权，如果会的话，也不会出现严重问题，只是仓位预估会偏。
+        # 想要能估计准，还是建议了解这些变化信息，当天先 refresh=True 手动刷新相关标的的数据，前提是每次对应数据源都有正确复权。
+        #
+        # 实际上对于仓位预测，之前几天的 daily increment 可能还有更多的坑，比如说节假日考虑不完善 real， pred 起止时间不对等。
+        # 但原则就是仓位的滑动平均可以尽量抑制这种问题，而不至于使其暴露的过于明显。但是如果基准仓位比较偏，比如一季报披露的话，可能有些问题，
+        # 会反复造成预估仓位过小。可能需要补一个修正。
+        #
+        # 此外关于利用基金净值而非市价预测的问题，可以参考：https://github.com/refraction-ray/xalpha/pull/15 的一些讨论。
+        ###########
+
         if not self.t0dict:
             raise ValueError("Please provide t0dict for prediction")
         t1value = self.get_t1(date=None, return_date=False)
@@ -1397,6 +1449,7 @@ class QDIIPredict:
                     fdict,
                     d.strftime("%Y-%m-%d"),
                     lastday=last_onday(d).strftime("%Y-%m-%d"),
+                    warning_threhold=(1.8, 0.1),
                 )
                 real = evaluate_fluctuation(
                     {self.fcode: 100},
@@ -1448,7 +1501,9 @@ class QDIIPredict:
             dstr = d.strftime("%Y%m%d")
             lstdstr = dl.iloc[j - 1].strftime("%Y%m%d")
             compare_data["date"].append(d)
-            fullestf = evaluate_fluctuation(full_holdings, dstr, lstdstr)
+            fullestf = evaluate_fluctuation(
+                full_holdings, dstr, lstdstr, warning_threhold=(1.8, 0.2)
+            )
             realf = evaluate_fluctuation(real_holdings, dstr, lstdstr)
             estf = fullestf * current_pos
             compare_data["est"].append(estf)
