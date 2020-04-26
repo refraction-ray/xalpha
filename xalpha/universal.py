@@ -1822,6 +1822,7 @@ def get_stock_peb_range(code, start, end, wrapper=False):
     return df
 
 
+@lru_cache()
 def ttjjcode(code):
     """
     将天天基金的持仓股票代码标准化

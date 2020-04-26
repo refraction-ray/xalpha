@@ -26,7 +26,8 @@ from xalpha.cons import (
     xnpv,
     xirr,
 )
-from xalpha.universal import lru_cache_time, get_rt, ttjjcode, get_daily
+import xalpha.universal as xu
+from xalpha.universal import lru_cache_time, get_rt, ttjjcode
 from xalpha.exceptions import ParserFailure
 
 # 该模块只是保存其他一些爬虫的函数，其接口很不稳定，不提供文档和测试，且随时增删，慎用！
@@ -393,8 +394,28 @@ class CBCalculator:
     可转债内在价值，简单计算器，期权价值与债券价值估算
     """
 
-    def __init__(self, code, bondrate=None, riskfreerate=None, volatility=None):
+    def __init__(
+        self, code, bondrate=None, riskfreerate=None, volatility=None, name=None
+    ):
+        """
+
+        :param code: str. 转债代码，包含 SH 或 SZ 字头
+        :param bondrate: Optional[float]. 评估所用的债券折现率，默认使用中证企业债对应信用评级对应久期的利率
+        :param riskfreerate: Optioal[float]. 评估期权价值所用的无风险利率，默认使用国债对应久期的年利率。
+        :param volatility: Optional[float]. 正股波动性百分点，默认在一个范围浮动加上历史波动率的小幅修正。
+        :param name: str. 对于历史回测，可以直接提供 str，免得多次 get_rt 获取 name
+        """
+        # 应该注意到该模型除了当天外，其他时间估计会利用现在的转股价，对于以前下修过转股价的转债历史价值估计有问题
+
         self.code = code
+        self.refbondrate = bondrate
+        self.bondrate = self.refbondrate
+        self.refriskfreerate = riskfreerate
+        self.riskfreerate = self.refriskfreerate
+        self.refvolatility = volatility
+        self.volatility = self.refvolatility
+        self.name = name
+
         r = rget("https://www.jisilu.cn/data/convert_bond_detail/" + code[2:])
         r.encoding = "utf-8"
         b = BeautifulSoup(r.text, "lxml")
@@ -407,20 +428,42 @@ class CBCalculator:
         self.scode = (
             b.select("td[class=jisilu_nav]")[0].contents[1].string.split("-")[1].strip()
         )
-        self.scode = ttjjcode(self.scode)
-        rt = get_rt(code)
-        self.name = rt["name"]
-        self.cbp = rt["current"]  # 转债价
-        self.stockp = get_rt(self.scode)["current"]  # 股票价
+        self.scode = ttjjcode(self.scode)  # 标准化股票代码
         self.zgj = float(b.select("td[id=convert_price]")[0].string)  # 转股价
         self.rating = b.select("td[id=rating_cd]")[0].string
-        df = get_daily(self.scode)
+        self.enddate = b.select("td[id=maturity_dt]")[0].string
+
+    def process_byday(self, date):
+        if not date:
+            self.date_obj = dt.datetime.today()
+        else:
+            self.date_obj = dt.datetime.strptime(
+                date.replace("-", "").replace("/", ""), "%Y%m%d"
+            )
+        if not date:
+            rt = get_rt(self.code)
+            self.name = rt["name"]
+            self.cbp = rt["current"]  # 转债价
+            self.stockp = get_rt(self.scode)["current"]  # 股票价
+        else:
+            try:
+                if not self.name:
+                    rt = get_rt(self.code)
+                    self.name = rt["name"]
+            except:
+                self.name = "unknown"
+            df = xu.get_daily(self.code, prev=100, end=self.date_obj.strftime("%Y%m%d"))
+            self.cbp = df.iloc[-1]["close"]
+            df = xu.get_daily(
+                self.scode, prev=100, end=self.date_obj.strftime("%Y%m%d")
+            )
+            self.stockp = df.iloc[-1]["close"]
+
+        df = xu.get_daily(self.scode, prev=360, end=self.date_obj.strftime("%Y%m%d"))
         self.history_volatility = np.std(
             np.log(df["close"] / df.shift(1)["close"])
         ) * np.sqrt(244)
-        if volatility:
-            self.volatility = volatility
-        else:
+        if not self.refvolatility:
             self.volatility = 0.17
             if self.rating in ["A", "A+", "AA-"]:
                 self.volatility = 0.19
@@ -432,17 +475,14 @@ class CBCalculator:
                 self.volatility += 0.02
             elif self.history_volatility > 0.45:
                 self.volatility += 0.01
-        self.enddate = b.select("td[id=maturity_dt]")[0].string
         self.years = len(self.rlist) - 1
         syear = int(self.enddate.split("-")[0]) - self.years
         self.issuedate = str(syear) + self.enddate[4:]
         self.days = (
-            dt.datetime.strptime(self.enddate, "%Y-%m-%d") - dt.datetime.today()
+            dt.datetime.strptime(self.enddate, "%Y-%m-%d") - self.date_obj
         ).days
-        if bondrate:
-            self.bondrate = bondrate
-        else:
-            ratestable = get_bond_rates(self.rating)
+        if not self.refbondrate:
+            ratestable = get_bond_rates(self.rating, self.date_obj.strftime("%Y-%m-%d"))
             if self.rating in ["A", "A+", "AA-"]:
                 ## AA 到 AA- 似乎是利率跳高的一个坎
                 cutoff = 2
@@ -450,7 +490,7 @@ class CBCalculator:
                 cutoff = 4
             if self.days / 365 > cutoff:
                 # 过长久期的到期收益率，容易造成估值偏离，虽然理论上是对的
-                # 考虑到国内可转债市场信用风险较低，不应过分低谷低信用债的债券价值
+                # 考虑到国内可转债市场信用风险较低，不应过分低估低信用债的债券价值
                 self.bondrate = (
                     ratestable[ratestable["year"] <= cutoff].iloc[-1]["rate"] / 100
                 )
@@ -459,10 +499,8 @@ class CBCalculator:
                     ratestable[ratestable["year"] >= self.days / 365].iloc[0]["rate"]
                     / 100
                 )
-        if riskfreerate:
-            self.riskfreerate = riskfreerate
-        else:
-            ratestable = get_bond_rates("N")
+        if not self.refriskfreerate:
+            ratestable = get_bond_rates("N", self.date_obj.strftime("%Y-%m-%d"))
             if self.days / 365 > 5:
                 self.riskfreerate = (
                     ratestable[ratestable["year"] <= 5].iloc[-1]["rate"] / 100
@@ -473,8 +511,9 @@ class CBCalculator:
                     / 100
                 )
 
-    def basic_info(self):
-        return {
+    def analyse(self, date=None):
+        self.process_byday(date=date)
+        d = {
             "stockcode": self.scode,
             "cbcode": self.code,
             "name": self.name,
@@ -490,10 +529,8 @@ class CBCalculator:
             "riskfreerate": self.riskfreerate,
             "years": self.days / 365,
             "issuedate": self.issuedate,
+            "date": self.date_obj.strftime("%Y-%m-%d"),
         }
-
-    def price_analyse(self):
-        d = {}
         d["bond_value"] = cb_bond_value(self.issuedate, self.rlist, self.bondrate)
         d["ytm_wo_tax"] = cb_ytm(self.issuedate, self.rlist, self.cbp)
         d["ytm_wi_tax"] = cb_ytm(self.issuedate, self.rlist, self.cbp, tax=0.8)

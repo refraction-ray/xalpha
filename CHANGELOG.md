@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.8.9 - 2020.04.26
 ### fixed
 * 中证数据源 dataframe close 列保证是 float
 * 增加了原油期货交割日带来的QDII实时预测困难解决
