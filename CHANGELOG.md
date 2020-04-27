@@ -1,8 +1,9 @@
 # Changelog
 ## Unreleased
+### added
+* 增加场内账单分红派息合拆送股的处理，支持特定行跳过
 ### fixed
 * 继续完善 QDII 原油展期实时估值处理逻辑
-
 
 ## v0.8.9 - 2020.04.26
 ### fixed

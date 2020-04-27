@@ -103,7 +103,8 @@ class mul:
                 if isinstance(istatus, irecord):
                     istatus = istatus.status
                 for code in istatus.code.unique():
-                    fundtradeobj.append(itrade(code, istatus))
+                    if not code.startswith("#"):
+                        fundtradeobj.append(itrade(code, istatus))
         self.fundtradeobj = tuple(fundtradeobj)
         self.totcftable = self._mergecftb()
 
@@ -402,7 +403,8 @@ class imul(mul):
             if isinstance(status, irecord):
                 status = status.status
             for code in status.code.unique():
-                fundtradeobj.append(itrade(code, status))
+                if not code.startswith("#"):
+                    fundtradeobj.append(itrade(code, status))
         self.fundtradeobj = tuple(fundtradeobj)
         self.totcftable = self._mergecftb()
         self.is_in = True

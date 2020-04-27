@@ -16,7 +16,7 @@ orc = xa.record(path)
 
 
 def test_irecord():
-    assert len(ir.filter("SH501018")) == 7
+    assert len(ir.filter("SH501018")) == 8
 
 
 def test_itrade():
