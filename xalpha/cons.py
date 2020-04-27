@@ -303,10 +303,10 @@ heatmap_opts = {
     )
 }
 
-pie_opts = {
-    "tooltip_opts": TooltipOpts(),
-    "legend_opts": LegendOpts(orient="vertical", pos_left="left"),
-}
+# pie_opts = {
+#     "tooltip_opts": TooltipOpts(),
+#     "legend_opts": LegendOpts(orient="vertical", pos_left="left"),
+# }
 
 themeriver_opts = {
     "xaxis_opts": AxisOpts(type_="time"),
