@@ -975,6 +975,9 @@ def _get_daily(
     elif _from == "GZ":
         df = get_historical_fromgzindex(code, start=start, end=end)
 
+    elif _from == "HZ":
+        df = get_historical_fromhzindex(code, start=start, end=end)
+
     elif _from == "ES":
         df = get_historical_fromesunny(code, start=start, end=end)
 
