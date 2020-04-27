@@ -903,6 +903,8 @@ def _get_daily(
             _from = "ZZ"
         elif code.startswith("GZ") and code[-3:].isdigit():  # 注意国证系列指数的代码里可能包含多个字母！
             _from = "GZ"
+        elif code.startswith("HZ") and code[2:].isdigit():
+            _from = "HZ"
         elif code.startswith("ESCI") and code[4:].isdigit():
             _from = "ES"
         elif code.startswith("yc-companies/") or code.startswith("yc-indices/"):
