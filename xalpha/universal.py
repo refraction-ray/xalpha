@@ -1135,6 +1135,7 @@ def get_cninvesting_rt(suburl, app=False):
     if suburl.startswith("commodities"):  # 商品期货展期日
         try:
             d["rollover"] = s.select("span[class*=float_lang_base_2]")[10].string
+            d["lastrollover"] = s.select("span[class*=float_lang_base_2]")[13].string
         except (ValueError, IndexError, AttributeError):
             logger.warning("%s cannot extract rollover date" % suburl)
             # in case some commodities with strong page structure

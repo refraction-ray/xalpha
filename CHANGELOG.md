@@ -1,5 +1,8 @@
 # Changelog
 ## Unreleased
+### fixed
+* 继续完善 QDII 原油展期实时估值处理逻辑
+
 
 ## v0.8.9 - 2020.04.26
 ### fixed
