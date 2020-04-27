@@ -1,5 +1,11 @@
 # Changelog
 ## Unreleased
+### added
+* 增加场内账单分红派息合拆送股的处理，支持特定行跳过
+### fixed
+* 继续完善 QDII 原油展期实时估值处理逻辑
+
+## v0.8.9 - 2020.04.26
 ### fixed
 * 中证数据源 dataframe close 列保证是 float
 * 增加了原油期货交割日带来的QDII实时预测困难解决

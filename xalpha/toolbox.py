@@ -1298,25 +1298,8 @@ class QDIIPredict:
             ]  # 日线日期是按当地时间
         # TODO: check it is indeed date of last_on(today)
         else:
+            code = self.hot_replace(code)
             if code not in self.bar_cache:
-                if code in [
-                    "commodities/brent-oil",
-                    "commodities/crude-oil",
-                ]:  # 对原油期货展期时特殊处理
-                    involvedays = [
-                        s.strftime("%Y/%m/%d")
-                        for s in pd.date_range(last_onday(self.today), self.today)
-                    ]
-                    # 对于英为是在展期日开盘还是收盘改变主力合约，暂时不确定，因此两端都算了进来
-                    if get_rt(code)["rollover"] in involvedays:
-                        # 可能实时牵涉到展期日，将该油的预测部分切换到另一只做近似
-                        # 其实对于升水不严重的时候，这一切换也不一定有正效果
-                        # 但对于升水严重的市场，可以防止实时预测的严重偏离
-                        # 对于展期交割时实时预测的逻辑正确性与稳定性，还需要进一步实盘验证
-                        if code.endswith("brent-oil"):
-                            code = "commodities/crude-oil"
-                        else:
-                            code = "commodities/brent-oil"
                 funddf = get_bar(code, prev=168, interval="3600")  ## 获取小时线
                 ## 注意对于国内超长假期，prev 可能还不够
                 if self.now.hour > 6:  # 昨日美国市场收盘才正常，才缓存参考小时线
@@ -1329,6 +1312,33 @@ class QDIIPredict:
             ][
                 "close"
             ]  # 时间是按北京时间, 小时线只能手动缓存，日线不需要是因为自带透明缓存器
+
+    def hot_replace(self, code):
+        # 原油切换，避免展期误算实时
+        if code in [
+            "commodities/brent-oil",
+            "commodities/crude-oil",
+        ]:
+            involvedays = [
+                s.strftime("%Y/%m/%d")
+                for s in pd.date_range(last_onday(self.today), self.today)
+            ]
+            st = get_rt(code)
+            rl = st["rollover"]
+            lrl = st["lastrollover"]
+            if rl in involvedays or lrl in involvedays:
+                # 可能实时牵涉到展期日，将该油的预测部分切换到另一只做近似
+                # 其实对于升水不严重的时候，这一切换也不一定有正效果
+                # 但对于升水严重的市场，可以防止实时预测的严重偏离
+                # 对于展期交割时实时预测的逻辑正确性与稳定性，还需要进一步实盘验证
+                logger.info(
+                    "%s is rolling in this period, change to its alternative" % code
+                )
+                if code.endswith("brent-oil"):
+                    code = "commodities/crude-oil"
+                else:
+                    code = "commodities/brent-oil"
+        return code
 
     def get_t0(self, percent=False, return_date=True):
         """
@@ -1373,6 +1383,7 @@ class QDIIPredict:
             shift = v.get("time", None)
             base = v.get("base", None)
             t += w
+            k = self.hot_replace(k)  # 原油切换
             r = get_rt(
                 k
             )  # k should support get_rt, investing pid doesn't support this!
