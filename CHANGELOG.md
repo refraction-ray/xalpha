@@ -3,6 +3,7 @@
 ### added
 * 增加场内账单分红派息合拆送股的处理，支持特定行跳过
 * 为 trade.v_tradecost() 增加买卖点标记（类似蚂蚁财富显示效果）
+* 场内交易类也支持 tradecost 和 totvalue 可视化
 ### fixed
 * 继续完善 QDII 原油展期实时估值处理逻辑
 * 优化 mul 的扇形图和 trade 折线图的显示效果

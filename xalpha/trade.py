@@ -3,6 +3,7 @@
 module for trade class
 """
 import datetime as dt
+import logging
 
 import pandas as pd
 from pyecharts.charts import Bar, Line
@@ -14,6 +15,8 @@ from xalpha.exceptions import ParserFailure, TradeBehaviorError
 from xalpha.record import irecord
 import xalpha.universal as xu
 from xalpha.universal import get_rt
+
+logger = logging.getLogger(__name__)
 
 
 def xirrcal(cftable, trades, date, guess=0.1):
@@ -180,6 +183,7 @@ class trade:
         code = self.aim.code
         self.code = code
         self.name = self.aim.name
+        self.price = self.aim.price
         self.cftable = pd.DataFrame([], columns=["date", "cash", "share"])
         self.remtable = pd.DataFrame([], columns=["date", "rem"])
         self.status = status.loc[:, ["date", code]]
@@ -277,11 +281,7 @@ class trade:
                 cash += dcash
                 share += dshare
             if date in self.aim.specialdate:  # deal with fenhong and xiazhe
-                comment = (
-                    self.aim.price[self.aim.price["date"] == date]
-                    .iloc[0]
-                    .loc["comment"]
-                )
+                comment = self.price[self.price["date"] == date].iloc[0].loc["comment"]
                 if isinstance(comment, float):
                     if comment < 0:
                         dcash2, dshare2 = (
@@ -304,7 +304,7 @@ class trade:
                                 sum(self.cftable.loc[:, "share"])
                                 * (
                                     comment
-                                    / self.aim.price[self.aim.price["date"] == date]
+                                    / self.price[self.price["date"] == date]
                                     .iloc[0]
                                     .netvalue
                                 )
@@ -393,7 +393,7 @@ class trade:
         return df
 
     def get_netvalue(self, date=yesterdayobj()):
-        return self.aim.price[self.aim.price["date"] <= date].iloc[-1].netvalue
+        return self.price[self.price["date"] <= date].iloc[-1].netvalue
 
     def briefdailyreport(self, date=yesterdayobj()):
         """
@@ -454,9 +454,11 @@ class trade:
         """
         funddata = []
         costdata = []
-        pprice = self.aim.price[self.aim.price["date"] <= end]
+        pprice = self.price[self.price["date"] <= end]
+        pcftable = self.cftable
         if start is not None:
             pprice = pprice[pprice["date"] >= start]
+            pcftable = pcftable[pcftable["date"] >= start]
         for _, row in pprice.iterrows():
             date = row["date"]
             funddata.append(row["netvalue"])
@@ -466,13 +468,15 @@ class trade:
             costdata.append(cost)
 
         coords = []
-        for i, r in self.cftable.iterrows():
+        for i, r in pcftable.iterrows():
             coords.append(
                 [r.date, pprice[pprice["date"] <= r.date].iloc[-1]["netvalue"]]
             )
 
         upper = self.cftable.cash.abs().max()
         lower = self.cftable.cash.abs().min()
+        if upper == lower:
+            upper = 2 * lower
 
         def marker_factory(x, y):
             buy = self.cftable[self.cftable["date"] <= x].iloc[-1]["cash"]
@@ -533,7 +537,7 @@ class trade:
         """
         visualization on the total values daily change of the aim
         """
-        partp = self.aim.price[self.aim.price["date"] >= self.cftable.iloc[0].date]
+        partp = self.price[self.price["date"] >= self.cftable.iloc[0].date]
         # 多基金账单时起点可能非该基金持有起点
         partp = partp[partp["date"] <= end]
 
@@ -586,6 +590,16 @@ class itrade(trade):
         else:
             self.status = status[status.code == code]
         # self.cftable = pd.DataFrame([], columns=["date", "cash", "share"])
+        try:
+            self.price = xu.get_daily(
+                self.code, start=self.status.iloc[0]["date"].strftime("%Y-%m-%d")
+            )
+            self.price["netvalue"] = self.price["close"]
+        except Exception as e:
+            logger.warning(
+                "%s when trade trying to get daily price of %s" % (e, self.code)
+            )
+            self.price = None
         self._arrange()
         if not name:
             try:
@@ -608,25 +622,10 @@ class itrade(trade):
                 d["share"].append(r.share)
         self.cftable = pd.DataFrame(d)
 
-    def v_totvalue(self, **kws):
-        raise NotImplementedError()
-
-    def v_tradecost(self, **kws):
-        raise NotImplementedError()
-
     def get_netvalue(self, date=yesterdayobj()):
-        # 若使用请务必配合带 precached 的缓存策略！！
-        if not getattr(self, "fetchonly", None):
-            self.fetchonly = False
-        prestart = self.status.iloc[0]["date"]
-        df = xu.get_daily(
-            self.code,
-            end=date.strftime("%Y%m%d"),
-            prev=20,
-            fetchonly=self.fetchonly,
-            precached=prestart.strftime("%Y%m%d"),
-        )
-        self.fetchonly = True  # 这么做防止数据空白时期的反复抓取
+        if self.price is None:
+            return 0
+        df = self.price[self.price["date"] <= date]
         if len(df) > 0:
             return df.iloc[-1].close
         else:
