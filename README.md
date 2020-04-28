@@ -74,6 +74,23 @@ $ git clone https://github.com/refraction-ray/xalpha.git
 $ cd xalpha && python3 setup.py install
 ```
 
+在windows环境下，terminal默认编码是gbk，修改setup.py的第五行为:
+
+```python
+with open("README.md", "r", encoding="utf-8") as fh:
+```
+
+通过utf-8编码打开。
+
+在
+
+```python
+python3 setup.py install
+```
+是如果报错“AttributeError: ‘Function’ object has no attribute ‘get_marker’”，
+可以参考[链接](https://www.scivision.dev/pytest-attribute-error-getmarker/)，对pytest-cov做个升级.
+
+
 ## 用法
 
 ### 本地使用
