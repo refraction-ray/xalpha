@@ -80,6 +80,16 @@ $ cd xalpha && python3 setup.py install
 
 由于丰富的可视化支持，建议配合 Jupyter Notebook 使用。可以参照[这里](https://xalpha.readthedocs.io/en/latest/demo.html)给出的示例连接，快速掌握大部分功能。
 
+部分效果如下：
+
+<img src="doc/source/kline.png" width="90%">
+
+<img src="doc/source/tradecost.png" width="90%">
+
+<img src="doc/source/positions.png" width="80%">
+
+
+
 ### 在量化平台使用
 
 这里以聚宽为例，打开聚宽研究环境的 jupyter notebook，运行以下命令：

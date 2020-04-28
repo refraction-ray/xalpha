@@ -801,14 +801,14 @@ def is_on(date, market="CN", no_trading_days=None):
     return _is_on(code, date)
 
 
-def daily_increment(code, date, lastday=None, _check=False):
+def daily_increment(code, date, lastday=None, _check=False, warning_threhold=None):
     """
     单一标的 date 日（若 date 日无数据则取之前的最晚有数据日，但该日必须大于 _check 对应的日期）较上一日或 lastday 的倍数，
     lastday 支持不完整，且不能离 date 太远
 
     :param code:
     :param date:
-    :param lastday: 如果用默认 None，则表示和前一日的涨跌
+    :param lastday: 如果用默认 None，则表示和前一日的涨跌, 不是一个支持任意日期涨幅的通用类，只有最接近的几天才保证逻辑没有问题
     :param _check: 数据必须已更新到 date 日，除非之前每天都是节假日
     :return:
     """
@@ -821,6 +821,16 @@ def daily_increment(code, date, lastday=None, _check=False):
         else:
             raise e
     tds = tds[tds["date"] <= date]
+    if len(tds) > 1 and warning_threhold:
+        rough_ratio = tds.iloc[-1]["close"] / tds.iloc[-2]["close"]
+        if rough_ratio > warning_threhold[0] or rough_ratio < warning_threhold[1]:
+            logger.warning(
+                "daily_increment detects abnormal increase or decrease of %s"
+                " trying to refresh price cache" % code
+            )
+            tds = xu.get_daily(code=code, end=date, prev=30, refresh=True)
+            # 对于可能出现的拆合股情况，刷新该标的全局缓存
+            tds = tds[tds["date"] <= date]
     if _check:
         date = date.replace("-", "").replace("/", "")
         date_obj = dt.datetime.strptime(date, "%Y%m%d")
@@ -910,18 +920,19 @@ def evaluate_fluctuation(hdict, date, lastday=None, _check=None, warning_threhol
     """
     price = 0
     tot = 0
-
+    if warning_threhold:
+        if isinstance(warning_threhold, tuple):
+            pass
+        else:
+            warning_threhold = (warning_threhold, 1 / warning_threhold)  # 上界， 下界
     for fundid, percent in hdict.items():
-        ratio = daily_increment(fundid, date, lastday, _check)
+        ratio = daily_increment(fundid, date, lastday, _check, warning_threhold)
         if warning_threhold:
-            if isinstance(warning_threhold, tuple):
-                pass
-            else:
-                warning_threhold = (warning_threhold, 1 / warning_threhold)  # 上界， 下界
+
             # 额外检查，防止误算大幅分红和拆合股等为本身的价格变化，对于变化幅度小的拆合股与分红无法区别与价格变化
             if ratio > warning_threhold[0] or ratio < warning_threhold[1]:
                 logger.warning(
-                    "%s has abnormal daily increment beyond warning_threhold %s"
+                    "%s has abnormal daily increment beyond warning_threhold %s, auto reset..."
                     % (fundid, warning_threhold)
                 )
                 ratio = 1  # 直接重置
@@ -1248,7 +1259,7 @@ class QDIIPredict:
                     yesterday_str,
                     lastday=last_date,
                     _check=True,
-                    warning_threhold=(2.5, 0.05),
+                    warning_threhold=(1.8, 0.1),
                 )
                 / 100
             )
@@ -1359,6 +1370,8 @@ class QDIIPredict:
         # 刷新掉最后一日缓存的逻辑和英为历史数据自动变化前复权。
         # 至于分红，暂时没有样例观察英为如何处理价格，是否会前复权，如果会的话，也不会出现严重问题，只是仓位预估会偏。
         # 想要能估计准，还是建议了解这些变化信息，当天先 refresh=True 手动刷新相关标的的数据，前提是每次对应数据源都有正确复权。
+        # 注意：英为似乎并不是总能及时正确的对历史数据前复权。所以需要双重保险，daily_increment 探测到异常增幅的标的进行 refresh 刷新
+        # evaluate_fluctuation 可能继续探测到异常，这时直接涨幅置为0。
         #
         # 实际上对于仓位预测，之前几天的 daily increment 可能还有更多的坑，比如说节假日考虑不完善 real， pred 起止时间不对等。
         # 但原则就是仓位的滑动平均可以尽量抑制这种问题，而不至于使其暴露的过于明显。但是如果基准仓位比较偏，比如一季报披露的话，可能有些问题，
@@ -1513,7 +1526,7 @@ class QDIIPredict:
             lstdstr = dl.iloc[j - 1].strftime("%Y%m%d")
             compare_data["date"].append(d)
             fullestf = evaluate_fluctuation(
-                full_holdings, dstr, lstdstr, warning_threhold=(1.8, 0.2)
+                full_holdings, dstr, lstdstr, warning_threhold=(1.8, 0.1)
             )
             realf = evaluate_fluctuation(real_holdings, dstr, lstdstr)
             estf = fullestf * current_pos
