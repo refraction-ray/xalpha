@@ -7,7 +7,7 @@ import pandas as pd
 from pyecharts import options as opts
 from pyecharts.charts import Pie, ThemeRiver
 
-from xalpha.cons import convert_date, myround, pie_opts, yesterdaydash, yesterdayobj
+from xalpha.cons import convert_date, myround, yesterdaydash, yesterdayobj
 from xalpha.evaluate import evaluate
 from xalpha.exceptions import FundTypeError, TradeBehaviorError
 from xalpha.record import record, irecord
@@ -231,7 +231,7 @@ class mul:
         )
         return case
 
-    def v_positions(self, date=yesterdayobj(), rendered=True, vopts=None):
+    def v_positions(self, date=yesterdayobj(), rendered=True):
         """
         pie chart visualization of positions ratio in combination
         """
@@ -243,18 +243,27 @@ class mul:
             key=lambda x: x[1],
             reverse=True,
         )
-
         pie = Pie()
-        if vopts is None:
-            vopts = pie_opts
-        pie.add(series_name="总值占比", data_pair=sdata)
-        pie.set_global_opts(**vopts)
+        pie.add(
+            series_name="总值占比",
+            data_pair=sdata,
+            label_opts=opts.LabelOpts(is_show=False, position="center"),
+        ).set_global_opts(
+            legend_opts=opts.LegendOpts(
+                pos_left="left", type_="scroll", orient="vertical"
+            )
+        ).set_series_opts(
+            tooltip_opts=opts.TooltipOpts(
+                trigger="item", formatter="{a} <br/>{b}: {c} ({d}%)"
+            ),
+        )
+
         if rendered:
             return pie.render_notebook()
         else:
             return pie
 
-    def v_positions_history(self, end=yesterdaydash(), rendered=True, **vkwds):
+    def v_positions_history(self, end=yesterdaydash(), rendered=True):
         """
         river chart visulization of positions ratio history
         use text size to avoid legend overlap in some sense, eg. legend_text_size=8

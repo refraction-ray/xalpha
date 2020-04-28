@@ -3,17 +3,20 @@
 module for trade class
 """
 import datetime as dt
+import logging
 
 import pandas as pd
 from pyecharts.charts import Bar, Line
-from pyecharts.options import AxisOpts, DataZoomOpts
+from pyecharts import options as opts
 
 import xalpha.remain as rm
 from xalpha.cons import convert_date, line_opts, myround, xirr, yesterdayobj
 from xalpha.exceptions import ParserFailure, TradeBehaviorError
 from xalpha.record import irecord
 import xalpha.universal as xu
-from xalpha.universal import get_daily, get_rt
+from xalpha.universal import get_rt
+
+logger = logging.getLogger(__name__)
 
 
 def xirrcal(cftable, trades, date, guess=0.1):
@@ -152,8 +155,8 @@ def vtradevolume(cftable, freq="D", rendered=True):
     bar.add_yaxis(series_name="卖出", yaxis_data=selldata, category_gap="90%")
 
     bar.set_global_opts(
-        xaxis_opts=AxisOpts(type_="time"),
-        datazoom_opts=[DataZoomOpts(range_start=99, range_end=100)],
+        xaxis_opts=opts.AxisOpts(type_="time"),
+        datazoom_opts=[opts.DataZoomOpts(range_start=99, range_end=100)],
     )
     if rendered:
         return bar.render_notebook()
@@ -180,6 +183,7 @@ class trade:
         code = self.aim.code
         self.code = code
         self.name = self.aim.name
+        self.price = self.aim.price
         self.cftable = pd.DataFrame([], columns=["date", "cash", "share"])
         self.remtable = pd.DataFrame([], columns=["date", "rem"])
         self.status = status.loc[:, ["date", code]]
@@ -277,11 +281,7 @@ class trade:
                 cash += dcash
                 share += dshare
             if date in self.aim.specialdate:  # deal with fenhong and xiazhe
-                comment = (
-                    self.aim.price[self.aim.price["date"] == date]
-                    .iloc[0]
-                    .loc["comment"]
-                )
+                comment = self.price[self.price["date"] == date].iloc[0].loc["comment"]
                 if isinstance(comment, float):
                     if comment < 0:
                         dcash2, dshare2 = (
@@ -304,7 +304,7 @@ class trade:
                                 sum(self.cftable.loc[:, "share"])
                                 * (
                                     comment
-                                    / self.aim.price[self.aim.price["date"] == date]
+                                    / self.price[self.price["date"] == date]
                                     .iloc[0]
                                     .netvalue
                                 )
@@ -393,7 +393,7 @@ class trade:
         return df
 
     def get_netvalue(self, date=yesterdayobj()):
-        return self.aim.price[self.aim.price["date"] <= date].iloc[-1].netvalue
+        return self.price[self.price["date"] <= date].iloc[-1].netvalue
 
     def briefdailyreport(self, date=yesterdayobj()):
         """
@@ -446,18 +446,19 @@ class trade:
         """
         return vtradevolume(self.cftable, freq=freq, rendered=rendered)
 
-    def v_tradecost(self, start=None, end=yesterdayobj(), rendered=True, vopts=None):
+    def v_tradecost(self, start=None, end=yesterdayobj(), rendered=True):
         """
         visualization giving the average cost line together with netvalue line
 
-        :param vopts: global option for line in pyecharts
         :returns: pyecharts.line
         """
         funddata = []
         costdata = []
-        pprice = self.aim.price[self.aim.price["date"] <= end]
+        pprice = self.price[self.price["date"] <= end]
+        pcftable = self.cftable
         if start is not None:
             pprice = pprice[pprice["date"] >= start]
+            pcftable = pcftable[pcftable["date"] >= start]
         for _, row in pprice.iterrows():
             date = row["date"]
             funddata.append(row["netvalue"])
@@ -466,14 +467,67 @@ class trade:
                 cost = self.unitcost(date)
             costdata.append(cost)
 
+        coords = []
+        for i, r in pcftable.iterrows():
+            coords.append(
+                [r.date, pprice[pprice["date"] <= r.date].iloc[-1]["netvalue"]]
+            )
+
+        upper = self.cftable.cash.abs().max()
+        lower = self.cftable.cash.abs().min()
+        if upper == lower:
+            upper = 2 * lower
+
+        def marker_factory(x, y):
+            buy = self.cftable[self.cftable["date"] <= x].iloc[-1]["cash"]
+            if buy < 0:
+                color = "#ff7733"
+            else:
+
+                color = "#3366ff"
+            size = (abs(buy) - lower) / (upper - lower) * 5 + 5
+            return opts.MarkPointItem(
+                coord=[x.date(), y],
+                itemstyle_opts=opts.ItemStyleOpts(color=color),
+                # this nested itemstyle_opts within MarkPointItem is only supported for pyechart>1.7.1
+                symbol="circle",
+                symbol_size=size,
+            )
+
         line = Line()
-        if vopts is None:
-            vopts = line_opts
 
         line.add_xaxis([d.date() for d in pprice.date])
-        line.add_yaxis(series_name="基金净值", y_axis=funddata, is_symbol_show=False)
-        line.add_yaxis(series_name="持仓成本", y_axis=costdata, is_symbol_show=False)
-        line.set_global_opts(**vopts)
+        line.add_yaxis(
+            series_name="基金净值", y_axis=funddata, is_symbol_show=False,
+        )
+        line.add_yaxis(
+            series_name="持仓成本",
+            y_axis=costdata,
+            is_symbol_show=False,
+            markpoint_opts=opts.MarkPointOpts(
+                data=[marker_factory(*c) for c in coords],
+            ),
+        )
+        line.set_global_opts(
+            datazoom_opts=[
+                opts.DataZoomOpts(
+                    is_show=True, type_="slider", range_start=50, range_end=100
+                ),
+                opts.DataZoomOpts(
+                    is_show=True,
+                    type_="slider",
+                    orient="vertical",
+                    range_start=50,
+                    range_end=100,
+                ),
+            ],
+            tooltip_opts=opts.TooltipOpts(
+                is_show=True,
+                trigger="axis",
+                trigger_on="mousemove",
+                axis_pointer_type="cross",
+            ),
+        )
         if rendered:
             return line.render_notebook()
         else:
@@ -483,7 +537,8 @@ class trade:
         """
         visualization on the total values daily change of the aim
         """
-        partp = self.aim.price[self.aim.price["date"] >= self.cftable.iloc[0].date]
+        partp = self.price[self.price["date"] >= self.cftable.iloc[0].date]
+        # 多基金账单时起点可能非该基金持有起点
         partp = partp[partp["date"] <= end]
 
         date = [d.date() for d in partp.date]
@@ -535,6 +590,16 @@ class itrade(trade):
         else:
             self.status = status[status.code == code]
         # self.cftable = pd.DataFrame([], columns=["date", "cash", "share"])
+        try:
+            self.price = xu.get_daily(
+                self.code, start=self.status.iloc[0]["date"].strftime("%Y-%m-%d")
+            )
+            self.price["netvalue"] = self.price["close"]
+        except Exception as e:
+            logger.warning(
+                "%s when trade trying to get daily price of %s" % (e, self.code)
+            )
+            self.price = None
         self._arrange()
         if not name:
             try:
@@ -557,25 +622,10 @@ class itrade(trade):
                 d["share"].append(r.share)
         self.cftable = pd.DataFrame(d)
 
-    def v_totvalue(self, **kws):
-        raise NotImplementedError()
-
-    def v_tradecost(self, **kws):
-        raise NotImplementedError()
-
     def get_netvalue(self, date=yesterdayobj()):
-        # 若使用请务必配合带 precached 的缓存策略！！
-        if not getattr(self, "fetchonly", None):
-            self.fetchonly = False
-        prestart = self.status.iloc[0]["date"]
-        df = xu.get_daily(
-            self.code,
-            end=date.strftime("%Y%m%d"),
-            prev=20,
-            fetchonly=self.fetchonly,
-            precached=prestart.strftime("%Y%m%d"),
-        )
-        self.fetchonly = True  # 这么做防止数据空白时期的反复抓取
+        if self.price is None:
+            return 0
+        df = self.price[self.price["date"] <= date]
         if len(df) > 0:
             return df.iloc[-1].close
         else:

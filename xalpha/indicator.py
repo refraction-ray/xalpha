@@ -580,7 +580,6 @@ def plot_kline(df, rendered=True, col=""):
                     """
                 function(params) {
                     var colorList;
-                    console.log(params);
                     if (barData[params.dataIndex]>0) {
                         colorList = '#ef232a';
                     } else {

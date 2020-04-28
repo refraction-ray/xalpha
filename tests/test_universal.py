@@ -213,6 +213,7 @@ def test_get_es():
 
 
 def test_get_ycharts():
+    # ycharts 可能有时也需要代理了。。。。
     d = xa.get_daily(code="yc-companies/DBP", start="20200401", end="20200402")
     assert d.iloc[0]["close"] == 41.04
 
