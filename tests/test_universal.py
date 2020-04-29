@@ -209,6 +209,7 @@ def test_get_es():
     assert round(df.iloc[-1]["settlement"], 2) == 1074.80
 
 
+@pytest.mark.local
 def test_get_ycharts():
     # ycharts 可能有时也需要代理了。。。。
     d = xa.get_daily(code="yc-companies/DBP", start="20200401", end="20200402")

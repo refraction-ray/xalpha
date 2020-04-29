@@ -1376,7 +1376,7 @@ def get_rt(
         elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             _from = code.split("-")[0]
             code = "-".join(code.split("-")[1:])
-        elif code.startswith("F") and code[1:].isdigit():
+        elif (code.startswith("F") or code.startswith("T")) and code[1:].isdigit():
             _from = "ttjj"
         elif len(code.split("/")) > 1:
             _from = "investing"

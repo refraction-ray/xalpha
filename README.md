@@ -45,7 +45,6 @@ xa.PEBHistory("F100032").v()
 
 xalpha 不止如此，更多特性，欢迎探索。不只是数据，更是工具！
 
-您也可以尝试基于 xalpha 构建的基金净值预测与场内溢价率提醒的项目: [LOF-BOT](https://github.com/refraction-ray/lof-bot).
 
 ## 文档
 

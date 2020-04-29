@@ -66,7 +66,7 @@ class indicator:
         """
         generate price table for mulfix class, the cinfo class has this attr by default
         """
-        if getattr(self, "price", None) is None:
+        if getattr(self, "price", None) is None:  # 基金组合类，而非基金信息类
             times = pd.date_range(self.totcftable.iloc[0].date, yesterdayobj())
             netvalue = []
             for date in times:
@@ -98,6 +98,7 @@ class indicator:
             4,
         )
 
+    @staticmethod
     def annualized_returns(price, start, date=yesterdayobj()):
         """
         :param price: price table of info().price
@@ -173,6 +174,7 @@ class indicator:
             (res.loc["bcmk", "bcmk"] ** 0.5) * res.loc["bt", "bt"] ** 0.5
         )
 
+    @staticmethod
     def ratedaily(price, date=yesterdayobj()):
         partp = price[price["date"] <= date]
         return list(partp["netvalue"].pct_change())[1:]
