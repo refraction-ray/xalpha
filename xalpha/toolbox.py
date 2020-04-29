@@ -1062,6 +1062,7 @@ class RTPredict:
             currency_code = get_currency_code(k)
             if currency_code:
                 c = c * daily_increment(currency_code, today_str)
+                # TODO: 这里似乎应该有 lastdate
             n += c
         n += (100 - t) / 100
         t0value = n * last_value

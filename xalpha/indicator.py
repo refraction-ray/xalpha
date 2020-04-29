@@ -117,6 +117,34 @@ class indicator:
     def benchmark_annualized_returns(self, date=yesterdayobj()):
         return indicator.annualized_returns(self.bmprice, self.start, date)
 
+    def pct_chg(self, freq="Y", benchmark=True):
+        """
+        年度，月，周涨幅统计
+
+        :param freq: str, default Y, could be M or W or anything pd.date_range accepts
+        :return: pd.DataFrame with columns date and pct_chg
+        """
+        if getattr(self, "bmprice", None) is None:
+            benchmark = False
+
+        ydf = pd.merge_asof(
+            pd.DataFrame(
+                pd.date_range(
+                    self.price["date"].iloc[0], self.price["date"].iloc[-1], freq=freq
+                ),
+                columns=["date"],
+            ),
+            self.price,
+        )
+        ydf["pct_chg"] = ydf["netvalue"].pct_change()
+        if benchmark:
+            ydf = pd.merge_asof(ydf, self.bmprice, on="date", suffixes=["", "_bc"])
+            ydf["pct_chg_benchmark"] = ydf["netvalue_bc"].pct_change()
+            ydf["pct_chg_difference"] = ydf["pct_chg"] - ydf["pct_chg_benchmark"]
+            return ydf[["date", "pct_chg", "pct_chg_benchmark", "pct_chg_difference"]]
+
+        return ydf[["date", "pct_chg"]]
+
     def beta(self, date=yesterdayobj()):
         bcmk = indicator.ratedaily(self.bmprice, date)
         bt = indicator.ratedaily(self.price, date)
@@ -147,11 +175,12 @@ class indicator:
 
     def ratedaily(price, date=yesterdayobj()):
         partp = price[price["date"] <= date]
-        return [
-            (partp.iloc[i + 1].netvalue - partp.iloc[i].netvalue)
-            / partp.iloc[i].netvalue
-            for i in range(len(partp) - 1)
-        ]
+        return list(partp["netvalue"].pct_change())[1:]
+        # return [
+        #     (partp.iloc[i + 1].netvalue - partp.iloc[i].netvalue)
+        #     / partp.iloc[i].netvalue
+        #     for i in range(len(partp) - 1)
+        # ]
 
     def volatility(price, date=yesterdayobj()):
         df = pd.DataFrame(data={"rate": indicator.ratedaily(price, date)})
