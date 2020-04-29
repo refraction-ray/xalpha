@@ -51,3 +51,10 @@ linter 部分：使用 ``black`` 及其默认设置。
 
 
 对于更激进的新功能大幅增加或代码重构，需鉴权数据提供方的添加，API调整等，建议先开 issue 进行讨论，防止重复或无效工作。
+
+
+常见问题
+-------------
+
+在pytest时，如果报错“AttributeError: ‘Function’ object has no attribute ‘get_marker’”，
+可以参考[链接](https://www.scivision.dev/pytest-attribute-error-getmarker/)，对pytest-cov做个升级.

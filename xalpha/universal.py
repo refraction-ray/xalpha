@@ -688,6 +688,29 @@ def get_historical_fromgzindex(code, start, end):
     return df
 
 
+def get_historical_fromhzindex(code, start, end):
+    """
+    华证指数源
+
+    :param code:
+    :param start:
+    :param end:
+    :return:
+    """
+    if code.startswith("HZ"):
+        code = code[2:]
+
+    r = rget_json(
+        "http://www.chindices.com/index/values.val?code={code}".format(code=code)
+    )
+    df = pd.DataFrame(r["data"])
+    df["date"] = pd.to_datetime(df["date"])
+    df = df[["date", "price", "pctChange"]]
+    df.rename(columns={"price": "close", "pctChange": "percent"}, inplace=True)
+    df = df[::-1]
+    return df
+
+
 def get_historical_fromesunny(code, start=None, end=None):
     """
     易盛商品指数
@@ -830,6 +853,8 @@ def _get_daily(
 
             24. 形如 yc-indices/^SPGSCICO，yc-indices/^SPGSCICO/level 格式的数据，返回ycharts指数数据，对应网页 https://ycharts.com/indices/%5ESPGSCICO/level，最后部分为数据含义，默认level，可选：total_return_forward_adjusted_price，历史数据限制五年内。
 
+            25. 形如 HZ999001 HZ999005 格式的数据，代表了华证系列指数 http://www.chindices.com/indicator.html#
+
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
     :param prev: Optional[int], default 365. If start is not specified, start = end-prev.
@@ -877,6 +902,8 @@ def _get_daily(
             _from = "ZZ"
         elif code.startswith("GZ") and code[-3:].isdigit():  # 注意国证系列指数的代码里可能包含多个字母！
             _from = "GZ"
+        elif code.startswith("HZ") and code[2:].isdigit():
+            _from = "HZ"
         elif code.startswith("ESCI") and code[4:].isdigit():
             _from = "ES"
         elif code.startswith("yc-companies/") or code.startswith("yc-indices/"):
@@ -948,6 +975,9 @@ def _get_daily(
 
     elif _from == "GZ":
         df = get_historical_fromgzindex(code, start=start, end=end)
+
+    elif _from == "HZ":
+        df = get_historical_fromhzindex(code, start=start, end=end)
 
     elif _from == "ES":
         df = get_historical_fromesunny(code, start=start, end=end)
