@@ -198,3 +198,4 @@ def test_vinfo():
     t.dailyreport()
     assert len(t.cftable) == 2
     yy = xa.vinfo("ZZ931152")
+    yy.pct_chg()
