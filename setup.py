@@ -2,7 +2,7 @@ import setuptools
 import os
 import shutil
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 ## super ugly but quick way to exclude .py files in the packages
