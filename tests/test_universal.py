@@ -25,6 +25,8 @@ def test_get_xueqiu():
     assert round(df.iloc[0]["close"], 2) == 98
     df = xa.get_daily(start="20200222", end="20200301", code="SH501018")
     assert round(df.iloc[-1]["close"], 3) == 0.965
+    df = xa.get_daily("SH600000.A", end="20200428")
+    assert round(df.iloc[-1]["close"], 2) == 131.34
 
 
 def test_get_rmb():

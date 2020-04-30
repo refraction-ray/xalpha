@@ -435,7 +435,7 @@ def _float(n):
     return float(n)
 
 
-def reconnect(tries=5, timeout=16):
+def reconnect(tries=5, timeout=12):
     def robustify(f):
         @wraps(f)
         def wrapper(*args, **kws):

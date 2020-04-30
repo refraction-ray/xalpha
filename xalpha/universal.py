@@ -118,13 +118,23 @@ def ts2pdts(ts):
     )  # 雪球美股数据时间戳是美国0点，按北京时区换回时间后，把时分秒扔掉就重合了
 
 
-def get_historical_fromxq(code, count, full=False):
-    url = "https://stock.xueqiu.com/v5/stock/chart/kline.json?symbol={code}&begin={tomorrow}&period=day&type=before&count=-{count}"
+def get_historical_fromxq(code, count, type_="before", full=False):
+    """
+
+    :param code:
+    :param count:
+    :param type_: str. normal, before, after
+    :param full:
+    :return:
+    """
+    url = "https://stock.xueqiu.com/v5/stock/chart/kline.json?symbol={code}&begin={tomorrow}&period=day&type={type_}&count=-{count}"
     if full:
         url += "&indicator=kline,pe,pb,ps,pcf,market_capital,agt,ggt,balance"
     # pe 是 TTM 数据
     r = rget_json(
-        url.format(code=code, tomorrow=int(tomorrow_ts() * 1000), count=count),
+        url.format(
+            code=code, tomorrow=int(tomorrow_ts() * 1000), count=count, type_=type_
+        ),
         cookies={"xq_a_token": get_token()},
         headers={"user-agent": "Mozilla/5.0"},
     )
@@ -801,11 +811,11 @@ def _get_daily(
 ):
     """
     universal fetcher for daily historical data of literally everything has a value in market.
-    数据来源包括天天基金，雪球，英为财情，外汇局官网，聚宽，标普官网，bloomberg，雅虎财经，ycharts等。
+    数据来源包括但不限于天天基金，雪球，英为财情，外汇局官网，聚宽，标普官网，bloomberg，雅虎财经，ycharts等。
 
     :param code: str.
 
-            1. 对于沪深市场的股票，指数，ETF，LOF 场内基金，可转债和债券，直接使用其代码，主要开头需要包括 SH 或者 SZ。
+            1. 对于沪深市场的股票，指数，ETF，LOF 场内基金，可转债和债券，直接使用其代码，主要开头需要包括 SH 或者 SZ。如果数字代码之后接 .A .B .N 分别代表后复权，前复权和不复权数据，不加后缀默认前复权。港股美股同理。
 
             2. 对于香港市场的股票，指数，使用其数字代码，同时开头要添加 HK。
 
@@ -837,7 +847,7 @@ def _get_daily(
 
             16. 形如 FT-22065529 格式的数据或 FT-INX:IOM，可以返回 financial times 的数据，推荐直接用后者。前者数字代码来源，打开浏览器 network 监视，切换图标时间轴时，会新增到 https://markets.ft.com/data/chartapi/series 的 XHR 请求，其 request payload 里的 [elements][symbol] 即为该指数对应数字。
 
-            17. 形如 FTC-WTI+Crude+Oil 格式的数据，开头可以是 FTC, FTE, FTX, FTF, FTB, FTI 对应 commdities，equities，currencies，funds，bonds，indicies。其中 FTI 和 FT 相同。
+            17. 形如 FTC-WTI+Crude+Oil 格式的数据，开头可以是 FTC, FTE, FTX, FTF, FTB, FTI 对应 ft.com 子栏目 commdities，equities，currencies，funds，bonds，indicies。其中 FTI 和 FT 相同。
 
             18. 形如 mcy-MAC_AREA_UNEMPLOY 格式的数据，返回相应的宏观数据，需要聚宽数据源。mcy，mcq，mcm 代表年度，季度和月度的数据，code 为表名，可以参考 https://www.joinquant.com/help/api/help?name=macroData
 
@@ -861,7 +871,7 @@ def _get_daily(
     :param _from: Optional[str]. 一般用户不需设定该选项。can be one of "xueqiu", "zjj", "investing", "tiantianjijin". Only used for debug to
         enforce data source. For common use, _from can be chosed automatically based on code in the run time.
     :param wrapper: bool. 一般用户不需设定该选项。
-    :param handler: bool. Default True. 若为 False，则 handler 钩子失效，用于钩子函数中的嵌套。
+    :param handler: bool. Default True. 若为 False，则 handler 钩子失效，用于钩子函数中的原函数嵌套调用。
     :return: pd.Dataframe.
         must include cols: date[pd.Timestamp]，close[float64]。
     """
@@ -883,7 +893,7 @@ def _get_daily(
         start_obj = dstr2dobj(start)
 
     if not _from:
-        if (code.startswith("SH") or code.startswith("SZ")) and code[2:].isdigit():
+        if (code.startswith("SH") or code.startswith("SZ")) and code[2:8].isdigit():
             _from = "xueqiu"
         elif code.endswith("/CNY") or code.startswith("CNY/"):
             _from = "zjj"
@@ -891,7 +901,7 @@ def _get_daily(
             _from = "cninvesting"
         elif code[0] in ["F", "M", "T"] and code[1:].isdigit():
             _from = "ttjj"
-        elif code.startswith("HK") and code[2:].isdigit() and len(code) == 7:
+        elif code.startswith("HK") and code[2:7].isdigit():
             _from = "xueqiu"
             code = code[2:]
         elif code.startswith("SP") and code[2:].split(".")[0].isdigit():
@@ -926,7 +936,7 @@ def _get_daily(
             _from = "cninvesting"
             code = get_investing_id(code)
         else:
-            _from = "xueqiu"
+            _from = "xueqiu"  # 美股代码
 
     count = (today_obj() - start_obj).days + 1
     start_str = start_obj.strftime("%Y/%m/%d")
@@ -935,7 +945,22 @@ def _get_daily(
         df = get_historical_fromcninvesting(code, start_str, end_str)
         df = prettify(df)
     elif _from in ["xueqiu", "xq", "snowball", "XQ"]:
-        df = get_historical_fromxq(code, count)
+        if len(code.split(".")) > 1:
+            code, type_ = code.split(".")
+            if type_.startswith("b") or type_.startswith("B"):
+                type_ = "before"
+            elif type_.startswith("a") or type_.startswith("A"):
+                type_ = "after"
+            elif type_.startswith("n") or type_.startswith("N"):
+                type_ = "normal"
+            else:
+                logger.warning(
+                    "unrecoginzed flag for adjusted factor %s, use default" % type_
+                )
+                type_ = "before"
+        else:
+            type_ = "before"
+        df = get_historical_fromxq(code, count, type_=type_)
         df = prettify(df)
     elif _from in ["zhongjianjia", "zjj", "chinamoney", "ZJJ"]:
         df = get_rmb(start, end, prev, currency=code)

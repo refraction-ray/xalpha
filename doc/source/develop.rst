@@ -12,7 +12,7 @@ git部分：fork 仓库，clone 到本地修改，push 回 forked 仓库，提�
 
 测试部分：测试基于 pytest, ``cd tests && pytest`` 即可，请注意测试时 pwd 需为 tests 文件夹。单独测试可用 ``pytest test_file.py::test_func``。
 
-linter 部分：使用 ``black`` 及其默认设置。
+linter 部分：使用 ``black`` 及其默认设置，提交代码前请运行 ``black .``。
 
 文档部分：使用 ``sphnix`` 工作流，本地预览可以 ``cd doc && make html``, 生成的网页在 ``doc/build/html`` 中。
 
@@ -56,5 +56,5 @@ linter 部分：使用 ``black`` 及其默认设置。
 常见问题
 -------------
 
-在pytest时，如果报错“AttributeError: ‘Function’ object has no attribute ‘get_marker’”，
-可以参考[链接](https://www.scivision.dev/pytest-attribute-error-getmarker/)，对pytest-cov做个升级.
+* 运行 pytest 时，如果报错 ``AttributeError: ‘Function’ object has no attribute ‘get_marker’``，可以参考 `链接 <https://www.scivision.dev/pytest-attribute-error-getmarker/>`_，对pytest-cov做个升级.
+
