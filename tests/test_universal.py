@@ -158,6 +158,7 @@ def test_cache_mm():
 
 def test_get_bar_xq():
     xa.get_bar("HK00700", interval=60)
+    xa.get_bar("SH600000", interval=3600)
     xa.get_bar("commodities/brent-oil", interval=300, prev=20)
 
 

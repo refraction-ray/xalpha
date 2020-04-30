@@ -58,12 +58,16 @@ class mul:
                     self.is_in = True
                 break
         else:
+            fundtradeobj = []
             # warning: not a very good way to automatic generate these fund obj
             # because there might be some funds use round_down for share calculation, ie, label=2 must be given
             # unless you are sure corresponding funds are added to the droplist
-            fundtradeobj = []
+        fundcodelist = [f.code for f in fundtradeobj]
+        if status is not None:
             for code in status.columns[1:]:
                 # r1, d2, v4 p = r+d+v
+                if code in fundcodelist:
+                    continue
                 p = property.get(code, 0)
                 round_label = p % 2
                 dividend_label = ((p - round_label) / 2) % 2
@@ -98,12 +102,12 @@ class mul:
                             status,
                         )
                     )
-            if istatus:
+            if istatus is not None:
                 self.is_in = True
                 if isinstance(istatus, irecord):
                     istatus = istatus.status
                 for code in istatus.code.unique():
-                    if not code.startswith("#"):
+                    if code not in fundcodelist and not code.startswith("#"):
                         fundtradeobj.append(itrade(code, istatus))
         self.fundtradeobj = tuple(fundtradeobj)
         self.totcftable = self._mergecftb()
@@ -407,12 +411,14 @@ class imul(mul):
 
         if not fundtradeobj:
             fundtradeobj = []
-            if not status:
-                status = istatus
-            if isinstance(status, irecord):
-                status = status.status
+        if status is None:
+            status = istatus
+        if isinstance(status, irecord):
+            status = status.status
+        fundcodelist = [f.code for f in fundtradeobj]
+        if status is not None:
             for code in status.code.unique():
-                if not code.startswith("#"):
+                if code not in fundcodelist and not code.startswith("#"):
                     fundtradeobj.append(itrade(code, status))
         self.fundtradeobj = tuple(fundtradeobj)
         self.totcftable = self._mergecftb()

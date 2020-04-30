@@ -71,6 +71,39 @@ def has_weekday(start, end):
     return False
 
 
+def ts2pdts(ts):
+    dto = dt.datetime.fromtimestamp(ts / 1000, tz=tz_bj).replace(tzinfo=None)
+    return dto.replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )  # 雪球美股数据时间戳是美国0点，按北京时区换回时间后，把时分秒扔掉就重合了
+
+
+def decouple_code(code):
+    """
+    decompose SH600000.A into SH600000, after
+
+    :param code:
+    :return: Tuple
+    """
+    if len(code[1:].split(".")) > 1:  # .SPI in US stock!
+        type_ = code.split(".")[-1]
+        code = ".".join(code.split(".")[:-1])
+        if type_.startswith("b") or type_.startswith("B"):
+            type_ = "before"
+        elif type_.startswith("a") or type_.startswith("A"):
+            type_ = "after"
+        elif type_.startswith("n") or type_.startswith("N"):
+            type_ = "normal"
+        else:
+            logger.warning(
+                "unrecoginzed flag for adjusted factor %s, use default" % type_
+            )
+            type_ = "before"
+    else:
+        type_ = "before"
+    return code, type_
+
+
 def lru_cache_time(ttl=None, maxsize=None):
     """
     TTL support on lru_cache
@@ -109,13 +142,6 @@ def get_token():
     """
     r = rget("https://xueqiu.com", headers={"user-agent": "Mozilla"})
     return r.cookies["xq_a_token"]
-
-
-def ts2pdts(ts):
-    dto = dt.datetime.fromtimestamp(ts / 1000, tz=tz_bj).replace(tzinfo=None)
-    return dto.replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )  # 雪球美股数据时间戳是美国0点，按北京时区换回时间后，把时分秒扔掉就重合了
 
 
 def get_historical_fromxq(code, count, type_="before", full=False):
@@ -945,22 +971,8 @@ def _get_daily(
         df = get_historical_fromcninvesting(code, start_str, end_str)
         df = prettify(df)
     elif _from in ["xueqiu", "xq", "snowball", "XQ"]:
-        if len(code[1:].split(".")) > 1:  # .SPI in US stock!
-            type_ = code.split(".")[-1]
-            code = ".".join(code.split(".")[:-1])
-            if type_.startswith("b") or type_.startswith("B"):
-                type_ = "before"
-            elif type_.startswith("a") or type_.startswith("A"):
-                type_ = "after"
-            elif type_.startswith("n") or type_.startswith("N"):
-                type_ = "normal"
-            else:
-                logger.warning(
-                    "unrecoginzed flag for adjusted factor %s, use default" % type_
-                )
-                type_ = "before"
-        else:
-            type_ = "before"
+        code, type_ = decouple_code(code)
+
         df = get_historical_fromxq(code, count, type_=type_)
         df = prettify(df)
     elif _from in ["zhongjianjia", "zjj", "chinamoney", "ZJJ"]:
@@ -1681,9 +1693,9 @@ def cachedio(**ioconf):
                             if has_weekday(kws["start"], kws["end"]):
                                 # 考虑到海外市场的不同情况，不用 opendate 判断，采取保守型判别
                                 df1 = f(*args, **kws)
-                                if len(df1) > 0:
+                                if df1 is not None and len(df1) > 0:
                                     df1 = df1[df1["date"] <= kws["end"]]
-                                if len(df1) > 0:
+                                if df1 is not None and len(df1) > 0:
                                     is_changed = True
                                     df0 = df1.append(df0, ignore_index=True, sort=False)
                         # 向后延拓
@@ -1698,9 +1710,9 @@ def cachedio(**ioconf):
                             kws["end"] = end_str
                             if has_weekday(nextday_str, kws["end"]):  # 新更新的日期里有工作日
                                 df2 = f(*args, **kws)
-                                if len(df2) > 0:
+                                if df2 is not None and len(df2) > 0:
                                     df2 = df2[df2["date"] >= kws["start"]]
-                                if len(df2) > 0:
+                                if df2 is not None and len(df2) > 0:
                                     is_changed = True
                                     if (
                                         len(df0[df0["date"] == df0.iloc[-1]["date"]])
@@ -2164,8 +2176,8 @@ def get_bar(
 
     if not _from:
         if (
-            (start is None)
-            and (end is None)
+            (start is not None)
+            and (end is not None)
             and (code.startswith("SH") or code.startswith("SZ"))
         ):
             _from = "jq"
@@ -2173,10 +2185,10 @@ def get_bar(
             _from = "xueqiu"
         elif code.isdigit():
             _from = "cninvesting"
-        elif code.startswith("HK") and code[2:].isdigit() and len(code) == 7:
+        elif code.startswith("HK") and code[2:7].isdigit():
             _from = "xueqiu"
             code = code[2:]
-        elif len(code.split("-")) > 2 and len(code.split("-")[0]) <= 3:
+        elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             _from = code.split("-")[0]
             code = "-".join(code.split("-")[1:])
         elif len(code.split("/")) > 1:
@@ -2190,15 +2202,16 @@ def get_bar(
         return get_bar_frominvesting(code, prev, interval)
     elif _from in ["INA"]:
         return get_bar_frominvesting(code, prev, interval)
-        # 这里 app 源是 404，只能用网页源
+        # 这里 investing app 源是 404，只能用网页源
     elif _from in ["jq"]:
+        code, type_ = decouple_code(code)
+        # 关于复权，聚宽各个时间密度的数据都有复权，雪球源日线以上的高频数据没有复权
+        type_map = {"after": "post", "before": "pre", "normal": None}
         return get_bar_fromjq(
-            code,
-            start=kws["start"],
-            end=kws["end"],
-            interval=interval,
-            fq=kws.get("fq", "pre"),
+            code, start=start, end=end, interval=interval, fq=type_map[type_]
         )
+    elif _from in ["wsj"]:
+        return get_bar_fromwsj(code, interval=interval)[-prev:]
     else:
         raise ParserFailure("unrecoginized _from %s" % _from)
 
@@ -2294,10 +2307,15 @@ def get_bar_fromxq(code, prev, interval=3600):
         "604800": "week",
         "2592000": "month",
     }
+    code, type_ = decouple_code(code)
     interval = trans.get(str(interval), interval)
-    url = "https://stock.xueqiu.com/v5/stock/chart/kline.json?symbol={code}&begin={tomorrow}&period={interval}&type=before\
+    url = "https://stock.xueqiu.com/v5/stock/chart/kline.json?symbol={code}&begin={tomorrow}&period={interval}&type={type_}\
 &count=-{prev}&indicator=kline,pe,pb,ps,pcf,market_capital,agt,ggt,balance".format(
-        code=code, tomorrow=int(tomorrow_ts() * 1000), prev=prev, interval=interval
+        code=code,
+        tomorrow=int(tomorrow_ts() * 1000),
+        prev=prev,
+        interval=interval,
+        type_=type_,
     )
     r = rget(
         url, headers={"user-agent": "Mozilla/5.0"}, cookies={"xq_a_token": get_token()}
@@ -2321,6 +2339,53 @@ def get_bar_fromxq(code, prev, interval=3600):
                 "percent",
             ]
         ]
+    return df
+
+
+def get_bar_fromwsj(code, token=None, interval=3600):
+    # proxy required
+    # code = "FUTURE/US/XNYM/CLM20"
+    # TODO: also not explore the code format here extensively
+    trans = {"3600": "1H"}
+    # TODO: there is other freq tags, but I have no time to explore them, contributions are welcome:)
+    freq = trans.get(str(interval), interval)
+    if not token:
+        token = "cecc4267a0194af89ca343805a3e57af"
+    # the thing I am concerned here is whether token is refreshed
+
+    params = {
+        "json": '{"Step":"PT%s","TimeFrame":"D5","EntitlementToken":"%s",\
+"IncludeMockTick":true,"FilterNullSlots":false,"FilterClosedPoints":true,"IncludeClosedSlots":false,\
+"IncludeOfficialClose":true,"InjectOpen":false,"ShowPreMarket":false,"ShowAfterHours":false,\
+"UseExtendedTimeFrame":false,"WantPriorClose":true,"IncludeCurrentQuotes":false,\
+"ResetTodaysAfterHoursPercentChange":false,\
+"Series":[{"Key":"%s","Dialect":"Charting","Kind":"Ticker","SeriesId":"s1","DataTypes":["Last"]}]}'
+        % (freq, token, code),
+        "ckey": token[:10],
+    }
+    r = rget_json(
+        "https://api-secure.wsj.net/api/michelangelo/timeseries/history",
+        params=params,
+        headers={
+            "user-agent": "Mozilla/5.0",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Dylan2010.EntitlementToken": token,
+            "Host": "api-secure.wsj.net",
+            "Origin": "https://www.marketwatch.com",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "cross-site",
+        },
+    )
+
+    df = pd.DataFrame(
+        {
+            "date": r["TimeInfo"]["Ticks"],
+            "close": [n[0] for n in r["Series"][0]["DataPoints"]],
+        }
+    )
+    df["date"] = pd.to_datetime(df["date"] * 1000000) + pd.Timedelta(hours=8)
+    df = df[df["close"] > -100.0]  # 存在未来数据占位符需要排除
     return df
 
 

@@ -597,18 +597,19 @@ class OverPriced:
         )
         self.df = df1
 
-    def v(self, hline):
+    def v(self, hline=None):
         """
 
         :param hline: Union[float, List[float]], several horizental lines for assistance
         :return:
         """
         ax = self.df.plot(x="date", y="diff_rate")
-        if isinstance(hline, float):
-            ax.axhline(hline, c="red")
-        else:
-            for h in hline:
-                ax.axhline(h, c="red")
+        if hline:
+            if isinstance(hline, float):
+                ax.axhline(hline, c="red")
+            else:
+                for h in hline:
+                    ax.axhline(h, c="red")
         return ax
 
 

@@ -171,49 +171,6 @@ def get_ttjj_suggestions(keyword):
     return r["Datas"]
 
 
-def get_bar_from_wsj(code, token=None, freq="1H"):
-    # proxy required
-    # code = "FUTURE/US/XNYM/CLM20"
-    if not token:
-        token = "cecc4267a0194af89ca343805a3e57af"
-    # the thing I am concerned here is whether token is refreshed
-
-    params = {
-        "json": '{"Step":"PT%s","TimeFrame":"D5","EntitlementToken":"%s",\
-"IncludeMockTick":true,"FilterNullSlots":false,"FilterClosedPoints":true,"IncludeClosedSlots":false,\
-"IncludeOfficialClose":true,"InjectOpen":false,"ShowPreMarket":false,"ShowAfterHours":false,\
-"UseExtendedTimeFrame":false,"WantPriorClose":true,"IncludeCurrentQuotes":false,\
-"ResetTodaysAfterHoursPercentChange":false,\
-"Series":[{"Key":"%s","Dialect":"Charting","Kind":"Ticker","SeriesId":"s1","DataTypes":["Last"]}]}'
-        % (freq, token, code),
-        "ckey": token[:10],
-    }
-    r = rget_json(
-        "https://api-secure.wsj.net/api/michelangelo/timeseries/history",
-        params=params,
-        headers={
-            "user-agent": "Mozilla/5.0",
-            "Accept": "application/json, text/javascript, */*; q=0.01",
-            "Dylan2010.EntitlementToken": token,
-            "Host": "api-secure.wsj.net",
-            "Origin": "https://www.marketwatch.com",
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "cross-site",
-        },
-    )
-
-    df = pd.DataFrame(
-        {
-            "date": r["TimeInfo"]["Ticks"],
-            "close": [n[0] for n in r["Series"][0]["DataPoints"]],
-        }
-    )
-    df["date"] = pd.to_datetime(df["date"] * 1000000) + pd.Timedelta(hours=8)
-    df = df[df["close"] > -100.0]
-    return df
-
-
 def get_cb_historical_from_ttjj(code):
     if code.startswith("SH") or code.startswith("SZ"):
         code = code[2:]
@@ -242,6 +199,12 @@ def get_cb_historical_from_ttjj(code):
     df["swap_value"] = df["SWAPVALUE"]
     df["close"] = df["FCLOSE"]
     return df[["date", "close", "bond_value", "swap_value"]]
+
+
+## 常见标的合集列表，便于共同分析, 欢迎贡献:)
+
+# 战略配售封基
+zlps = ["SZ160142", "SZ161131", "SZ161728", "SH501186", "SH501188", "SH501189"]
 
 
 ## some small tools and calculators
