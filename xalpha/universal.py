@@ -945,8 +945,9 @@ def _get_daily(
         df = get_historical_fromcninvesting(code, start_str, end_str)
         df = prettify(df)
     elif _from in ["xueqiu", "xq", "snowball", "XQ"]:
-        if len(code.split(".")) > 1:
-            code, type_ = code.split(".")
+        if len(code[1:].split(".")) > 1:  # .SPI in US stock!
+            type_ = code.split(".")[-1]
+            code = ".".join(code.split(".")[:-1])
             if type_.startswith("b") or type_.startswith("B"):
                 type_ = "before"
             elif type_.startswith("a") or type_.startswith("A"):
