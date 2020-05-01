@@ -1894,7 +1894,7 @@ def get_stock_peb_range(code, start, end, wrapper=False):
 @lru_cache()
 def ttjjcode(code):
     """
-    将天天基金的持仓股票代码标准化
+    将天天基金的持仓股票代码或其他来源的代码标准化
 
     :param code: str.
     :return: str.
@@ -1908,6 +1908,7 @@ def ttjjcode(code):
         return "HK" + code
     elif code.isdigit() and len(code) == 6:
         if code.startswith("1") or code.startswith("0") or code.startswith("3"):
+            # 注意这里只能对应个股，指数代码有重叠没有办法的事
             return "SZ" + code
         elif code.startswith("5") or code.startswith("6"):
             return "SH" + code

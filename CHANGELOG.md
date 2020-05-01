@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.8.10 - 2020.05.01
 ### added
 * 增加场内账单分红派息合拆送股的处理，支持特定行跳过
 * 为 trade.v_tradecost() 增加买卖点标记（类似蚂蚁财富显示效果）

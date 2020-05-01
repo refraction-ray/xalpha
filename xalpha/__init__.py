@@ -1,4 +1,4 @@
-__version__ = "0.8.9"
+__version__ = "0.8.10"
 __author__ = "refraction-ray"
 __name__ = "xalpha"
 
