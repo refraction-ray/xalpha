@@ -19,7 +19,7 @@ from xalpha.universal import get_rt
 logger = logging.getLogger(__name__)
 
 
-def xirrcal(cftable, trades, date, guess=0.1):
+def xirrcal(cftable, trades, date, startdate=None, guess=0.01):
     """
     calculate the xirr rate
 
@@ -36,19 +36,32 @@ def xirrcal(cftable, trades, date, guess=0.1):
     partcftb = cftable[cftable["date"] <= date]
     if len(partcftb) == 0:
         return 0
-    cashflow = [(row["date"], row["cash"]) for i, row in partcftb.iterrows()]
+    if not startdate:
+        cashflow = [(row["date"], row["cash"]) for i, row in partcftb.iterrows()]
+    else:
+        if not isinstance(startdate, dt.datetime):
+            startdate = dt.datetime.strptime(
+                startdate.replace("-", "").replace("/", ""), "%Y%m%d"
+            )
+        start_cash = 0
+        for fund in trades:
+            start_cash += fund.briefdailyreport(startdate).get("currentvalue", 0)
+        cashflow = [(startdate, -start_cash)]
+        partcftb = partcftb[partcftb["date"] > startdate]
+        cashflow.extend([(row["date"], row["cash"]) for i, row in partcftb.iterrows()])
     rede = 0
     for fund in trades:
         if not isinstance(fund, itrade):
+            partremtb = fund.remtable[fund.remtable["date"] <= date]
+            if len(partremtb) > 0:
+                rem = partremtb.iloc[-1]["rem"]
+            else:
+                rem = []
             rede += fund.aim.shuhui(
-                fund.briefdailyreport(date).get("currentshare", 0),
-                date,
-                fund.remtable[fund.remtable["date"] <= date].iloc[-1].rem,
+                fund.briefdailyreport(date).get("currentshare", 0), date, rem
             )[1]
         else:  # 场内交易
-            pricedf = xu.get_daily(fund.code, end=date.strftime("%Y%m%d"), prev=20)
-            price = pricedf[pricedf.date <= date].iloc[-1]["close"]
-            rede += fund.cftable.share.sum() * price
+            rede += fund.briefdailyreport(date).get("currentvalue", 0)
     cashflow.append((date, rede))
     return xirr(cashflow, guess)
 
@@ -325,13 +338,13 @@ class trade:
             pd.DataFrame([[rdate, rem]], columns=["date", "rem"]), ignore_index=True
         )
 
-    def xirrrate(self, date=yesterdayobj(), guess=0.1):
+    def xirrrate(self, date=yesterdayobj(), startdate=None, guess=0.01):
         """
         give the xirr rate for all the trade of the aim before date (virtually sold out on date)
 
         :param date: string or obj of datetime, the virtually sell-all date
         """
-        return xirrcal(self.cftable, [self], date, guess)
+        return xirrcal(self.cftable, [self], date, startdate, guess)
 
     def dailyreport(self, date=yesterdayobj()):
         date = convert_date(date)

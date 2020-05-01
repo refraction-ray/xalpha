@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### fixed
+* xirrrate 支持调整时间起点，并修改内部 bug
 
 ## v0.8.10 - 2020.05.01
 ### added

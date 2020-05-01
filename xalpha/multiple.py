@@ -215,11 +215,11 @@ class mul:
         df = df.reset_index(drop=True)
         return df
 
-    def xirrrate(self, date=yesterdayobj(), guess=0.1):
+    def xirrrate(self, date=yesterdayobj(), startdate=None, guess=0.01):
         """
         xirr rate evauation of the whole invest combination
         """
-        return xirrcal(self.totcftable, self.fundtradeobj, date, guess)
+        return xirrcal(self.totcftable, self.fundtradeobj, date, startdate, guess)
 
     def evaluation(self, start=None):
         """

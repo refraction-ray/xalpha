@@ -64,6 +64,7 @@ def test_mulfix():
     tot.v_positions()
     tot.v_positions_history("2017-01-01")
     assert round(tot.summary("2018-08-04").iloc[0]["投资收益率"], 1) == 1.0
+    assert round(tot.xirrrate(date="2020-01-01", startdate="2018-05-01"), 2) == 0.04
     eva = tot.evaluation()
     assert round(eva.correlation_table(end="2018-07-30").iloc[2, 4], 3) == 0.095
 
