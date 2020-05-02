@@ -343,6 +343,7 @@ class trade:
         give the xirr rate for all the trade of the aim before date (virtually sold out on date)
 
         :param date: string or obj of datetime, the virtually sell-all date
+        :param startdate: string or obj of datetime, the beginning date of calculation, default from first buy
         """
         return xirrcal(self.cftable, [self], date, startdate, guess)
 

@@ -18,7 +18,9 @@
 
 *	基金交易策略生成与回测： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/policy.ipynb>`_
 
-*   2020 新用法新范式整理 (推荐)： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/newparadigm.ipynb>`_
+*   2020 新用法新范式整理 (**推荐**)： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/newparadigm.ipynb>`_
+
+*   基金投资模拟回测简明教程（以一揽子主动基组合回测为例）：`示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/virtualtrade.ipynb>`_
 
 
 研究案例
@@ -30,13 +32,11 @@
 
 *	定投策略的研究： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/schedulestudy.ipynb>`_
 
-*   基于技术指标的相关策略研究：
-
 *	ETF拯救世界投资计划的分析与可视化： `示例 <http://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/ETFanalysis.ipynb>`_
 
 *	石油相关基金的分析和研究： `示例 <https://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/oilfund.ipynb>`_
 
-*   QDII 基金T-1日净值预估研究： `示例 <https://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/netvalueestimation.ipynb>`_
+*   QDII 基金T-1日净值预估研究 （deprecated）： `示例 <https://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/netvalueestimation.ipynb>`_
 
 *   和基金净值预测与折溢价套利相关的独立项目 `LOF-BOT <https://re-ra.xyz/lof-bot/>`_
 

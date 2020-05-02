@@ -184,6 +184,7 @@ class indicator:
         #     for i in range(len(partp) - 1)
         # ]
 
+    @staticmethod
     def volatility(price, date=yesterdayobj()):
         df = pd.DataFrame(data={"rate": indicator.ratedaily(price, date)})
         return df.std().rate * 15.8144

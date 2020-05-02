@@ -64,7 +64,9 @@ class mul:
             # unless you are sure corresponding funds are added to the droplist
         fundcodelist = [f.code for f in fundtradeobj]
         if status is not None:
-            for code in status.columns[1:]:
+            for code in status.columns:
+                if code == "date":
+                    continue
                 # r1, d2, v4 p = r+d+v
                 if code in fundcodelist:
                     continue
@@ -218,6 +220,9 @@ class mul:
     def xirrrate(self, date=yesterdayobj(), startdate=None, guess=0.01):
         """
         xirr rate evauation of the whole invest combination
+
+        :param date: string or obj of datetime, the virtually sell-all date
+        :param startdate: string or obj of datetime, the beginning date of calculation, default from first buy
         """
         return xirrcal(self.totcftable, self.fundtradeobj, date, startdate, guess)
 
