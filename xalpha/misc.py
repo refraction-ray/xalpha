@@ -201,6 +201,23 @@ def get_cb_historical_from_ttjj(code):
     return df[["date", "close", "bond_value", "swap_value"]]
 
 
+@lru_cache()
+def get_fund_list(ft):
+    # hh, zq, zs, gp, qdii, fof
+    r = rget(
+        "http://fund.eastmoney.com/data/FundGuideapi.aspx?\
+dt=0&ft={ft}&sd=&ed=&sc=z&st=desc&pi=1&pn=5000&zf=diy&sh=list".format(
+            ft=ft
+        ),
+        headers={
+            "Host": "fund.eastmoney.com",
+            "Referer": "http://fund.eastmoney.com/daogou/",
+        },
+    )
+    d = eval(r.text.split("=")[1].replace("null", "None"))
+    return [code.split(",")[0] for code in d["datas"] if code.strip()]
+
+
 ## 常见标的合集列表，便于共同分析, 欢迎贡献:)
 
 # 战略配售封基

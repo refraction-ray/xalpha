@@ -2,6 +2,7 @@
 ## Unreleased
 ### fixed
 * xirrrate 支持调整时间起点，并修改内部 bug
+* 允许账单的 date 不出现在第一列
 
 ## v0.8.10 - 2020.05.01
 ### added

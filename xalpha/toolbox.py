@@ -167,6 +167,7 @@ class IndexPEBHistory:
         "000300.XSHG": ("沪深300", "2012-01-01"),
         "000905.XSHG": ("中证500", "2012-01-01"),
         "000922.XSHG": ("中证红利", "2012-01-01"),
+        "000925.XSHG": ("基本面50", "2012-01-01"),
         "399006.XSHE": ("创业板指", "2012-01-01"),
         "000992.XSHG": ("全指金融", "2012-01-01"),
         "000991.XSHG": ("全指医药", "2012-01-01"),
@@ -1022,13 +1023,14 @@ class RTPredict:
         else:
             return self.t1value_cache[0]
 
+    @error_catcher
     def get_t0(self, return_date=True, percent=False):
         last_value, last_date = self.get_t1()
         last_date_obj = dt.datetime.strptime(last_date, "%Y-%m-%d")
         cday = last_onday(self.today)
         while last_date_obj < cday:  # 昨天净值数据还没更新
             # 是否存在部分部分基金可能有 gap？
-            if cday.strftime("%Y-%m-%d") not in gap_info[self.fcode]:
+            if cday.strftime("%Y-%m-%d") not in gap_info.get(self.fcode, []):
                 self.t1_type = "昨日未出"
                 raise DateMismatch(
                     self.code,
