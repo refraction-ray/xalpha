@@ -859,8 +859,11 @@ def daily_increment(code, date, lastday=None, _check=False, warning_threhold=Non
         ratio = tds.iloc[-1]["close"] / tds.iloc[-2]["close"]
     else:
         tds2 = tds[tds["date"] <= lastday]
+        if tds2 is None or len(tds2) == 0:
+            ratio = 1.0
         # 未考虑检查连 lastday 的数据数据源都没更新的情形，这种可能极小
-        ratio = tds.iloc[-1]["close"] / tds2.iloc[-1]["close"]
+        else:
+            ratio = tds.iloc[-1]["close"] / tds2.iloc[-1]["close"]
     return ratio
 
 

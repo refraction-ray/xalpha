@@ -222,7 +222,19 @@ dt=0&ft={ft}&sd=&ed=&sc=z&st=desc&pi=1&pn=5000&zf=diy&sh=list".format(
 
 # 战略配售封基
 zlps = ["SZ160142", "SZ161131", "SZ161728", "SH501186", "SH501188", "SH501189"]
-
+# 科创封基
+kcfj = [
+    "SH501073",
+    "SH501075",
+    "SH501076",
+    "SH501078",
+    "SH501079",
+    "SH501080",
+    "SH501081",
+    "SH501082",
+    "SH501082",
+    "SH501085",
+]
 
 ## some small tools and calculators
 
