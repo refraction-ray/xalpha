@@ -200,6 +200,7 @@ class trade:
         self.cftable = pd.DataFrame([], columns=["date", "cash", "share"])
         self.remtable = pd.DataFrame([], columns=["date", "rem"])
         self.status = status.loc[:, ["date", code]]
+        self.status = self.status[self.status[code] != 0]
         self._arrange()
 
     def _arrange(self):
@@ -221,7 +222,9 @@ class trade:
         分级份额折算日封闭无法买入，所以程序直接忽略当天的买卖。因此不会出现多个操作共存的情形。
         """
         # the design on data remtable is disaster, it is very dangerous though works now
-
+        # possibly failing cases include:
+        # 买卖日记录是节假日，而顺延的日期恰好是折算日（理论上无法申赎）或分红日（可能由于 date 和 rdate 的错位而没有考虑到），
+        # 又比如周日申购记录，周一申购记录，那么周日记录会现金流记在周一，继续现金流标更新将从周二开始，周一数据被丢弃
         code = self.aim.code
         if len(self.cftable) == 0:
             if len(self.status[self.status[code] != 0]) == 0:
@@ -238,7 +241,10 @@ class trade:
                 raise TradeBehaviorError("You cannot sell first when you never buy")
         elif len(self.cftable) > 0:
             recorddate = list(self.status.date)
-            lastdate = self.cftable.iloc[-1].date + pd.Timedelta(1, unit="d")
+            if not getattr(self, "lastdate", None):
+                lastdate = self.cftable.iloc[-1].date + pd.Timedelta(1, unit="d")
+            else:
+                lastdate = self.lastdate + pd.Timedelta(1, unit="d")
             while (lastdate not in self.aim.specialdate) and (
                 (lastdate not in recorddate)
                 or (
@@ -255,14 +261,29 @@ class trade:
             if (lastdate - yesterdayobj()).days >= 1:
                 raise Exception("no other info to be add into cashflow table")
             date = lastdate
+            # 无净值日优先后移，无法后移则前移
+            if len(self.price[self.price["date"] >= date]) > 0:
+                date = self.price[self.price["date"] >= date].iloc[0]["date"]
+            else:
+                date = self.price[self.price["date"] <= date].iloc[-1]["date"]
+            if date != lastdate and date in list(self.status.date):
+                # 日期平移到了其他记录日，很可能出现问题!
+                logger.warning(
+                    "账单日期 %s 非 %s 的净值记录日期，日期智能平移后 %s 与账单其他日期重合！交易处理极可能出现问题！！ "
+                    "靠后日期的记录被覆盖" % (lastdate, self.code, date)
+                )
+            self.lastdate = lastdate
+            if date > lastdate:
+                self.lastdate = date
+            # see https://github.com/refraction-ray/xalpha/issues/27, begin new date from last one in df is not reliable
             label = self.aim.dividend_label  # 现金分红 0, 红利再投 1
             cash = 0
             share = 0
             rem = self.remtable.iloc[-1].rem
             rdate = date
-            if (date in recorddate) and (date not in self.aim.zhesuandate):
+            if (lastdate in recorddate) and (date not in self.aim.zhesuandate):
                 # deal with buy and sell and label the fenhongzaitouru, namely one label a 0.05 in the original table to label fenhongzaitouru
-                value = self.status[self.status["date"] == date].iloc[0].loc[code]
+                value = self.status[self.status["date"] <= lastdate].iloc[-1].loc[code]
                 fenhongmark = round(10 * value - int(10 * value), 1)
                 if fenhongmark == 0.5 and label == 0:
                     label = 1  # fenhong reinvest
@@ -282,7 +303,9 @@ class trade:
                     _, rem = rm.sell(rem, -dshare, rdate)
                 elif value >= -0.005 and value < 0:
                     # value now stands for the ratio to be sold in terms of remain positions, -0.005 stand for sell 100%
-                    remainshare = sum(self.cftable.loc[:, "share"])
+                    remainshare = sum(
+                        self.cftable[self.cftable["date"] <= date].loc[:, "share"]
+                    )
                     ratio = -value / 0.005
                     rdate, dcash, dshare = self.aim.shuhui(
                         remainshare * ratio, date, self.remtable.iloc[-1].rem

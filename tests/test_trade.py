@@ -81,6 +81,15 @@ def test_policy_buyandhold():
     assert round(cm_t2.xirrrate("2019-08-12", guess=-0.9), 2) == -0.33
 
 
+def test_weekly_price():
+    # see https://github.com/refraction-ray/xalpha/issues/27
+    ryjh = xa.fundinfo("008969")
+    bah = xa.policy.buyandhold(ryjh, start="2019-01-01", totmoney=100000)
+    bah.sellout("2020-05-12")  # 选定日期全部卖出
+    jshstrade = xa.trade(ryjh, bah.status)
+    assert round(jshstrade.xirrrate("2020-05-01", startdate="2020-02-01"), 1) == 0.2
+
+
 def test_policy_scheduled():
     auto = xa.policy.scheduled(
         cm, 1000, pd.date_range("2015-07-01", "2018-07-01", freq="W-THU")
