@@ -1,5 +1,8 @@
 # Changelog
 ## Unreleased
+### added
+* get_rt 增加货币基金元信息支持
+* mul 增加资产分类扇形图， mul.v_category_positions()
 
 ## v0.8.11 - 2020.05.15
 ### fixed

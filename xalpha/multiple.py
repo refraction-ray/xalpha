@@ -3,6 +3,7 @@
 module for mul and mulfix class: fund combination management
 """
 
+import logging
 import pandas as pd
 from pyecharts import options as opts
 from pyecharts.charts import Pie, ThemeRiver
@@ -14,6 +15,10 @@ from xalpha.record import record, irecord
 from xalpha.indicator import indicator
 from xalpha.info import cashinfo, fundinfo, mfundinfo
 from xalpha.trade import bottleneck, trade, turnoverrate, vtradevolume, xirrcal, itrade
+from xalpha.universal import get_fund_type
+
+
+logger = logging.getLogger(__name__)
 
 
 class mul:
@@ -252,6 +257,49 @@ class mul:
             key=lambda x: x[1],
             reverse=True,
         )
+        pie = Pie()
+        pie.add(
+            series_name="总值占比",
+            data_pair=sdata,
+            label_opts=opts.LabelOpts(is_show=False, position="center"),
+        ).set_global_opts(
+            legend_opts=opts.LegendOpts(
+                pos_left="left", type_="scroll", orient="vertical"
+            )
+        ).set_series_opts(
+            tooltip_opts=opts.TooltipOpts(
+                trigger="item", formatter="{a} <br/>{b}: {c} ({d}%)"
+            ),
+        )
+
+        if rendered:
+            return pie.render_notebook()
+        else:
+            return pie
+
+    def v_category_positions(self, date=yesterdayobj(), rendered=True):
+        """
+        资产分类扇形图，按大类资产求和绘制
+
+        :param date:
+        :param rendered: bool. default true for notebook, for plain pyechart obj to return, set rendered=False
+        :return:
+        """
+        d = {}
+        for f in self.fundtradeobj:
+            if isinstance(f, itrade):
+                t = f.get_type()
+                if t == "场内基金":
+                    t = get_fund_type(f.code[2:])
+            else:
+                t = get_fund_type(f.code)
+            if t == "其他":
+                logger.warning(
+                    "%s has category others which should be double checked" % f.code
+                )
+            d[t] = d.get(t, 0) + f.briefdailyreport(date)["currentvalue"]
+
+        sdata = sorted([(k, round(v, 2)) for k, v in d.items()])
         pie = Pie()
         pie.add(
             series_name="总值占比",

@@ -1371,27 +1371,37 @@ def get_rt_from_ttjj(code):
     r = rget("http://fund.eastmoney.com/{code}.html".format(code=code))
     r.encoding = "utf-8"
     s = BeautifulSoup(r.text, "lxml")
-    value, date, name = (
-        float(
-            s.findAll("dd", class_="dataNums")[1]
-            .find("span", class_="ui-font-large")
-            .string
-        ),
-        str(s.findAll("dt")[1]).split("(")[1].split(")")[0][7:],
-        s.select("div[style='float: left']")[0].text.split("(")[0],
-    )
+    name = s.select("div[style='float: left']")[0].text.split("(")[0]
+    if s.findAll("dd", class_="dataNums")[1].find(
+        "span", class_="ui-font-large"
+    ):  # 非货币基金
+        value, date = (
+            float(
+                s.findAll("dd", class_="dataNums")[1]
+                .find("span", class_="ui-font-large")
+                .string
+            ),
+            str(s.findAll("dt")[1]).split("(")[1].split(")")[0][7:],
+        )
+        estimate = s.select("#gz_gsz")[0].text
+        if estimate == "--":
+            estimate = None
+        else:
+            try:
+                estimate = _float(estimate)
+            except ValueError:
+                logger.warning("unrecognized estimate netvalue %s" % estimate)
+                estimate = None
+    else:
+        value, date = (
+            s.findAll("dd", class_="dataNums")[1].text,
+            str(s.findAll("dt")[1]).split("(")[1].split(")")[0],
+        )
+        estimate = None
     status = s.select("span[class='staticCell']")[0].text.strip()
     tb = s.select("div.infoOfFund > table >tr>td")
     infol = [i.text for i in tb]
-    estimate = s.select("#gz_gsz")[0].text
-    if estimate == "--":
-        estimate = None
-    else:
-        try:
-            estimate = _float(estimate)
-        except ValueError:
-            logger.warning("unrecognized estimate netvalue %s" % estimate)
-            estimate = None
+
     return {
         "name": name,
         "time": date,
@@ -1407,6 +1417,34 @@ def get_rt_from_ttjj(code):
         "estimate": estimate,
     }
     # 是否有美元份额计价的基金会出问题？
+
+
+@lru_cache(2048)
+def get_fund_type(code):
+    """
+    given fund code, return unified fund category which is extracted from get_rt(code)["type"]
+
+    :param code:
+    :return: str.
+    """
+    if code.startswith("F") or code.startswith("T") or code.startswith("M"):
+        code = code[1:]
+    t = get_rt("F" + code)["type"]
+
+    if t in ["联接基金", "股票指数"] or t.startswith("ETF"):
+        return "指数基金"
+    elif t.startswith("QDII"):
+        return "QDII"
+    elif t.startswith("股票"):
+        return "股票基金"
+    elif t.startswith("混合"):
+        return "混合基金"
+    elif t.startswith("债券"):
+        return "债券基金"
+    elif t.startswith("货币"):
+        return "货币基金"
+    else:
+        return "其他"
 
 
 def get_rt(

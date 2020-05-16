@@ -643,6 +643,45 @@ class itrade(trade):
                 self.name = get_rt(code)["name"]
             except:
                 self.name = code
+        self.type_ = None
+
+    def get_type(self):
+        if not self.type_:
+            code = self.code
+            if (
+                code.startswith("SZ15900")
+                or code.startswith("SH5116")
+                or code.startswith("SH5117")
+                or code.startswith("SH5118")
+                or code.startswith("SH5119")
+                or code.startswith("SH5198")
+            ):
+                self.type_ = "货币基金"
+            elif (
+                code.startswith("SH5")
+                or code.startswith("SZ16")
+                or code.startswith("SZ159")
+            ):
+                self.type_ = "场内基金"
+            elif code.startswith("SH11") or code.startswith("SZ12"):
+                if self.name.endswith("转债"):
+                    self.type_ = "可转债"
+                else:
+                    self.type_ = "债券"
+            elif code.starswith("SZ399") or code.startswith("SH000"):
+                self.type_ = "指数"
+
+            elif (
+                code.startswith("SH60")
+                or code.startswith("SZ00")
+                or code.startswith("SZ20")
+                or code.startswith("SZ30")
+            ):
+                self.type_ = "股票"
+            else:
+                self.type_ = "其他"
+
+        return self.type_
 
     def _arrange(self):
         d = {"date": [], "cash": [], "share": []}
