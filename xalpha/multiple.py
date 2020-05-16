@@ -268,12 +268,12 @@ class mul:
             logger.debug("use %s, %s for fund report" % (year, season))
         for f in self.fundtradeobj:
             if isinstance(f, itrade):
-                if f.get_type() not in ["场内基金", "股票"]:
-                    continue
-                elif f.get_type() == "股票":
-                    pass
-                else:
+                if f.get_type() == "股票":
+                    code = f.code
+                elif f.get_type() == "场内基金":
                     code = f.code[2:]
+                else:
+                    continue
             else:
                 code = f.code
             value = f.briefdailyreport(date).get("currentvalue", 0)
@@ -281,6 +281,8 @@ class mul:
                 if code.startswith("SH") or code.startswith("SZ"):
                     stock = code
                     d[stock] = d.get(stock, 0) + value
+                elif code == "mf":
+                    continue
                 else:
                     df = get_fund_holdings(code, year, season)
                     if df is None:
@@ -313,6 +315,7 @@ class mul:
         """
 
         d = {"stock": 0, "bond": 0, "cash": 0}
+        date = convert_date(date)
         for f in self.fundtradeobj:
             value = f.briefdailyreport(date).get("currentvalue", 0)
             if value > 0:
@@ -332,10 +335,13 @@ class mul:
                         continue
                 else:
                     code = f.code
+                if code == "mf":
+                    d["cash"] += value
+                    continue
                 if get_fund_type(code) == "货币基金":
                     d["cash"] += value
                     continue
-                df = xu.get_daily("pt-F" + code, end=date)
+                df = xu.get_daily("pt-F" + code, end=date.strftime("%Y%m%d"))
                 if df is None or len(df) == 0:
                     logger.warning("empty portfolio info for %s" % code)
                 row = df.iloc[-1]

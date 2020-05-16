@@ -34,3 +34,11 @@ def test_imul():
     c.v_category_positions()
     c.get_stock_holdings(date="2020-04-08")
     c.get_portfolio(date="20200501")
+
+
+def test_imulfix():
+    c = xa.mulfix(status=orc, istatus=ir, totmoney=100000, **ioconf)
+    c.summary()
+    c.v_category_positions("2020-04-08")
+    c.get_stock_holdings()
+    c.get_portfolio(date="20200501")

@@ -1427,8 +1427,7 @@ def get_fund_type(code):
     :param code:
     :return: str.
     """
-    if code.startswith("F") or code.startswith("T") or code.startswith("M"):
-        code = code[1:]
+    code = code[-6:]
     t = get_rt("F" + code)["type"]
 
     if t in ["联接基金", "股票指数"] or t.startswith("ETF"):
