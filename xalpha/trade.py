@@ -430,7 +430,10 @@ class trade:
         return df
 
     def get_netvalue(self, date=yesterdayobj()):
-        return self.price[self.price["date"] <= date].iloc[-1].netvalue
+        df = self.price[self.price["date"] <= date]
+        if df is None or len(df) == 0:
+            return 0
+        return df.iloc[-1].netvalue
 
     def briefdailyreport(self, date=yesterdayobj()):
         """

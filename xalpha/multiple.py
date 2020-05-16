@@ -13,9 +13,10 @@ from xalpha.evaluate import evaluate
 from xalpha.exceptions import FundTypeError, TradeBehaviorError
 from xalpha.record import record, irecord
 from xalpha.indicator import indicator
-from xalpha.info import cashinfo, fundinfo, mfundinfo
+from xalpha.info import cashinfo, fundinfo, mfundinfo, get_fund_holdings
 from xalpha.trade import bottleneck, trade, turnoverrate, vtradevolume, xirrcal, itrade
-from xalpha.universal import get_fund_type
+from xalpha.universal import get_fund_type, ttjjcode, get_rt
+import xalpha.universal as xu
 
 
 logger = logging.getLogger(__name__)
@@ -245,6 +246,111 @@ class mul:
         )
         return case
 
+    def get_stock_holdings(
+        self, year=None, season=None, date=yesterdayobj(), threhold=100
+    ):
+        """
+        获取整个基金组合的底层股票持仓总和和细节，组合穿透
+
+        :param year: 基于的基金季报年份
+        :param season: 基于的基金季报季度
+        :param date: 默认昨天
+        :param threhold: 默认100。小于100元的底层股票将不在最后的结果中展示
+        :return: pd.DataFrame column: name, code, value, ratio
+        """
+        d = {}
+        if year is None or season is None:
+            rd = convert_date(date) - pd.Timedelta(days=120)
+            if not year:
+                year = rd.year
+            if not season:
+                season = int((rd.month - 0.1) / 3) + 1
+            logger.debug("use %s, %s for fund report" % (year, season))
+        for f in self.fundtradeobj:
+            if isinstance(f, itrade):
+                if f.get_type() not in ["场内基金", "股票"]:
+                    continue
+                elif f.get_type() == "股票":
+                    pass
+                else:
+                    code = f.code[2:]
+            else:
+                code = f.code
+            value = f.briefdailyreport(date).get("currentvalue", 0)
+            if value > 0:
+                if code.startswith("SH") or code.startswith("SZ"):
+                    stock = code
+                    d[stock] = d.get(stock, 0) + value
+                else:
+                    df = get_fund_holdings(code, year, season)
+                    if df is None:
+                        continue
+
+                    for _, row in df.iterrows():
+                        stock = row["code"]
+                        stock = ttjjcode(stock)
+                        d[stock] = d.get(stock, 0) + row["ratio"] / 100 * value
+                        # print("%s has %s contribution from %s" %(stock, row["ratio"] / 100 * value, f.name))
+
+        l = []
+        for code, value in sorted(d.items(), key=lambda item: -item[1]):
+            if value >= threhold:
+                try:
+                    name = get_rt(code)["name"]
+                except:
+                    name = code
+                l.append([name, code, value])
+        fdf = pd.DataFrame(l, columns=["name", "code", "value"])
+        fdf["ratio"] = fdf["value"] / fdf["value"].sum()
+        return fdf
+
+    def get_portfolio(self, date=yesterdayobj()):
+        """
+        获取基金组合底层资产大类配置的具体值
+
+        :param date:
+        :return: Dict[str, float]. stock，bond，cash 对应总值的字典
+        """
+
+        d = {"stock": 0, "bond": 0, "cash": 0}
+        for f in self.fundtradeobj:
+            value = f.briefdailyreport(date).get("currentvalue", 0)
+            if value > 0:
+                if isinstance(f, itrade):
+                    if f.get_type() == "股票":
+                        d["stock"] += value
+                        continue
+                    elif f.get_type() in ["可转债", "债券"]:
+                        d["bond"] += value
+                        continue
+                    elif f.get_type() == "货币基金":
+                        d["cash"] += value
+                        continue
+                    elif f.get_type() == "场内基金":
+                        code = f.code[2:]
+                    else:
+                        continue
+                else:
+                    code = f.code
+                if get_fund_type(code) == "货币基金":
+                    d["cash"] += value
+                    continue
+                df = xu.get_daily("pt-F" + code, end=date)
+                if df is None or len(df) == 0:
+                    logger.warning("empty portfolio info for %s" % code)
+                row = df.iloc[-1]
+                if row["bond_ratio"] + row["stock_ratio"] < 10:  # 联接基金
+                    d["stock"] += (
+                        (100 - row["bond_ratio"] - row["cash_ratio"]) * value / 100
+                    )
+                    d["bond"] += row["bond_ratio"] * value / 100
+                    d["cash"] += row["cash_ratio"] * value / 100
+                else:
+                    d["stock"] += row["stock_ratio"] * value / 100
+                    d["bond"] += row["bond_ratio"] * value / 100
+                    d["cash"] += row["cash_ratio"] * value / 100
+        return d
+
     def v_positions(self, date=yesterdayobj(), rendered=True):
         """
         pie chart visualization of positions ratio in combination
@@ -291,13 +397,15 @@ class mul:
                 t = f.get_type()
                 if t == "场内基金":
                     t = get_fund_type(f.code[2:])
+            elif f.code == "mf":
+                t = "货币基金"
             else:
                 t = get_fund_type(f.code)
             if t == "其他":
                 logger.warning(
                     "%s has category others which should be double checked" % f.code
                 )
-            d[t] = d.get(t, 0) + f.briefdailyreport(date)["currentvalue"]
+            d[t] = d.get(t, 0) + f.briefdailyreport(date).get("currentvalue", 0)
 
         sdata = sorted([(k, round(v, 2)) for k, v in d.items()])
         pie = Pie()

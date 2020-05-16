@@ -32,3 +32,5 @@ def test_imul():
     c = xa.mul(status=orc, istatus=ir, **ioconf)
     assert round(c.combsummary("20200309").iloc[0]["投资收益率"], 2) == 0.49
     c.v_category_positions()
+    c.get_stock_holdings(date="2020-04-08")
+    c.get_portfolio(date="20200501")
