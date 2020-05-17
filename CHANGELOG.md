@@ -1,11 +1,15 @@
 # Changelog
 ## Unreleased
+
+## v0.9.0 - 2020.05.17
 ### added
 * get_rt 增加货币基金元信息支持
 * mul 增加资产分类扇形图， mul.v_category_positions()
 * 基金组合分析增加了股票透视功能，mul.get_stock_holdings(2020, 1) 直接看穿底层持仓股票及比例
 * 基金组合分析增加了股债比例穿透 mul.get_portfolio()
 * 可转债价值全能计算器移入 toolbox，公开 API 进入主线支持
+### fixed
+* 完成了可转债定价工具的全面基准测试，并完善了几个数据细节
 
 ## v0.8.11 - 2020.05.15
 ### fixed
