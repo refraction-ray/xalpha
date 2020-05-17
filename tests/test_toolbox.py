@@ -60,3 +60,9 @@ def test_qdii_predict_local():
 def test_rt_predict():
     p = xa.RTPredict("SH512500", t0dict="SH000905")
     p.get_t0_rate()
+
+
+def test_cbcaculator():
+    c = xa.CBCalculator("SH113577")
+    d = c.analyse()
+    assert d["name"] == "春秋转债"

@@ -41,3 +41,5 @@
 *   和基金净值预测与折溢价套利相关的独立项目 `LOF-BOT <https://re-ra.xyz/lof-bot/>`_
 
 *   直接基于 xalpha 的关于场内基金折溢价的最佳实践 `示例 <https://github.com/refraction-ray/xalpha/blob/master/doc/samples/qdiipred.py>`_
+
+*   可转债价格估计的研究和比较（xalpha 可转债价格计算器教学） `示例 <https://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/cbond.ipynb>`_

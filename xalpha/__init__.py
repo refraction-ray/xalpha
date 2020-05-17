@@ -44,6 +44,7 @@ from xalpha.toolbox import (
     OverPriced,
     QDIIPredict,
     RTPredict,
+    CBCalculator,
     set_holdings,
     set_display,
 )

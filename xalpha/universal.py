@@ -1944,10 +1944,16 @@ def ttjjcode(code):
     elif code.isdigit() and len(code) == 5:
         return "HK" + code
     elif code.isdigit() and len(code) == 6:
-        if code.startswith("1") or code.startswith("0") or code.startswith("3"):
+        if (
+            code.startswith("16")
+            or code.startswith("15")
+            or code.startswith("12")
+            or code.startswith("0")
+            or code.startswith("3")
+        ):
             # 注意这里只能对应个股，指数代码有重叠没有办法的事
             return "SZ" + code
-        elif code.startswith("5") or code.startswith("6"):
+        elif code.startswith("5") or code.startswith("6") or code.startswith("11"):
             return "SH" + code
         else:
             logger.warning("unrecognized code format %s" % code)
