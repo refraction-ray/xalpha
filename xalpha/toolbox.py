@@ -32,6 +32,7 @@ from xalpha.universal import (
     get_rt,
     get_bar,
     ttjjcode,
+    get_bond_rates,
     _convert_code,
     _inverse_convert_code,
     fetch_backend,
@@ -720,51 +721,6 @@ def cb_ytm(issue_date, rlist, cp, date=None, tax=1.0, guess=0.01):
     cf.append((issue_date_obj + dt.timedelta(days=(len(rlist) - 1) * 365), rlist[-1]))
     #     print(cf)
     return xirr(cf, guess=guess)
-
-
-@lru_cache()
-def get_bond_rates(rating, date=None):
-    """
-    获取各评级企业债的不同久期的预期利率
-
-    :param rating: str. eg AAA, AA-, N for 中国国债
-    :param date: %Y-%m-%d
-    :return:
-    """
-    rating = rating.strip()
-    rating_uid = {
-        "N": "2c9081e50a2f9606010a3068cae70001",
-        "AAA": "2c9081e50a2f9606010a309f4af50111",
-        "AAA-": "8a8b2ca045e879bf014607ebef677f8e",
-        "AA+": "2c908188138b62cd01139a2ee6b51e25",
-        "AA": "2c90818812b319130112c279222836c3",
-        "AA-": "8a8b2ca045e879bf014607f9982c7fc0",
-        "A+": "2c9081e91b55cc84011be40946ca0925",
-        "A": "2c9081e91e6a3313011e6d438a58000d",
-        "A-": "8a8b2ca04142df6a014148ca880f3046",
-    }
-
-    def _fetch(date):
-        r = rpost(
-            "https://yield.chinabond.com.cn/cbweb-mn/yc/searchYc?\
-xyzSelect=txy&&workTimes={date}&&dxbj=0&&qxll=0,&&yqqxN=N&&yqqxK=K&&\
-ycDefIds={uid}&&wrjxCBFlag=0&&locale=zh_CN".format(
-                uid=rating_uid[rating], date=date
-            ),
-        )
-        return r
-
-    if not date:
-        date = dt.datetime.today().strftime("%Y-%m-%d")
-
-    r = _fetch(date)
-    while len(r.text.strip()) < 20:  # 当天没有数据，非交易日
-        date = last_onday(date).strftime("%Y-%m-%d")
-        r = _fetch(date)
-    l = r.json()[0]["seriesData"]
-    l = [t for t in l if t[1]]
-    df = pd.DataFrame(l, columns=["year", "rate"])
-    return df
 
 
 class CBCalculator:

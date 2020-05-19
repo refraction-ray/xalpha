@@ -378,7 +378,7 @@ class basicinfo(indicator):
         ]
         return (row.date, -myround(value), share)
 
-    def shuhui(self, share, date, rem):
+    def shuhui(self, share, date, rem, value_label=None):
         """
         give the cashout considering redemption rates as zero.
         if the date is not a trade date, then the purchase would happen on the next trade day, if the date is
@@ -390,7 +390,7 @@ class basicinfo(indicator):
             the second is a positive float for cashout,
             the third is a negative float for share decrease
         """
-        if self.value_label == 0:
+        if self.value_label == 0 or value_label == 0:
             return self._shuhui_by_share(share, date, rem)
         elif self.value_label == 1:  # 按金额赎回，仅支持无赎回费的货币基金
             partprice = self.price[self.price["date"] >= date]
@@ -734,7 +734,7 @@ class fundinfo(basicinfo):
                 return float(self.feeinfo[i].strip("%"))
         return 0  # error backup, in case there is sth wrong in segment
 
-    def shuhui(self, share, date, rem):
+    def shuhui(self, share, date, rem, value_label=None):
         """
         give the cashout based on rem term considering redemption rates
 

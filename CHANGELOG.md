@@ -1,5 +1,9 @@
 # Changelog
 ## Unreleased
+### added
+* get_daily 增加国债和企业债利率历史数据
+### fixed
+* 修复 value_label=1 时，-0.005 代表的全部赎回逻辑
 
 ## v0.9.0 - 2020.05.17
 ### added

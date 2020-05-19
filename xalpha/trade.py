@@ -308,7 +308,7 @@ class trade:
                     )
                     ratio = -value / 0.005
                     rdate, dcash, dshare = self.aim.shuhui(
-                        remainshare * ratio, date, self.remtable.iloc[-1].rem
+                        remainshare * ratio, date, self.remtable.iloc[-1].rem, 0
                     )
                     _, rem = rm.sell(rem, -dshare, rdate)
                 else:  # in case value=0, when specialday is in record day

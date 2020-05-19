@@ -46,6 +46,7 @@ from xalpha.cons import (
     rget_json,
     rpost_json,
     tz_bj,
+    last_onday,
     region_trans,
     today_obj,
     _float,
@@ -808,6 +809,66 @@ def get_historical_fromycharts(code, start, end, category, metric):
     return df[["date", "close"]]
 
 
+@lru_cache()
+def get_bond_rates(rating, date=None):
+    """
+    获取各评级企业债的不同久期的预期利率
+
+    :param rating: str. eg AAA, AA-, N for 中国国债
+    :param date: %Y-%m-%d
+    :return:
+    """
+    rating = rating.strip()
+    rating_uid = {
+        "N": "2c9081e50a2f9606010a3068cae70001",
+        "AAA": "2c9081e50a2f9606010a309f4af50111",
+        "AAA-": "8a8b2ca045e879bf014607ebef677f8e",
+        "AA+": "2c908188138b62cd01139a2ee6b51e25",
+        "AA": "2c90818812b319130112c279222836c3",
+        "AA-": "8a8b2ca045e879bf014607f9982c7fc0",
+        "A+": "2c9081e91b55cc84011be40946ca0925",
+        "A": "2c9081e91e6a3313011e6d438a58000d",
+        "A-": "8a8b2ca04142df6a014148ca880f3046",
+    }
+    # 上边字典不全，非常欢迎贡献 ：）
+    def _fetch(date):
+        r = rpost(
+            "https://yield.chinabond.com.cn/cbweb-mn/yc/searchYc?\
+xyzSelect=txy&&workTimes={date}&&dxbj=0&&qxll=0,&&yqqxN=N&&yqqxK=K&&\
+ycDefIds={uid}&&wrjxCBFlag=0&&locale=zh_CN".format(
+                uid=rating_uid.get(rating, rating), date=date
+            ),
+        )
+        return r
+
+    if not date:
+        date = dt.datetime.today().strftime("%Y-%m-%d")
+
+    r = _fetch(date)
+    while len(r.text.strip()) < 20:  # 当天没有数据，非交易日
+        date = last_onday(date).strftime("%Y-%m-%d")
+        r = _fetch(date)
+    l = r.json()[0]["seriesData"]
+    l = [t for t in l if t[1]]
+    df = pd.DataFrame(l, columns=["year", "rate"])
+    return df
+
+
+def get_bond_rates_range(rating, duration=3, freq="W-FRI", start=None, end=None):
+    l = []
+    if rating.startswith("B-"):
+        rating = rating[2:]
+    rs = rating.split(".")
+    if len(rs) > 1:
+        duration = float(rs[1])
+        rating = rs[0]
+
+    for d in pd.date_range(start, end, freq=freq):
+        df = get_bond_rates(rating, d.strftime("%Y-%m-%d"))
+        l.append([d, df[df["year"] <= duration].iloc[-1]["rate"]])
+    return pd.DataFrame(l, columns=["date", "close"])
+
+
 @data_source("jq")
 def get_macro(table, start, end, datecol="stat_year"):
     df = macro.run_query(
@@ -890,6 +951,8 @@ def _get_daily(
             24. 形如 yc-indices/^SPGSCICO，yc-indices/^SPGSCICO/level 格式的数据，返回ycharts指数数据，对应网页 https://ycharts.com/indices/%5ESPGSCICO/level，最后部分为数据含义，默认level，可选：total_return_forward_adjusted_price，历史数据限制五年内。
 
             25. 形如 HZ999001 HZ999005 格式的数据，代表了华证系列指数 http://www.chindices.com/indicator.html#
+
+            26. 形如 B-AA+.3 格式的数据，代表了 AA+ 企业债三年久期利率数据 (每周)
 
     :param start: str. "20200101", "2020/01/01", "2020-01-01" are all legal. The starting date of daily data.
     :param end: str. format is the same as start. The ending date of daily data.
@@ -1019,6 +1082,9 @@ def _get_daily(
 
     elif _from == "ES":
         df = get_historical_fromesunny(code, start=start, end=end)
+
+    elif _from == "B":
+        df = get_bond_rates_range(code, start=start, end=end)
 
     elif _from == "ycharts":
         df = get_historical_fromycharts(

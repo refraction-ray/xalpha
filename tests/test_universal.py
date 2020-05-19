@@ -239,3 +239,8 @@ def test_get_ycharts():
     assert d.iloc[0]["close"] == 169.821
 
     assert xa.get_rt("yc-companies/DBO")["currency"] == "USD"
+
+
+def test_get_bond_rates():
+    df = xa.get_daily("B-AA+.3", end="2020-05-17")
+    assert df.iloc[-1]["close"] == 2.7743
