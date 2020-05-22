@@ -729,7 +729,13 @@ class CBCalculator:
     """
 
     def __init__(
-        self, code, bondrate=None, riskfreerate=None, volatility=None, name=None
+        self,
+        code,
+        bondrate=None,
+        riskfreerate=None,
+        volatility=None,
+        name=None,
+        zgj=None,
     ):
         """
 
@@ -738,6 +744,7 @@ class CBCalculator:
         :param riskfreerate: Optioal[float]. 评估期权价值所用的无风险利率，默认使用国债对应久期的年利率。
         :param volatility: Optional[float]. 正股波动性百分点，默认在一个范围浮动加上历史波动率的小幅修正。
         :param name: str. 对于历史回测，可以直接提供 str，免得多次 get_rt 获取 name
+        :param zgj: float. 手动设置转股价，适用于想要考虑转股价调整因素进行历史估值的高阶用户
         """
         # 应该注意到该模型除了当天外，其他时间估计会利用现在的转股价，对于以前下修过转股价的转债历史价值估计有问题
 
@@ -763,7 +770,10 @@ class CBCalculator:
             b.select("td[class=jisilu_nav]")[0].contents[1].string.split("-")[1].strip()
         )
         self.scode = ttjjcode(self.scode)  # 标准化股票代码
-        self.zgj = float(b.select("td[id=convert_price]")[0].string)  # 转股价
+        if not zgj:
+            self.zgj = float(b.select("td[id=convert_price]")[0].string)  # 转股价
+        else:
+            self.zgj = zgj
         self.rating = b.select("td[id=rating_cd]")[0].string.strip()
         self.enddate = b.select("td[id=maturity_dt]")[0].string
 

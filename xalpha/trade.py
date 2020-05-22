@@ -671,7 +671,7 @@ class itrade(trade):
                     self.type_ = "可转债"
                 else:
                     self.type_ = "债券"
-            elif code.starswith("SZ399") or code.startswith("SH000"):
+            elif code.startswith("SZ399") or code.startswith("SH000"):
                 self.type_ = "指数"
 
             elif (

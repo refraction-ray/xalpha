@@ -8,7 +8,6 @@ import pandas as pd
 import datetime as dt
 import logging
 import numpy as np
-from scipy import stats
 from bs4 import BeautifulSoup
 from functools import lru_cache
 
@@ -233,3 +232,23 @@ kcfj = [
 ]
 
 ## some small tools and calculators below
+
+
+def summary_cb(df, l=None, cutoff=5):
+    for c in ["转债代码"]:
+        df[c] = df[c].apply(lambda s: s.strip())
+    for c in ["双低指数", "转债价格", "股票市值", "转债余额"]:
+        df[c] = df[c].apply(_float)
+    for c in ["转股溢价率", "价值溢价", "税后收益率"]:
+        df[c] = df[c].apply(lambda s: float(str(s).strip("%")))
+    if l is not None:
+        df = df[df["转债代码"].isin(l)]
+    d = {}
+    for c in ["双低指数", "转债价格", "转股溢价率", "价值溢价", "税后收益率", "股票市值"]:
+
+        yj = sorted(df[c])[cutoff:-cutoff]
+        d[c + "中位数"] = yj[int(len(yj) / 2)]
+        d[c + "均值"] = round(np.mean(yj), 3)
+    d["破面值转债数目"] = len([v for v in df["转债价格"] if v < 100])
+    d["总转债余额"] = round(np.sum(df["转债余额"]), 0)
+    return d
