@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.9.1 - 2020.05.31
 ### added
 * get_daily 增加国债和企业债利率历史数据
 ### fixed
