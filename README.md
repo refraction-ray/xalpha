@@ -24,9 +24,10 @@ nfyy = xa.fundinfo("501018")
 一行根据账单进行基金组合全模拟，和实盘完全相符:
 
 ```python
-jiaoyidan = xa.record(path).status # 额外一行先读入 path 处的 csv 账单
-shipan = xa.mul(jiaoyidan) # Let's rock
-shipan.combsummary() # 看所有基金总结效果
+jiaoyidan = xa.record(path) # 额外一行先读入 path 处的 csv 账单
+shipan = xa.mul(status=jiaoyidan) # Let's rock
+shipan.summary() # 看所有基金总结效果
+shipan.get_stock_holdings() # 查看底层等效股票持仓
 ```
 
 一行获取各种金融产品的历史日线数据或实时数据

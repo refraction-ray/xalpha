@@ -231,22 +231,44 @@ kcfj = [
     "SH501085",
 ]
 
+# 混合基
+hh_cand = [
+    "001500",
+    "001278",
+    "001103",
+    "519697",
+    "001182",
+    "001510",
+    "001508",
+    "519700",
+    "519732",
+    "519056",
+    "213001",
+    "161606",
+    "519091",
+    "000717",
+    "000878",
+    "000452",
+]
+
 ## some small tools and calculators below
 
 
 def summary_cb(df, l=None, cutoff=5):
     for c in ["转债代码"]:
         df[c] = df[c].apply(lambda s: s.strip())
-    for c in ["双低指数", "转债价格", "股票市值", "转债余额"]:
+    for c in ["老式双低", "转债价格", "股票市值", "转债余额"]:
         df[c] = df[c].apply(_float)
     for c in ["转股溢价率", "价值溢价", "税后收益率"]:
         df[c] = df[c].apply(lambda s: float(str(s).strip("%")))
     if l is not None:
         df = df[df["转债代码"].isin(l)]
     d = {}
-    for c in ["双低指数", "转债价格", "转股溢价率", "价值溢价", "税后收益率", "股票市值"]:
-
-        yj = sorted(df[c])[cutoff:-cutoff]
+    for c in ["老式双低", "转债价格", "转股溢价率", "价值溢价", "税后收益率", "股票市值"]:
+        if cutoff == 0:
+            yj = sorted(df[c])
+        else:
+            yj = sorted(df[c])[cutoff:-cutoff]
         d[c + "中位数"] = yj[int(len(yj) / 2)]
         d[c + "均值"] = round(np.mean(yj), 3)
     d["破面值转债数目"] = len([v for v in df["转债价格"] if v < 100])

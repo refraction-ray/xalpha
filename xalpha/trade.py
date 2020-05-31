@@ -107,9 +107,10 @@ def vtradevolume(cftable, freq="D", rendered=True):
     :returns: the Bar object
     """
     ### WARN: datazoom and time conflict, sliding till 1970..., need further look into pyeacharts
-    ### very unsatisfied about current visualize effect, and it seems the order of add and set option matters a lot
+    startdate = cftable.iloc[0]["date"]
     if freq == "D":
-        datedata = [d.to_pydatetime() for d in cftable["date"]]
+        # datedata = [d.to_pydatetime() for d in cftable["date"]]
+        datedata = pd.date_range(startdate, yesterdayobj(), freq="D")
         selldata = [
             [row["date"].to_pydatetime(), row["cash"]]
             for _, row in cftable.iterrows()
@@ -124,10 +125,13 @@ def vtradevolume(cftable, freq="D", rendered=True):
         cfmerge = cftable.groupby([cftable["date"].dt.year, cftable["date"].dt.week])[
             "cash"
         ].sum()
-        datedata = [
-            dt.datetime.strptime(str(a) + "4", "(%Y, %W)%w")
-            for a, _ in cfmerge.iteritems()
-        ]
+        # datedata = [
+        #     dt.datetime.strptime(str(a) + "4", "(%Y, %W)%w")
+        #     for a, _ in cfmerge.iteritems()
+        # ]
+        datedata = pd.date_range(
+            startdate, yesterdayobj() + pd.Timedelta(days=7), freq="W-THU"
+        )
         selldata = [
             [dt.datetime.strptime(str(a) + "4", "(%Y, %W)%w"), b]
             for a, b in cfmerge.iteritems()
@@ -142,17 +146,20 @@ def vtradevolume(cftable, freq="D", rendered=True):
         cfmerge = cftable.groupby([cftable["date"].dt.year, cftable["date"].dt.month])[
             "cash"
         ].sum()
-        datedata = [
-            dt.datetime.strptime(str(a) + "15", "(%Y, %m)%d")
-            for a, _ in cfmerge.iteritems()
-        ]
+        # datedata = [
+        #     dt.datetime.strptime(str(a) + "15", "(%Y, %m)%d")
+        #     for a, _ in cfmerge.iteritems()
+        # ]
+        datedata = pd.date_range(
+            startdate, yesterdayobj() + pd.Timedelta(days=31), freq="MS"
+        )
         selldata = [
-            [dt.datetime.strptime(str(a) + "15", "(%Y, %m)%d"), b]
+            [dt.datetime.strptime(str(a) + "1", "(%Y, %m)%d"), b]
             for a, b in cfmerge.iteritems()
             if b > 0
         ]
         buydata = [
-            [dt.datetime.strptime(str(a) + "15", "(%Y, %m)%d"), b]
+            [dt.datetime.strptime(str(a) + "1", "(%Y, %m)%d"), b]
             for a, b in cfmerge.iteritems()
             if b < 0
         ]
@@ -162,14 +169,19 @@ def vtradevolume(cftable, freq="D", rendered=True):
     buydata = [[d, round(x, 1)] for d, x in buydata]
     selldata = [[d, round(x, 1)] for d, x in selldata]
     bar = Bar()
-    bar.add_xaxis(datedata)
+    datedata = list(datedata)
+    bar.add_xaxis(xaxis_data=datedata)
     # buydata should before selldata, since emptylist in the first line would make the output fig empty: may be bug in pyecharts
-    bar.add_yaxis(series_name="买入", yaxis_data=buydata, category_gap="90%")
-    bar.add_yaxis(series_name="卖出", yaxis_data=selldata, category_gap="90%")
-
+    bar.add_yaxis(series_name="买入", yaxis_data=buydata)
+    bar.add_yaxis(series_name="卖出", yaxis_data=selldata)
     bar.set_global_opts(
-        xaxis_opts=opts.AxisOpts(type_="time"),
-        datazoom_opts=[opts.DataZoomOpts(range_start=99, range_end=100)],
+        tooltip_opts=opts.TooltipOpts(
+            is_show=True,
+            trigger="axis",
+            trigger_on="mousemove",
+            axis_pointer_type="cross",
+        ),
+        datazoom_opts=[opts.DataZoomOpts(range_start=90, range_end=100)],
     )
     if rendered:
         return bar.render_notebook()
