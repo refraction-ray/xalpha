@@ -360,7 +360,7 @@ class basicinfo(indicator):
         # self.price = pd.DataFrame(data={'date':[],'netvalue':[],'comment':[]})
         raise NotImplementedError
 
-    def shengou(self, value, date):
+    def shengou(self, value, date, fee=None):
         """
         give the realdate deltacash deltashare tuple based on purchase date and purchase amount
         if the date is not a trade date, then the purchase would happen on the next trade day, if the date is
@@ -368,17 +368,18 @@ class basicinfo(indicator):
 
         :param value: the money for purchase
         :param date: string or object of date
+        :param fee: the rate for shengou, default None and info.rate will be used, ok for most cases
         :returns: three elements tuple, the first is the actual dateobj of commit
             the second is a negative float for cashin,
             the third is a positive float for share increase
         """
+        if fee is None:
+            fee = self.rate
         row = self.price[self.price["date"] >= date].iloc[0]
-        share = _shengoucal(value, self.rate, row.netvalue, label=self.round_label + 1)[
-            1
-        ]
+        share = _shengoucal(value, fee, row.netvalue, label=self.round_label + 1)[1]
         return (row.date, -myround(value), share)
 
-    def shuhui(self, share, date, rem, value_label=None):
+    def shuhui(self, share, date, rem, value_label=None, fee=None):
         """
         give the cashout considering redemption rates as zero.
         if the date is not a trade date, then the purchase would happen on the next trade day, if the date is
@@ -386,6 +387,11 @@ class basicinfo(indicator):
 
         :param share: float or int, number of shares to be sold. if value_label=1, its cash to be sold.
         :param date: string or object of date
+        :param rem: positions with time list
+        :param value_label: default None, value_label will be chosen by info.value_label, determining
+                whether shuhui by share 0 or value 1. value_label = 0 will rewrite self.value_label = 1
+        :param fee: default None, determined automatically, suggested for most of the cases.
+                Otherwise 0.015 means 1.5% in shuhui
         :returns: three elements tuple, the first is dateobj
             the second is a positive float for cashout,
             the third is a negative float for share decrease
@@ -399,9 +405,9 @@ class basicinfo(indicator):
             else:
                 row = partprice.iloc[0]
             share = share / row.netvalue
-            return self._shuhui_by_share(share, date, rem)
+            return self._shuhui_by_share(share, date, rem, fee=fee)
 
-    def _shuhui_by_share(self, share, date, rem):
+    def _shuhui_by_share(self, share, date, rem, fee=None):
         date = convert_date(date)
         tots = sum([remitem[1] for remitem in rem if remitem[0] <= date])
         if share > tots:
@@ -414,6 +420,8 @@ class basicinfo(indicator):
         else:
             row = partprice.iloc[0]
         value = myround(sh * row.netvalue)
+        if fee is not None:
+            value = (1 - fee) * value
         return (
             row.date,
             value,
@@ -734,7 +742,7 @@ class fundinfo(basicinfo):
                 return float(self.feeinfo[i].strip("%"))
         return 0  # error backup, in case there is sth wrong in segment
 
-    def shuhui(self, share, date, rem, value_label=None):
+    def shuhui(self, share, date, rem, value_label=None, fee=None):
         """
         give the cashout based on rem term considering redemption rates
 
@@ -753,8 +761,12 @@ class fundinfo(basicinfo):
         value = 0
         sh = myround(sum([item[1] for item in soldrem]))
         for d, s in soldrem:
+            if fee is None:
+                tmpfee = self.feedecision((row.date - d).days) * 1e-2
+            else:
+                tmpfee = fee
             value += myround(
-                s * row.netvalue * (1 - self.feedecision((row.date - d).days) * 1e-2)
+                s * row.netvalue * (1 - tmpfee)
             )  # TODO: round_label whether play a role here?
         return (row.date, value, -sh)
 

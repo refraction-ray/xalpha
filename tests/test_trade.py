@@ -26,6 +26,16 @@ def test_trade():
     cm_t.v_tradevolume(freq="M")
 
 
+def test_customize_fee():
+    df = pd.DataFrame(
+        {"date": ["2020-05-28", "2020-06-01"], "519732": [500.005, -0.505]}
+    )
+    df["date"] = pd.to_datetime(df["date"])
+    dqzf = xa.trade(xa.fundinfo("519732"), df)
+    assert dqzf.dailyreport("2020-06-02")["基金分红与赎回"].iloc[0] == 2.22
+    assert dqzf.dailyreport("2020-05-31")["持有份额"].iloc[0] == 116.5
+
+
 def test_mul():
     with pytest.raises(Exception) as excinfo:
         cm_m = xa.mulfix(cm_t, totmoney=200)

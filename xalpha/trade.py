@@ -2,6 +2,7 @@
 """
 module for trade class
 """
+import math
 import datetime as dt
 import logging
 
@@ -252,7 +253,13 @@ class trade:
                 date = self.price[self.price["date"] <= date].iloc[-1]["date"]
             # 这里没有像下边部分一样仔细处理单独的 lastdate，hopefully 不会出现其他奇怪的问题，有 case 再说
             if value > 0:
-                rdate, cash, share = self.aim.shengou(value, date)
+                feelabel = 100 * value - int(100 * value)
+                if int(10 * feelabel) == 5:
+                    feelabel = feelabel - 0.5
+                else:
+                    feelabel = None
+                value = int(value * 100) / 100
+                rdate, cash, share = self.aim.shengou(value, date, fee=feelabel)
                 rem = rm.buy([], share, rdate)
             else:
                 raise TradeBehaviorError("You cannot sell first when you never buy")
@@ -301,21 +308,34 @@ class trade:
             if (lastdate in recorddate) and (date not in self.aim.zhesuandate):
                 # deal with buy and sell and label the fenhongzaitouru, namely one label a 0.05 in the original table to label fenhongzaitouru
                 value = self.status[self.status["date"] <= lastdate].iloc[-1].loc[code]
-                fenhongmark = round(10 * value - int(10 * value), 1)
-                if fenhongmark == 0.5 and label == 0:
-                    label = 1  # fenhong reinvest
-                    value = round(value, 1)
-                elif fenhongmark == 0.5 and label == 1:
-                    label = 0
-                    value = round(value, 1)
+                if date in self.aim.fenhongdate:  # 0.05 的分红行为标记，只有分红日才有效
+                    fenhongmark = round(10 * value - int(10 * value), 1)
+                    if fenhongmark == 0.5 and label == 0:
+                        label = 1  # fenhong reinvest
+                        value = value - math.copysign(0.05, value)
+                    elif fenhongmark == 0.5 and label == 1:
+                        label = 0
+                        value = value - math.copysign(0.05, value)
 
                 if value > 0:  # value stands for purchase money
-                    rdate, dcash, dshare = self.aim.shengou(value, date)
+                    feelabel = 100 * value - int(100 * value)
+                    if int(10 * feelabel) == 5:
+                        feelabel = feelabel - 0.5
+                    else:
+                        feelabel = None
+                    value = int(value * 100) / 100
+                    rdate, dcash, dshare = self.aim.shengou(value, date, fee=feelabel)
                     rem = rm.buy(rem, dshare, rdate)
 
                 elif value < -0.005:  # value stands for redemp share
+                    feelabel = int(100 * value) - 100 * value
+                    if int(10 * feelabel) == 5:
+                        feelabel = feelabel - 0.5
+                    else:
+                        feelabel = None
+                    value = int(value * 100) / 100
                     rdate, dcash, dshare = self.aim.shuhui(
-                        -value, date, self.remtable.iloc[-1].rem
+                        -value, date, self.remtable.iloc[-1].rem, fee=feelabel
                     )
                     _, rem = rm.sell(rem, -dshare, rdate)
                 elif value >= -0.005 and value < 0:

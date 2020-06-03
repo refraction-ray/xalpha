@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### added
+* 账单上自定义单项交易的申购赎回费用
 
 ## v0.9.1 - 2020.05.31
 ### added
