@@ -14,7 +14,15 @@ from xalpha.exceptions import FundTypeError, TradeBehaviorError
 from xalpha.record import record, irecord
 from xalpha.indicator import indicator
 from xalpha.info import cashinfo, fundinfo, mfundinfo, get_fund_holdings
-from xalpha.trade import bottleneck, trade, turnoverrate, vtradevolume, xirrcal, itrade
+from xalpha.trade import (
+    bottleneck,
+    trade,
+    turnoverrate,
+    vtradevolume,
+    xirrcal,
+    itrade,
+    vtradecost,
+)
 from xalpha.universal import get_fund_type, ttjjcode, get_rt
 import xalpha.universal as xu
 
@@ -565,6 +573,14 @@ class mulfix(mul, indicator):
         for fund in self.fundtradeobj:
             res += fund.briefdailyreport(date).get("currentvalue", 0)
         return res / self.totmoney
+
+    def v_tradecost(self, threhold=0, date=yesterdayobj(), rendered=True):
+        if getattr(self, "price", None) is None:
+            raise ValueError("Please generate price table by ``bcmkset()`` first")
+        cftable = self.fundtradeobj[-1].cftable[1:]
+        cftable = cftable[abs(cftable["cash"]) > threhold]
+        cftable["cash"] = -cftable["cash"]
+        return vtradecost(self, cftable, end=date, rendered=rendered)
 
 
 class imul(mul):

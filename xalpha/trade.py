@@ -190,6 +190,96 @@ def vtradevolume(cftable, freq="D", rendered=True):
         return bar
 
 
+def vtradecost(
+    self, cftable, unitcost=False, start=None, end=yesterdayobj(), rendered=True
+):
+    """
+    visualization giving the average cost line together with netvalue line as well as buy and sell points
+
+    :returns: pyecharts.line
+    """
+    funddata = []
+    costdata = []
+    pprice = self.price[self.price["date"] <= end]
+    pcftable = cftable
+    if start is not None:
+        pprice = pprice[pprice["date"] >= start]
+        pcftable = pcftable[pcftable["date"] >= start]
+    for _, row in pprice.iterrows():
+        date = row["date"]
+        funddata.append(row["netvalue"])
+        if unitcost:
+            cost = 0
+            if (date - self.cftable.iloc[0].date).days >= 0:
+                cost = self.unitcost(date)
+            costdata.append(cost)
+
+    coords = []
+    # pcftable = pcftable[abs(pcftable["cash"]) > threhold]
+    for i, r in pcftable.iterrows():
+        coords.append([r.date, pprice[pprice["date"] <= r.date].iloc[-1]["netvalue"]])
+
+    upper = pcftable.cash.abs().max()
+    lower = pcftable.cash.abs().min()
+    if upper == lower:
+        upper = 2 * lower + 1  # avoid zero in denominator
+
+    def marker_factory(x, y):
+        buy = pcftable[pcftable["date"] <= x].iloc[-1]["cash"]
+        if buy < 0:
+            color = "#ff7733"
+        else:
+
+            color = "#3366ff"
+        size = (abs(buy) - lower) / (upper - lower) * 5 + 5
+        return opts.MarkPointItem(
+            coord=[x.date(), y],
+            itemstyle_opts=opts.ItemStyleOpts(color=color),
+            # this nested itemstyle_opts within MarkPointItem is only supported for pyechart>1.7.1
+            symbol="circle",
+            symbol_size=size,
+        )
+
+    line = Line()
+
+    line.add_xaxis([d.date() for d in pprice.date])
+
+    if unitcost:
+        line.add_yaxis(
+            series_name="持仓成本", y_axis=costdata, is_symbol_show=False,
+        )
+    line.add_yaxis(
+        series_name="基金净值",
+        y_axis=funddata,
+        is_symbol_show=False,
+        markpoint_opts=opts.MarkPointOpts(data=[marker_factory(*c) for c in coords],),
+    )
+    line.set_global_opts(
+        datazoom_opts=[
+            opts.DataZoomOpts(
+                is_show=True, type_="slider", range_start=50, range_end=100
+            ),
+            opts.DataZoomOpts(
+                is_show=True,
+                type_="slider",
+                orient="vertical",
+                range_start=50,
+                range_end=100,
+            ),
+        ],
+        tooltip_opts=opts.TooltipOpts(
+            is_show=True,
+            trigger="axis",
+            trigger_on="mousemove",
+            axis_pointer_type="cross",
+        ),
+    )
+    if rendered:
+        return line.render_notebook()
+    else:
+        return line
+
+
 class trade:
     """
     Trade class with fundinfo obj as input and its main attrs are cftable and remtable:
@@ -529,86 +619,9 @@ class trade:
 
         :returns: pyecharts.line
         """
-        funddata = []
-        costdata = []
-        pprice = self.price[self.price["date"] <= end]
-        pcftable = self.cftable
-        if start is not None:
-            pprice = pprice[pprice["date"] >= start]
-            pcftable = pcftable[pcftable["date"] >= start]
-        for _, row in pprice.iterrows():
-            date = row["date"]
-            funddata.append(row["netvalue"])
-            cost = 0
-            if (date - self.cftable.iloc[0].date).days >= 0:
-                cost = self.unitcost(date)
-            costdata.append(cost)
-
-        coords = []
-        for i, r in pcftable.iterrows():
-            coords.append(
-                [r.date, pprice[pprice["date"] <= r.date].iloc[-1]["netvalue"]]
-            )
-
-        upper = self.cftable.cash.abs().max()
-        lower = self.cftable.cash.abs().min()
-        if upper == lower:
-            upper = 2 * lower
-
-        def marker_factory(x, y):
-            buy = self.cftable[self.cftable["date"] <= x].iloc[-1]["cash"]
-            if buy < 0:
-                color = "#ff7733"
-            else:
-
-                color = "#3366ff"
-            size = (abs(buy) - lower) / (upper - lower) * 5 + 5
-            return opts.MarkPointItem(
-                coord=[x.date(), y],
-                itemstyle_opts=opts.ItemStyleOpts(color=color),
-                # this nested itemstyle_opts within MarkPointItem is only supported for pyechart>1.7.1
-                symbol="circle",
-                symbol_size=size,
-            )
-
-        line = Line()
-
-        line.add_xaxis([d.date() for d in pprice.date])
-        line.add_yaxis(
-            series_name="基金净值", y_axis=funddata, is_symbol_show=False,
+        return vtradecost(
+            self, self.cftable, unitcost=True, start=start, end=end, rendered=rendered
         )
-        line.add_yaxis(
-            series_name="持仓成本",
-            y_axis=costdata,
-            is_symbol_show=False,
-            markpoint_opts=opts.MarkPointOpts(
-                data=[marker_factory(*c) for c in coords],
-            ),
-        )
-        line.set_global_opts(
-            datazoom_opts=[
-                opts.DataZoomOpts(
-                    is_show=True, type_="slider", range_start=50, range_end=100
-                ),
-                opts.DataZoomOpts(
-                    is_show=True,
-                    type_="slider",
-                    orient="vertical",
-                    range_start=50,
-                    range_end=100,
-                ),
-            ],
-            tooltip_opts=opts.TooltipOpts(
-                is_show=True,
-                trigger="axis",
-                trigger_on="mousemove",
-                axis_pointer_type="cross",
-            ),
-        )
-        if rendered:
-            return line.render_notebook()
-        else:
-            return line
 
     def v_totvalue(self, end=yesterdayobj(), rendered=True, vopts=None):
         """

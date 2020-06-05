@@ -159,3 +159,5 @@ class irecord(record):
 
 Record = record
 IRecord = irecord
+
+# TODO: merge multiple status or istatus csv into one

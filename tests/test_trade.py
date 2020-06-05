@@ -53,6 +53,7 @@ def test_mul():
     assert round(cm_m.benchmark_volatility("2018-07-22"), 3) == 0.192
     assert round(cm_m.max_drawdown("2018-08-01")[2], 2) == -0.24
     cm_m.v_tradevolume()
+    cm_m.v_tradecost()
 
 
 def test_mul_properties():
