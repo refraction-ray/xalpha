@@ -877,7 +877,7 @@ class CBCalculator:
             "rating": self.rating,
             "bondrate": self.bondrate,
             "predicted_volatility": self.volatility,
-            "historical_valatility": self.history_volatility,
+            "historical_volatility": self.history_volatility,
             "riskfreerate": self.riskfreerate,
             "years": self.days / 365,
             "issuedate": self.issuedate,
