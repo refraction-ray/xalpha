@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.9.2 - 2020.06.08
 ### added
 * 账单上自定义单项交易的申购赎回费用
 * mulfix 添加了 v_tradecost(), 可视化显示买卖点
