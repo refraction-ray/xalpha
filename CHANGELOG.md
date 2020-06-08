@@ -3,6 +3,8 @@
 ### added
 * 账单上自定义单项交易的申购赎回费用
 * mulfix 添加了 v_tradecost(), 可视化显示买卖点
+### fixed
+* pyecharts 再次引入 breaking API，这样的上游显得有些不负责任，跟进过于麻烦，若无其他情况，将永久将 pyecharts 版本 pin 到 1.7.1，其他版本 pyecharts 不再支持
 
 ## v0.9.1 - 2020.05.31
 ### added
