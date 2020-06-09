@@ -1180,6 +1180,12 @@ def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
     timestr = dt.datetime.fromtimestamp(r["data"]["quote"]["time"] / 1000).strftime(
         "%Y-%m-%d %H:%M:%S"
     )
+    if r["data"]["quote"].get("timestamp_ext", None):
+        time_ext = dt.datetime.fromtimestamp(
+            r["data"]["quote"]["timestamp_ext"] / 1000
+        ).strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        time_ext = None
     share = r["data"]["quote"]["total_shares"]
     fshare = r["data"]["quote"]["float_shares"]
     volume = r["data"]["quote"]["volume"]
@@ -1191,6 +1197,7 @@ def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
         "currency": currency,
         "market": market,  # HK, US, CN
         "time": timestr,
+        "time_ext": time_ext,
         "totshare": share,
         "floatshare": fshare,
         "volume": volume,
@@ -1256,11 +1263,17 @@ def get_cninvesting_rt(suburl, app=False):
         if span.find("a") and span.find("a")["href"].startswith("/markets"):
             market = span.string
     market = region_trans.get(market, market)
+    time_ext = s.select("div[class~=lastUpdated]")
+    if time_ext:
+        time_ext = time_ext[0].text.strip()
+    else:
+        time_ext = None
     d = {
         "name": name,
         "current": q,
         "current_ext": q_ext,
         "time": timestr,
+        "time_ext": time_ext,
         "currency": currency,
         "percent": percent,
         "market": market,
