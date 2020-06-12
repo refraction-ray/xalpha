@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### added
+* get_rt 字典增加 time_ext 盘外数据时间
 
 ## v0.9.2 - 2020.06.08
 ### added
