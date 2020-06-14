@@ -95,9 +95,9 @@ def test_get_ft_rt():
     assert xa.get_rt("FTC-WTI+Crude+Oil")["name"] == "NYMEX Crude Oil Front Month"
 
 
-@pytest.mark.skip(
-    reason="sp fetcher is currently to be fixed for new verion of websites"
-)
+# @pytest.mark.skip(
+#     reason="sp fetcher is currently to be fixed for new version of websites"
+# )
 def test_get_sp_daily():
     df = xa.get_daily("SP5475707.2", start="20200202", end="20200303")
     assert round(df.iloc[-1]["close"], 3) == 1349.31

@@ -159,7 +159,7 @@ xalpha 的数据来自天天基金，英为财情，雪球，彭博，标普，�
 那么场外基金的账单，只需要时间，基金代码和数字三要素。对于数字，正数时代表申购金额，负数代表赎回份额，这与基金的申赎逻辑相符。
 场外账单的默认格式是 matrix，也即每列的列头是一个不同的六位基金代码，每行的行头是一个独立的日期 (格式 20200202)，对于对应日期和基金有交易的，则在相应单元格记录数额即可 （请注意下午三点之后的申赎应算作下个交易日）。
 其他单元格可为空即可。
-通常可以 Excel 等记录，导出成 csv 格式即可。这一格式账单的例子可以参考 tests/demo.csv, 和 tests/demo2.csv.
+通常可以 Excel 等软件记录，导出成 csv 格式即可。这一格式账单的例子可以参考 github repo 中的 tests/demo.csv, 和 tests/demo2.csv.
 
 场外账单的一些进阶说明：
 
@@ -240,6 +240,105 @@ QDII 净值预测
     xa.set_holdings(holdings) # 设置 xalpha 使用该数据文件
     # 之后的操作与之前相同
 
+
+自制 holdings.py 文件
++++++++++++++++++++++++++++++++
+
+默认的 xalpha 不提供 holdings.py ，因此 QDII 净值预测只有脚手架，没有具体的数据文件，要想预测 QDII 基金的净值和溢价率，暂时使用可以直接提供持仓字典，传入 QDIIPredict 初始化参数中。
+但打算长期持续使用的话，还是建议维护自己的 holdings.py 文件。下面将具体介绍 holdings.py 文件应具有的内容和格式。文件示例
+
+.. code-block:: python
+
+    no_trading_days = {}  # 市场对应休市日
+    no_trading_days["LU"] = [
+        "2020-01-01",
+        "2020-04-10",
+        "2020-04-13",
+        "2020-05-01",
+        "2020-12-24",
+        "2020-12-25",
+        "2020-12-31",
+    ]
+
+    market_info = {
+        "SP5475707.2": "US",
+        "FT-CSGOLD:SWX:USD": "CH",
+    }  # 代码对应市场
+
+    # 收盘北京时间，用于期货基准比较
+    usend = 4  # winter 5
+    euend = -1
+    jpend = -10
+
+    futures_info = {
+        "indices/india-50-futures": "indices/s-p-cnx-nifty",
+        "commodities/crude-oil": "commodities/crude-oil",
+        "commodities/brent-oil": "commodities/brent-oil",
+    }  # 期货对应现货
+
+
+    alt_info = {
+        "FT-AUCHAH:SWX:CHF": "BB-AUCHAH:SW",
+        "indices/dj-us-select-oil-exploration-prod": "SP91988493.2",
+    }
+    # 标的备份替换，用于生产级稳定性
+
+    # 单个标的非假期净值缺失日
+    gap_info = {}  # Fcode: list of %Y-%m-%d
+    gap_info["etfs/velocityshares-3x-long-crude-oil"] = ["2020-04-03"]  # 基金清盘
+
+    # 计价货币信息
+
+    currency_info = {
+        "BB-AUCHAH:SW": "CHF",
+        "FT-RICY:IOM": "USD",
+        "etfs/powershares-india-portfolio": "USD",
+    }
+
+    # 基金持仓
+    holdings = {}
+
+
+    # 南方原油
+    holdings_501018_19s4 = {
+        "etfs/etfs-brent-1mth-uk": 17.51,  # UK
+        "etfs/etfs-brent-crude": 15.04,  # UK
+        "etfs/etfs-crude-oil": 7.34,  # UK
+        "etfs/ipath-series-b-sp-gsci-crd-oil-tr": 0.06,  # US
+        "etfs/powershares-db-oil-fund": 11.6,  # US
+        "etfs/ubs-cmci-oil-sf-usd": 8.68,  # CH
+        "etfs/united-states-12-month-oil": 8.14,  # US
+        "etfs/united-states-brent-oil-fund-lp": 15.42,  # US
+        "etfs/united-states-oil-fund": 9.63,  # US
+    }
+
+    holdings["501018"] = holdings_501018_19s4
+    holdings["501018rt"] = {
+        "commodities/brent-oil": {"weight": 30, "time": euend},
+        "commodities/crude-oil~1": {"weight": 45, "time": usend},
+        "commodities/crude-oil~2": {"weight": 20, "time": jpend},
+    }
+    # 将对应标的 T-1 及实时预测持仓，添加到 holdings 字典
+
+
+    holdings["510510"] = {"SH000905": 100}  # 国内标的实时溢价率也支持，但需要调用的是 xa.RTPredict 类
+
+
+
+具体解释如下
+
+``no_trading_days``: Dict[str, List[str(%Y-%m-%d)]] eg. ``no_trading_days = {"FR": ["2020-02-02"]}``, 用来记录各个地区市场的非周末休息日，注意大部分主流市场的休市日信息已经在 ``xa.cons.holiday`` 中，而不需重复记录
+
+``market_info``: Dict[str, str]. 对应标的的市场地区，如不存在，则默认网络抓取，如对应标的不支持市场信息，则按照标的货币信息推断。
+
+``currency_info``: Dict[str, str]. 对应标的货币信息，大部分标的可通过 ``xa.get_rt`` 获取的，不必须记录。
+
+``holdings``: Dict[str, Dict[str, float]]. 核心字典，key 可以是基金代码用于 T-1 净值预测或普通基金的实时净值预测，基金代码 + rt 用于 QDII 基金的实时净值预测。每个 value 是一个持仓字典。
+数值代表比例，100为单位。对于 rt 字典，value 也可以还是一个字典，分别用 weight time base 来精准的表示对应比例和参考的基准时间与基准标的。
+
+其他更进阶的信息字典一般不需要设置，如果有需求或疑问，请直接参考 :class:`xalpha.toolbox.QDIIPredict` 源代码，或开 issue 联系作者。
+
+需要注意的是，上述内容看似复杂，但实际上只定义对应基金的 holdings 字典已经可以在绝大多数情形正常使用净值预测功能。
 
 
 日志系统
@@ -348,7 +447,7 @@ xalpha 设计的尽量对数据源网站友好，通过丰富而合理的本地�
 xalpha 也不建议被用作高频交易的组件，不提倡任何高强度爬取数据的行为。
 
 如果对同一数据源链接强度过大，很有可能被限制 ip 从而无法获取数据。此时唯一的 workaround 就是设置代理 ``xa.set_proxy()``，从而改变 ip。
-根据个人经验，最容易封禁 ip 从而无法爬取的数据源包括人民币中间价官方网站，彭博网站。
+根据个人经验，最容易封禁 ip 从而无法爬取的数据源包括人民币中间价官方网站，彭博网站。此外，ft.com 和标普网站在部分情况容易出现访问超时或访问错误等问题，原因未知，似乎不是反爬策略造成的。
 
 set_proxy 传入字符串可以是 http 或 socks5 代理地址，注意， socks5:// 格式的输入，不会改变使用本地的 DNS，如果想 DNS 查询也通过代理服务器的话，需使用 socks5h:// ,
 这一约定与 curl 和 requests 同步。
