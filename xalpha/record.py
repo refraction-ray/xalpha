@@ -50,6 +50,9 @@ class record:
             fund_property = True
         if format == "matrix":
             df.fillna(0, inplace=True)
+            df.columns = ["date"] + [
+                c.zfill(6) if c.isdigit() else c for c in df.columns[1:]
+            ]
             if fund_property:
                 self.property = df.iloc[0]
                 df2 = df.iloc[1:]
@@ -69,7 +72,8 @@ class record:
 
         elif format == "list":
             fund = df.fund.unique()
-            fund_s = ["{:06d}".format(i) for i in fund]
+            # fund_s = ["{:06d}".format(i) for i in fund]
+            fund_s = [str(c).zfill(6) if str(c).isdigit() else c for c in fund]
             date_s = df.date.unique()
             dfnew = pd.DataFrame(
                 columns=["date"] + fund_s, index=date_s, dtype="float64"

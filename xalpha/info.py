@@ -534,6 +534,7 @@ class fundinfo(basicinfo):
             raise FundTypeError(
                 "This code seems to be a mfund, use ``mfundinfo`` instead"
             )
+        code = code.zfill(6)  # 1234 is the same as 001234
         self._url = (
             "http://fund.eastmoney.com/pingzhongdata/" + code + ".js"
         )  # js url api for info of certain fund
@@ -1168,6 +1169,7 @@ class mfundinfo(basicinfo):
     ):
         if code.startswith("M") and code[1:].isdigit():
             code = code[1:]
+        code = code.zfill(6)
         self._url = "http://fund.eastmoney.com/pingzhongdata/" + code + ".js"
         self.rate = 0
         super().__init__(
@@ -1184,7 +1186,6 @@ class mfundinfo(basicinfo):
         self._page = rget(self._url)
         if self._page.text[:800].find("Data_fundSharesPositions") >= 0:
             raise FundTypeError("This code seems to be a fund, use fundinfo instead")
-
         l = eval(
             re.match(
                 r"[\s\S]*Data_millionCopiesIncome = ([^;]*);[\s\S]*", self._page.text
