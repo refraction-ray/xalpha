@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.9.3 - 2020.06.20
 ### added
 * get_rt 字典增加 time_ext 盘外数据时间
 * 账单代码自动补全6位，前边智能补零
