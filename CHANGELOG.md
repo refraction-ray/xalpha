@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### fixed
+* evaluate 类的可视化函数补充 rendered 选项
 
 ## v0.9.3 - 2020.06.20
 ### added

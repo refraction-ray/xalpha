@@ -50,7 +50,7 @@ class evaluate:
             if col != "date":
                 self.totprice[col] = self.totprice[col] / self.totprice[col].iloc[0]
 
-    def v_netvalue(self, end=yesterdayobj(), vopts=None):
+    def v_netvalue(self, end=yesterdayobj(), vopts=None, rendered=True):
         """
         起点对齐归一的，各参考基金或指数的净值比较可视化
 
@@ -72,7 +72,10 @@ class evaluate:
                 y_axis=list(partprice[fund.code]),
                 is_symbol_show=False,
             )
-        return line.render_notebook()
+        if rendered:
+            return line.render_notebook()
+        else:
+            return line
 
     def correlation_table(self, end=yesterdayobj()):
         """
@@ -85,7 +88,7 @@ class evaluate:
         covtable = partprice.iloc[:, 1:].pct_change().corr()
         return covtable
 
-    def v_correlation(self, end=yesterdayobj(), vopts=None):
+    def v_correlation(self, end=yesterdayobj(), vopts=None, rendered=True):
         """
         各基金净值的相关程度热力图可视化
 
@@ -105,5 +108,7 @@ class evaluate:
         if vopts is None:
             vopts = heatmap_opts
         heatmap.set_global_opts(**vopts)
-
-        return heatmap.render_notebook()
+        if rendered:
+            return heatmap.render_notebook()
+        else:
+            return heatmap
