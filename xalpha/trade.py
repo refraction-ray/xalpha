@@ -134,15 +134,19 @@ def vtradevolume(cftable, freq="D", rendered=True):
             startdate, yesterdayobj() + pd.Timedelta(days=7), freq="W-THU"
         )
         selldata = [
-            [dt.datetime.strptime(str(a) + "4", "(%Y, %W)%w"), b]
+            [dt.datetime.strptime(str(a) + "4", "(%G, %V)%w"), b]
             for a, b in cfmerge.iteritems()
             if b > 0
         ]
         buydata = [
-            [dt.datetime.strptime(str(a) + "4", "(%Y, %W)%w"), b]
+            [dt.datetime.strptime(str(a) + "4", "(%G, %V)%w"), b]
             for a, b in cfmerge.iteritems()
             if b < 0
         ]
+        # %V pandas gives iso weeknumber which is different from python original %W or %U,
+        # see https://stackoverflow.com/questions/5882405/get-date-from-iso-week-number-in-python for more details
+        # python3.6+ required for %G and %V
+        # but now seems no equal distance between sell and buy data, no idea why
     elif freq == "M":
         cfmerge = cftable.groupby([cftable["date"].dt.year, cftable["date"].dt.month])[
             "cash"
