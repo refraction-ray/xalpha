@@ -45,7 +45,10 @@ class record:
     def __init__(
         self, path="input.csv", format="matrix", fund_property=False, **readkwds
     ):
-        df = pd.read_csv(path, **readkwds)
+        if isinstance(path, str):
+            df = pd.read_csv(path, **readkwds)
+        else:  # path itself is a pd.DataFrame
+            df = path
         if df.iloc[0]["date"] == "property":
             fund_property = True
         if format == "matrix":
@@ -131,7 +134,10 @@ class irecord(record):
     """
 
     def __init__(self, path="input.csv", **readkwds):
-        df = pd.read_csv(path, **readkwds)
+        if isinstance(path, str):
+            df = pd.read_csv(path, **readkwds)
+        else:
+            df = path
         df.fillna(0, inplace=True)
         df.date = [
             pd.to_datetime(df.iloc[i].date, format="%Y%m%d") for i in range(len(df))

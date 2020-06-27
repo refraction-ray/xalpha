@@ -720,7 +720,10 @@ def cb_ytm(issue_date, rlist, cp, date=None, tax=1.0, guess=0.01):
     # 富投网的算法：将最后一年超出100的部分，全部按照20%计税，
     cf.append((issue_date_obj + dt.timedelta(days=(len(rlist) - 1) * 365), rlist[-1]))
     #     print(cf)
-    return xirr(cf, guess=guess)
+    try:
+        return xirr(cf, guess=guess)
+    except RuntimeError:
+        return
 
 
 class CBCalculator:
