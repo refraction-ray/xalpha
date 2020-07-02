@@ -34,7 +34,7 @@ class record:
 
     对于不同格式的记账单的例子，可在 github repo 中 tests 文件夹内的 demo*.csv 参考。
 
-    :param path: string for the csv file path
+    :param path: string for the csv file path or pd.DataFrame
     :param format: str. Default is "matrix". Can also be "list"。list 形式的账单更类似流水单。总共三列，每行由日期基金号和金额组成。
                 三栏标题分别为 date，fund 和 trade。其中日期的形式是 %Y/%m/%d. 该形式与默认的 matrix 不包含 "/" 不同。
     :param fund_property: bool. Default False. If True, 基金号下第一行的数字标记对应基金参数（暂时只支持 matrix 形式账单）。
