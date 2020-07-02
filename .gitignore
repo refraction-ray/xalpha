@@ -17,6 +17,7 @@ demo.ipynb
 demo*.html
 .ipynb_checkpoints/
 build/
+tests/AB.csv
 dist/
 xalpha.egg-info/
 .coverage

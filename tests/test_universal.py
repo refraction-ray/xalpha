@@ -148,6 +148,18 @@ def test_cache_io():
     xa.universal.check_cache("SH501018", prev=32, omit_lines=1)
 
 
+def test_ioconf_keyfunc():
+    get_daily_key = xa.universal.cachedio(
+        path="./", backend="csv", key_func=lambda s: s[::-1]
+    )(xa.universal._get_daily)
+    df1 = get_daily_key("BA", start="2020-03-03")
+    get_daily_key = xa.universal.cachedio(path="./", backend="csv")(
+        xa.universal._get_daily
+    )
+    df2 = get_daily_key("AB", fetchonly=True)
+    assert df2.iloc[-1]["close"] == df1.iloc[-1]["close"]
+
+
 def test_cache_mm():
     df = xa.get_daily("SH501018", prev=100)
     l1 = len(df)

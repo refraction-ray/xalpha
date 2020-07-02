@@ -1721,6 +1721,9 @@ def cachedio(**ioconf):
             precached = kws.get("precached", precached)
             key = kws.get("key", code)
             key = key.replace("/", " ")
+            key_func = ioconf.get("key_func", None)
+            if key_func is not None:
+                key = key_func(key)
             defaultend = ioconf.get("defaultend", today_obj)
             defaultend = ioconf.get("default_end", defaultend)
             defaultprev = ioconf.get("defaultprev", 365)
@@ -1758,6 +1761,8 @@ def cachedio(**ioconf):
             end_str = end_obj.strftime("%Y%m%d")
             backend = ioconf.get("backend")
             backend = kws.get("backend", backend)
+            # if backend == "sql": # reserved for case insensitive database settings
+            #     key = key.lower()
             refresh = ioconf.get("refresh", False)
             refresh = kws.get("refresh", refresh)
             fetchonly = ioconf.get("fetchonly", False)
