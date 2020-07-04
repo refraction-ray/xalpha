@@ -298,14 +298,27 @@ class trade:
     :param status: status table, obtained from record class
     """
 
-    def __init__(self, infoobj, status):
+    def __init__(self, infoobj, status, cftable=None, remtable=None):
         self.aim = infoobj
         code = self.aim.code
         self.code = code
         self.name = self.aim.name
         self.price = self.aim.price
-        self.cftable = pd.DataFrame([], columns=["date", "cash", "share"])
-        self.remtable = pd.DataFrame([], columns=["date", "rem"])
+        if (cftable is not None and remtable is None) or (
+            cftable is None and remtable is not None
+        ):
+            raise ValueError(
+                "You must provide both `cftable` and `remtable` for incremental trade engine"
+            )
+        # 请确保提供的 cftable 和 remtable 在日期，份额等数据上是匹配的
+        if cftable is None:
+            self.cftable = pd.DataFrame([], columns=["date", "cash", "share"])
+        else:
+            self.cftable = cftable
+        if remtable is None:
+            self.remtable = pd.DataFrame([], columns=["date", "rem"])
+        else:
+            self.remtable = remtable
         self.status = status.loc[:, ["date", code]]
         self.status = self.status[self.status[code] != 0]
         self._arrange()

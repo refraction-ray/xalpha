@@ -48,3 +48,4 @@ from xalpha.toolbox import (
     set_holdings,
     set_display,
 )
+import xalpha.backtest
