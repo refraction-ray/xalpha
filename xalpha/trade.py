@@ -324,6 +324,7 @@ class trade:
         self._arrange()
 
     def _arrange(self):
+        self.recorddate_set = set(self.status.date)
         while 1:
             try:
                 self._addrow()
@@ -371,15 +372,15 @@ class trade:
             else:
                 raise TradeBehaviorError("You cannot sell first when you never buy")
         elif len(self.cftable) > 0:
-            recorddate = list(self.status.date)
+            # recorddate = list(self.status.date)
             if not getattr(self, "lastdate", None):
                 lastdate = self.cftable.iloc[-1].date + pd.Timedelta(1, unit="d")
             else:
                 lastdate = self.lastdate + pd.Timedelta(1, unit="d")
             while (lastdate not in self.aim.specialdate) and (
-                (lastdate not in recorddate)
+                (lastdate not in self.recorddate_set)
                 or (
-                    (lastdate in recorddate)
+                    (lastdate in self.recorddate_set)
                     and (
                         self.status[self.status["date"] == lastdate].loc[:, code].any()
                         == 0
@@ -393,6 +394,7 @@ class trade:
                 raise Exception("no other info to be add into cashflow table")
             date = lastdate
             # 无净值日优先后移，无法后移则前移
+            # 还是建议日期记录准确，不然可能有无法完美兼容的错误出现
             if len(self.price[self.price["date"] >= date]) > 0:
                 date = self.price[self.price["date"] >= date].iloc[0]["date"]
             else:
@@ -412,7 +414,7 @@ class trade:
             share = 0
             rem = self.remtable.iloc[-1].rem
             rdate = date
-            if (lastdate in recorddate) and (date not in self.aim.zhesuandate):
+            if (lastdate in self.recorddate_set) and (date not in self.aim.zhesuandate):
                 # deal with buy and sell and label the fenhongzaitouru, namely one label a 0.05 in the original table to label fenhongzaitouru
                 value = self.status[self.status["date"] <= lastdate].iloc[-1].loc[code]
                 if date in self.aim.fenhongdate:  # 0.05 的分红行为标记，只有分红日才有效

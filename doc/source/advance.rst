@@ -59,8 +59,13 @@ precached 可以不设，若设置为 %Y%m%d 的时间字符串格式，则代�
 
 而对于另一些数据，我们不希望去更新，只希望使用缓存的数据，即使其日期不全（可能是由于节假日造成的错觉），这时可以添加 fetchonly 选项，也即 ``xa.get_daily(code, fetchonly=True)``.
 
+fetchonly 和 refresh 选项也可在 set_backend 设定，则全局生效。
+
 get_daily 不指定起止时间的时候，默认采用 end=today, prev=365, 这两个的行为也可以通过 ``defaultend=`` 和 ``defaultprev=`` 在 ``xa.set_backend`` 设置。其中 defaultend
 可以是日期字符串或日期对象或返回日期对象的函数。
+
+此外，考虑到有些数据库后端，可能由于特殊符号和大小写不敏感等情况，导致表名冲突或出错。有两种解决方案，第一 ``xa.get_daily("LK", key="lk")``, 在每次使用 get_daily 时，单独指定 key，则 key 作为存储的表名。
+或者一劳永逸的办法，``xa.set_backend(path=, backend=, key_func=lambda s: s.lower())``, 通过给 ``set_backend`` 指定 ``key_func`` 参数，则每个 ``get_daily`` 的数据存储，都会将原来的 key （默认为标的代码）在 ``key_func(key)`` 转化一下。
 
 
 数据本地化
@@ -136,6 +141,11 @@ xalpha 的数据来自天天基金，英为财情，雪球，彭博，标普，�
 
 :py:mod:`xalpha.toolbox` 模块维护了面向对象，封装数据的一些工具箱。
 
+:py:mod:`xalpha.backtest` 模块维护了一个轻量级但扩展性强大的简单动态低频回测框架。
+
+:py:mod:`xalpha.misc` 模块包含一些测试功能和爬虫组件，没有文档，随时 API 变更，也不受官方主线支持，生产环境慎用！
+
+
 
 以下对象内部封装的数据结构均基于 pandas.DataFrame
 
@@ -188,7 +198,7 @@ xalpha 的数据来自天天基金，英为财情，雪球，彭博，标普，�
 
 
 场内账单则统一采用流水形式，每一笔需要记录交易净值和交易份额，此时由于买卖都是份额，因此数字全部代表份额，正买负卖，若有分红折算等，需自己手动维护，额外添加交易记录实现。
-场内账单的例子请参考 tests/demo3.csv. 其列头分别是 date,code,value,share,fee。date 格式为20200202。code 对应场内代码，开头需包含 SH 或 SZ。value 是成交的净值单价。
+场内账单的例子请参考 github 库中的 tests/demo3.csv. 其列头分别是 date,code,value,share,fee。date 格式为20200202。code 对应场内代码，开头需包含 SH 或 SZ。value 是成交的净值单价。
 share 代表成交的份数。fee 代表手续费，也可以不计，则默认为0，建议记录以得到交易盈利的更好全景。
 
 场内账单的读入使用 ``ist=xa.irecord(path)``. 其既可以传入专门的场内投资组合类 ``xa.imul(status=ist)``，
@@ -338,7 +348,14 @@ QDII 净值预测
 
 其他更进阶的信息字典一般不需要设置，如果有需求或疑问，请直接参考 :class:`xalpha.toolbox.QDIIPredict` 源代码，或开 issue 联系作者。
 
-需要注意的是，上述内容看似复杂，但实际上只定义对应基金的 holdings 字典已经可以在绝大多数情形正常使用净值预测功能。
+需要注意的是，上述内容看似复杂，但多是为了生产级的稳定性和速度，实际上只定义对应基金的 holdings 字典已经可以在绝大多数情形正常使用净值预测功能。
+
+
+动态回测系统
+------------
+
+:py:mod:``xalpha.backtest`` 引入了一个轻量级但可扩展性强的动态回测框架，支持编程回测较复杂的需求，（``xa.policy`` 简单策略无法充分支持的）。
+通过自定义 ``xa.backtest.BTE`` 的子类，作为不同策略的回测引擎。同时该模块提供一些简单常见回测策略的例子。
 
 
 日志系统

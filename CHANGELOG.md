@@ -1,5 +1,8 @@
 # Changelog
 ## Unreleased
+### added
+* 增加全新的动态回测引擎模块 xa.backtest
+* 为了兼容动态回测，trade 支持增量更新账单的交易处理
 
 ## v0.9.4 - 2020.07.02
 ### added
