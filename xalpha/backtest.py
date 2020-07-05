@@ -11,6 +11,7 @@ from xalpha.multiple import mul, mulfix
 from xalpha.cons import yesterdayobj
 from xalpha.exceptions import TradeBehaviorError, FundTypeError
 from xalpha.cons import opendate_set, next_onday, convert_date
+from xalpha.universal import vinfo
 
 
 class GlobalRegister:
@@ -21,6 +22,7 @@ class GlobalRegister:
 class BTE:
     """
     BackTestEnvironment, currently only fund is supported
+    vinfo is partially supported, however stock refactor is not carefully considered
     To use such powerful dynamical backtesting, one need to subclass ``BTE``
 
     """
@@ -120,10 +122,31 @@ class BTE:
         :param code:
         :return:
         """
-        try:
-            return fundinfo(code[1:])
-        except FundTypeError:
+        if code in self.infos:
+            return self.infos[code]
+        if code.startswith("F"):
+            try:
+                return fundinfo(code[1:])
+            except FundTypeError:
+                return mfundinfo(code[1:])
+        elif code.startswith("M"):
             return mfundinfo(code[1:])
+        else:
+            return vinfo(
+                code, start=(self.start - pd.Timedelta(days=180)).strftime("%Y-%m-%d")
+            )
+
+    def get_code(self, code):
+        """
+        get standard code in status code column
+
+        :param code:
+        :return:
+        """
+        if code.startswith("F") or code.startswith("M"):
+            return code[1:]
+        else:
+            return code
 
     def get_current_asset(self, date):
         """
@@ -160,7 +183,7 @@ class BTE:
             remtable = self.trades[code].remtable
             remtable = remtable[remtable["date"] <= self.lastdates[code]]
             self.lastdates[code] = date
-            df2 = pd.DataFrame([[date, value]], columns=["date", code[1:]])
+            df2 = pd.DataFrame([[date, value]], columns=["date", self.get_code(code)])
             df = df.append(df2)
             self.trades[code] = trade(
                 self.infos[code], df, cftable=cftable, remtable=remtable,
@@ -169,7 +192,7 @@ class BTE:
             self.lastdates[code] = date
             if code not in self.infos:
                 self.infos[code] = self.get_info(code)
-            df = pd.DataFrame({"date": [date], code[1:]: [value]})
+            df = pd.DataFrame({"date": [date], self.get_code(code): [value]})
             self.trades[code] = trade(self.infos[code], df)
 
     def sell(self, code, share, date, is_value=False):
@@ -194,7 +217,7 @@ class BTE:
         remtable = remtable[remtable["date"] <= self.lastdates[code]]
         self.lastdates[code] = date
         self.lastdates[code] = date
-        df2 = pd.DataFrame([[date, -share]], columns=["date", code[1:]])
+        df2 = pd.DataFrame([[date, -share]], columns=["date", self.get_code(code)])
         df = df.append(df2)
         if is_value:
             self.set_fund(code, value_label=1)
@@ -285,3 +308,73 @@ class ScheduledSellonXIRR(Scheduled):
                     self.sell(self.code, -0.005, date)
         if not self.sold:
             super().run(date)
+
+
+class Tendency28(BTE):
+    """
+    二八趋势轮动
+    """
+
+    def prepare(self):
+        self.aim1 = self.kws.get("aim1", "SH000300")
+        self.aim2 = self.kws.get("aim2", "SH000905")
+        self.aim0 = self.kws.get("aim0", "M000198")
+        self.freq = self.kws.get("freq", "W-THU")
+        self.check_dates = pd.date_range(self.start, self.end, freq=self.freq)
+        self.upthrehold = self.kws.get("upthrehold", 1.0)
+        self.diffthrehold = self.kws.get("diffthrehold", self.upthrehold)
+        self.prev = self.kws.get("prev", 10)
+        self.status = 0  # have aim0
+        self.initial_money = self.kws.get("initial_money", self.totmoney / 2.0)
+        self.buy(self.aim0, self.initial_money, self.start)
+
+    def run(self, date):
+        if date not in self.check_dates:
+            return
+        df1 = self.get_info(self.aim1).price
+        df1 = df1[df1["date"] < date]
+        up1 = (
+            (df1.iloc[-1].netvalue - df1.iloc[-1 - self.prev].netvalue)
+            / df1.iloc[-1 - self.prev].netvalue
+            * 100
+        )
+        df2 = self.get_info(self.aim2).price
+        df2 = df2[df2["date"] < date]
+        up2 = (
+            (df2.iloc[-1].netvalue - df2.iloc[-1 - self.prev].netvalue)
+            / df2.iloc[-1 - self.prev].netvalue
+            * 100
+        )
+        if up1 < self.upthrehold and up2 < self.upthrehold:
+            if self.status == 1:
+                value = self.get_current_asset(date)
+                self.sell(self.aim1, -0.005, date)
+                self.status = 0
+                self.buy(self.aim0, value, date)
+            elif self.status == 2:
+                value = self.get_current_asset(date)
+                self.sell(self.aim2, -0.005, date)
+                self.status = 0
+                self.buy(self.aim0, value, date)
+        elif up1 > self.upthrehold and up1 > up2:
+            if self.status == 0:
+                value = self.get_current_asset(date)
+                self.sell(self.aim0, -0.005, date, is_value=False)
+                self.status = 1
+                self.buy(self.aim1, value, date)
+            elif self.status == 2 and up1 - up2 > self.diffthrehold:
+                value = self.get_current_asset(date)
+                self.sell(self.aim2, -0.005, date)
+                self.status = 1
+                self.buy(self.aim1, value, date)
+        elif up2 > self.upthrehold and up2 > up1:
+            if self.status == 0:
+                value = self.get_current_asset(date)
+                self.sell(self.aim0, -0.005, date, is_value=False)
+                self.status = 2
+                self.buy(self.aim2, value, date)
+            elif self.status == 1 and up2 - up1 > self.diffthrehold:
+                value = self.get_current_asset(date)
+                self.sell(self.aim1, -0.005, date)
+                self.status = 2
+                self.buy(self.aim2, value, date)
