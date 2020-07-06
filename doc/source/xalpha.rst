@@ -1,6 +1,14 @@
 xalpha package
 ==============
 
+xalpha.backtest module
+------------------------
+
+.. automodule:: xalpha.backtest
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 xalpha.cons module
 ------------------
 

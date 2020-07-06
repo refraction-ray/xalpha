@@ -1722,6 +1722,7 @@ def cachedio(**ioconf):
             key = kws.get("key", code)
             key = key.replace("/", " ")
             key_func = ioconf.get("key_func", None)
+            key_func = ioconf.get("keyfunc", key_func)
             if key_func is not None:
                 key = key_func(key)
             defaultend = ioconf.get("defaultend", today_obj)

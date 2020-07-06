@@ -57,6 +57,7 @@ yesterdaydash = lambda: dt.datetime.strftime(yesterdayobj(), "%Y-%m-%d")
 caldate = pd.read_csv(os.path.join(__path__[0], "caldate.csv"))
 opendate = list(caldate[caldate["is_open"] == 1]["cal_date"])
 # opendate = list(ts.trade_cal()[ts.trade_cal()['isOpen']==1]['calendarDate'])
+opendate_set = set(opendate)  # for speed checking?
 
 # fund code list which always round down for the purchase share approximation
 droplist = ["003318", "000311"]
@@ -393,7 +394,7 @@ def _date_check(dtobj, check=False):
 def next_onday(dtobj):
     dtobj = _date_check(dtobj, check=True)
     dtobj += dt.timedelta(1)
-    while dtobj.strftime("%Y-%m-%d") not in opendate:
+    while dtobj.strftime("%Y-%m-%d") not in opendate_set:
         dtobj += dt.timedelta(1)
     return dtobj
 

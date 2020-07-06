@@ -2,6 +2,9 @@
 ## Unreleased
 ### fixed
 * 修复 info 类兼容 set_backend 指定数据库后端的 bug
+### added
+* 增加全新的动态回测引擎模块 xa.backtest
+* 为了兼容动态回测，trade 支持增量更新账单的交易处理
 
 ## v0.9.4 - 2020.07.02
 ### added
@@ -157,10 +160,10 @@
 * read excel 和网络下载部分解耦，增加稳定性和模块化
 
 ## v0.8.0 - 2020.03.30
-## added
+### added
 * 添加 ft 日线数据源和实时数据
 * 将净值预测的基础设施迁移重构进 xalpha，并封装成面向对象
-## fixed
+### fixed
 * 天天基金总量 API 中，累计净值里可能存在 null
 * 港股新浪实时数据现价抓取错位
 

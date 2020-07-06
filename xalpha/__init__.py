@@ -20,7 +20,7 @@ from xalpha.info import (
     get_fund_holdings,
 )
 from xalpha.multiple import mul, mulfix, imul, Mul, MulFix, IMul
-from xalpha.realtime import rfundinfo, review
+from xalpha.realtime import rfundinfo, review  # deprecated
 from xalpha.record import record, irecord, Record, IRecord
 from xalpha.trade import trade, itrade, Trade, ITrade
 from xalpha.universal import (
@@ -48,3 +48,4 @@ from xalpha.toolbox import (
     set_holdings,
     set_display,
 )
+import xalpha.backtest

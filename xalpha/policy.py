@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-modules for policy making: generate status table for backtesting
+modules for policy making: generate status table for simple backtesting
 """
 import pandas as pd
 
