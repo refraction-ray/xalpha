@@ -323,7 +323,7 @@ class basicinfo(indicator):
         self.fenhongdate = []
         self.zhesuandate = []
 
-        # compatible with new xa.set_backend()
+        # compatible with new ``xa.set_backend()`` API
         import xalpha.universal as xu
 
         if (xu.ioconf["backend"] in ["csv", "sql"]) and (not path):
@@ -331,7 +331,8 @@ class basicinfo(indicator):
             save = True
             form = xu.ioconf["backend"]
             path = xu.ioconf["path"]
-            path = os.path.join(path, xu.ioconf["prefix"] + "INFO-")
+            if xu.ioconf["backend"] == "csv":
+                path = os.path.join(path, xu.ioconf["prefix"] + "INFO-")
         self.format = form
         if fetch is False:
             self._basic_init()  # update self. name rate and price table

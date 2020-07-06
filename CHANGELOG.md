@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### fixed
+* 修复 info 类兼容 set_backend 指定数据库后端的 bug
 
 ## v0.9.4 - 2020.07.02
 ### added
