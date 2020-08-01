@@ -433,6 +433,9 @@ def _float(n):
             return 0
     except AttributeError:
         pass
+    if not n:
+        logger.warning("_float met with None as input arguments")
+        return 0
     return float(n)
 
 

@@ -929,8 +929,8 @@ class fundinfo(basicinfo):
             ts = pd.Timestamp(str(items[7 * i].string))
             if (ts - lastdate).days > 0:
                 date.append(ts)
-                netvalue.append(float(items[7 * i + 1].string))
-                totvalue.append(float(items[7 * i + 2].string))
+                netvalue.append(_float(items[7 * i + 1].string))
+                totvalue.append(_float(items[7 * i + 2].string))
                 comment.append(_nfloat(items[7 * i + 6].string))
             else:
                 break

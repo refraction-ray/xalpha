@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### fixed
+* 兼容天天基金 API 增量更新出现的累计净值空白
 
 ## v0.10.0 - 2020.07.06
 ### fixed
