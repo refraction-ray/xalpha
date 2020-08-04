@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### added
+* 场外账单支持日期乱序记录（但每天仍必须严格一行）
 ### fixed
 * 兼容天天基金 API 增量更新出现的累计净值空白
 

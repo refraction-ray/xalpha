@@ -59,6 +59,7 @@ class record:
             if fund_property:
                 self.property = df.iloc[0]
                 df2 = df.iloc[1:]
+                df2 = df2.sort_values(by="date", ascending=True)
                 df2.date = [
                     # pd.Timestamp.strptime(str(int(df.iloc[i].date)), "%Y%m%d")
                     # higher version of pandas timestamp doesn't support strptime anymore? why? what is the gain here?
@@ -67,6 +68,7 @@ class record:
                 ]
                 self.status = df2
             else:
+                df = df.sort_values(by="date", ascending=True)
                 df.date = [
                     pd.to_datetime(str(int(df.iloc[i].date)), format="%Y%m%d")
                     for i in range(len(df))
