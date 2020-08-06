@@ -355,11 +355,16 @@ class trade:
                 i += 1
             value = self.status.iloc[i].loc[code]
             date = self.status.iloc[i].date
+            self.lastdate = date
             if len(self.price[self.price["date"] >= date]) > 0:
                 date = self.price[self.price["date"] >= date].iloc[0]["date"]
             else:
                 date = self.price[self.price["date"] <= date].iloc[-1]["date"]
+
             # 这里没有像下边部分一样仔细处理单独的 lastdate，hopefully 不会出现其他奇怪的问题，有 case 再说
+            # https://github.com/refraction-ray/xalpha/issues/47
+            # 凭直觉这个地方的处理很可能还有其他 issue
+
             if value > 0:
                 feelabel = 100 * value - int(100 * value)
                 if int(10 * feelabel) == 5:
