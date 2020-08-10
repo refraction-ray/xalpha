@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.10.1 - 2020.08.10
 ### added
 * 场外账单支持日期乱序记录（但每天仍必须严格一行）
 ### fixed
