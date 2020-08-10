@@ -435,7 +435,7 @@ def _float(n):
         pass
     if not n:
         logger.warning("_float met with None as input arguments")
-        return 0
+        return 0.0
     return float(n)
 
 

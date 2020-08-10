@@ -511,6 +511,7 @@ selectedModule=PerformanceGraphView&selectedSubModule=Graph\
     df = pd.read_excel(r.content)
     # print(df.iloc[:10])
     df = df.iloc[6:]
+    df = df.dropna()
     df["close"] = df["Unnamed: " + col]
     df["date"] = pd.to_datetime(df["Unnamed: 0"])
     df = df[["date", "close"]]
