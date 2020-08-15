@@ -718,8 +718,9 @@ def cb_ytm(issue_date, rlist, cp, date=None, tax=1.0, guess=0.01):
     # 关于赎回利息计算： https://www.jisilu.cn/?/question/339
     # https://www.jisilu.cn/question/5807
     # 富投网的算法：将最后一年超出100的部分，全部按照20%计税，
+    # 关于到期或回售部分的利息，最新进展： https://www.jisilu.cn/question/389264
+
     cf.append((issue_date_obj + dt.timedelta(days=(len(rlist) - 1) * 365), rlist[-1]))
-    #     print(cf)
     try:
         return xirr(cf, guess=guess)
     except RuntimeError:

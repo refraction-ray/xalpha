@@ -33,7 +33,8 @@ def get_ri_status(suburl=None):
     if not suburl:
         suburl = "m=cb&a=cb_all"  # 可转债
 
-    url = "http://www.richvest.com/index.php?"
+    # url = "http://www.richvest.com/index.php?"
+    url = "http://www.ninwin.cn/index.php?"
     url += suburl
     r = rget(url, headers={"user-agent": "Mozilla/5.0"})
     b = BeautifulSoup(r.text, "lxml")
@@ -49,6 +50,15 @@ def get_ri_status(suburl=None):
         if i % nocl == nocl - 1:
             rl.append(r)
     return pd.DataFrame(rl, columns=cl)
+
+
+@lru_cache_time(ttl=60)
+def get_jsl_cb_status():
+    url = "https://www.jisilu.cn/data/cbnew/cb_list/?___jsl=LST___t=%s" % (
+        int(dt.datetime.now().timestamp() * 100)
+    )
+    r = rpost_json(url)
+    return [item["cell"] for item in r["rows"]]
 
 
 @lru_cache_time(ttl=7200, maxsize=512)
@@ -217,6 +227,7 @@ dt=0&ft={ft}&sd=&ed=&sc=z&st=desc&pi=1&pn=5000&zf=diy&sh=list".format(
 
 # 战略配售封基
 zlps = ["SZ160142", "SZ161131", "SZ161728", "SH501186", "SH501188", "SH501189"]
+
 # 科创封基
 kcfj = [
     "SH501073",
@@ -255,6 +266,7 @@ hh_cand = [
 
 
 def summary_cb(df, l=None, cutoff=5):
+    # not functional since richinvest change
     for c in ["转债代码"]:
         df[c] = df[c].apply(lambda s: s.strip())
     for c in ["老式双低", "转债价格", "股票市值", "转债余额"]:
