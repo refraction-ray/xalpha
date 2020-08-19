@@ -956,14 +956,94 @@ class fundinfo(basicinfo):
         )
 
     def get_stock_holdings(self, year="", season="", month=""):
+        """
+        持仓个股细节
+
+        :param year:
+        :param season:
+        :param month:
+        :return: pd.DataFrame
+        """
         return get_fund_holdings(
             self.code, year, season=season, month=month, category="stock"
         )
 
     def get_bond_holdings(self, year="", season="", month=""):
+        """
+        持仓债券细节
+
+        :param year:
+        :param season:
+        :param month:
+        :return: pd.DataFrame
+        """
         return get_fund_holdings(
             self.code, year, season=season, month=month, category="bond"
         )
+
+    def get_portfolio_holdings(self, date=None):
+        """
+        持仓股债现金占比
+
+        :param date:
+        :return: Dict
+        """
+        if date is None:
+            date = dt.datetime.now().strftime("%Y-%m-%d")
+        import xalpha.universal as xu
+
+        df = xu.get_daily("pt-F" + self.code, end=date)
+        if df is not None:
+            d = dict(df.iloc[-1])
+            del d["assets"], d["date"]
+            return d
+        else:
+            logger.warning("no portfolio information before %s" % date)
+            return
+
+    def get_industry_holdings(self, year="", season="", month=""):
+        """
+        持仓行业占比
+
+        :param year:
+        :param season:
+        :param month:
+        :return:  Dict
+        """
+        from xalpha.universal import ttjjcode, get_industry_fromxq
+
+        df = self.get_stock_holdings(year=year, season=season, month=month)
+        d = {}
+        for i, row in df.iterrows():
+            code = ttjjcode(row["code"])
+            industry = get_industry_fromxq(code)["industryname"]
+            if not industry.strip():
+                logger.warning(
+                    "%s has no industry information, cannot be classfied" % code
+                )
+            else:
+                if industry not in d:
+                    d[industry] = 0
+                d[industry] += row["ratio"]
+        return d
+
+    def which_industry(self, threhold=1.0):
+        """
+        Experimental API
+        当单一行业占比较其他行业的 threhold 倍还多时，自动判定为对应的行业基金
+        注意这里的行业可能比较细分，导致持仓多个行业其实是同一大行业从而误判为宽基基金的可能
+
+        :param threhold: float
+        :return: str
+        """
+        d = self.get_industry_holdings()
+        l = sorted([(k, v) for k, v in d.items()], key=lambda s: -s[1])
+        s0 = l[0][1]
+        s1 = sum([l[i][1] for i in range(1, len(l))])
+        if s0 > threhold * s1:
+            return "行业基金： " + l[0][0]
+        else:
+            return "宽基基金"
 
 
 class indexinfo(basicinfo):

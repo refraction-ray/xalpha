@@ -170,6 +170,21 @@ def get_historical_fromxq(code, count, type_="before", full=False):
     return df
 
 
+def get_industry_fromxq(code):
+    """
+    part of symbols has empty industry information
+
+    :param code:
+    :return: dict
+    """
+    url = (
+        "https://xueqiu.com/stock/industry/stockList.json?code=%s&type=1&size=100"
+        % code
+    )
+    r = rget_json(url, cookies={"xq_a_token": get_token()})
+    return r
+
+
 def get_historical_fromcninvesting(curr_id, st_date, end_date, app=False):
     data = {
         "curr_id": curr_id,
