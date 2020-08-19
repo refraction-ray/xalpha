@@ -65,6 +65,10 @@ def test_mul_properties():
         == 339.89
     )
     assert round(hl_m.fundtradeobj[2].cftable.iloc[1]["cash"], 2) == 1000
+    d = hl_m.get_portfolio_holdings(date="20190801")
+    d2 = hl_m.get_industry_holdings(date="20190201")
+    assert round(d["stock"], 2) == 299.85
+    assert round(d2["银行"], 2) == 48.29
     hl_m2 = xa.mul(status=statnb, property={"002758": 0}, **ioconf)
     # print(hl_m2.fundtradeobj[2].cftable)
     assert round(hl_m2.fundtradeobj[2].cftable.iloc[1]["share"], 2) == -926.0

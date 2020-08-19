@@ -170,6 +170,7 @@ def get_historical_fromxq(code, count, type_="before", full=False):
     return df
 
 
+@lru_cache()
 def get_industry_fromxq(code):
     """
     part of symbols has empty industry information
@@ -1325,6 +1326,8 @@ def get_rt_from_sina(code):
     if (
         code.startswith("SH") or code.startswith("SZ") or code.startswith("HK")
     ) and code[2:].isdigit():
+        # TODO: 20200819: API seems changed a bit, index shift?
+        # or things may get zero when the market is closed?
         if code.startswith("HK"):
             d["current"] = float(l[9])  # 英文股票名称占位
             d["currency"] = "HKD"

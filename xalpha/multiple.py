@@ -23,7 +23,7 @@ from xalpha.trade import (
     itrade,
     vtradecost,
 )
-from xalpha.universal import get_fund_type, ttjjcode, get_rt
+from xalpha.universal import get_fund_type, ttjjcode, get_rt, get_industry_fromxq
 import xalpha.universal as xu
 
 
@@ -364,6 +364,66 @@ class mul:
                     d["bond"] += row["bond_ratio"] * value / 100
                     d["cash"] += row["cash_ratio"] * value / 100
         return d
+
+    get_portfolio_holdings = get_portfolio
+
+    def get_industry(self, date=yesterdayobj()):
+        """
+        获取基金组合持仓的行业占比信息，底层为非 A 股持仓的暂不支持
+
+        :param date:
+        :return: Dict
+        """
+        # TODO: hard coded 一个字典来合并一些二级行业
+        d = {}
+        date = convert_date(date)
+        rd = date - pd.Timedelta(days=120)
+        year = rd.year
+        season = int((rd.month - 0.1) / 3) + 1
+        for f in self.fundtradeobj:
+            value = f.briefdailyreport(date).get("currentvalue", 0)
+            if value > 0:
+                if isinstance(f, itrade):
+                    if f.get_type() == "股票":
+                        industry = get_industry_fromxq(f.code).get("industryname", "")
+                        if industry.strip():
+                            d[industry] = d.get(industry, 0) + value
+                        continue
+                    elif f.get_type() in ["可转债", "债券", "货币基金"]:
+                        # 现在简化实现可转债暂时不按正股记行业
+                        continue
+                    elif f.get_type() == "场内基金":
+                        code = f.code[2:]
+                    else:
+                        continue
+                else:
+                    code = f.code
+                if code == "mf":
+                    continue
+                if get_fund_type(code) == "货币基金":
+                    continue
+                ## 以下为持有股票的基金处理
+                ## fundinfo 有点浪费，不过简化实现暂时如此
+                fobj = fundinfo(code)
+                industry_dict = fobj.get_industry_holdings(year=year, season=season)
+                if industry_dict is None:
+                    continue
+                ## 这里行业占比需要做个 scaling
+                sv = sum([v for _, v in industry_dict.items()])
+                if sv < 1.0:
+                    # 只有极少数持仓存在行业信息
+                    continue
+                stock_ratio = fobj.get_portfolio_holdings(date.strftime("%Y%m%d"))[
+                    "stock_ratio"
+                ]
+                scale = stock_ratio / sv
+                print(scale)
+                for k, v in industry_dict.items():
+                    if k.strip():
+                        d[k] = d.get(k, 0) + value * v / 100 * scale
+        return d
+
+    get_industry_holdings = get_industry
 
     def v_positions(self, date=yesterdayobj(), rendered=True):
         """

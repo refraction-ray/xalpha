@@ -1001,20 +1001,32 @@ class fundinfo(basicinfo):
             logger.warning("no portfolio information before %s" % date)
             return
 
-    def get_industry_holdings(self, year="", season="", month=""):
+    def get_industry_holdings(self, year="", season="", month="", threhold=0.5):
         """
         持仓行业占比
 
         :param year:
         :param season:
         :param month:
+        :param threhold: float, 持仓小于该百分数的个股行业不再统计，加快速度
         :return:  Dict
         """
+        # 注意该 API 未直接使用天天基金的行业数据，其数据行业划分比较奇怪，大量行业都划分进了笼统的制造业，
+        # 用于分析代表性不强，甚至没有消费，医药等行业划分方式
+
         from xalpha.universal import ttjjcode, get_industry_fromxq
 
         df = self.get_stock_holdings(year=year, season=season, month=month)
+        if df is None:
+            logger.warning(
+                "%s has no stock holdings in %s y %s s. (Possible reason: 链接基金，债券基金)"
+                % (self.code, year, season)
+            )
+            return
         d = {}
         for i, row in df.iterrows():
+            if row["ratio"] < threhold:
+                continue
             code = ttjjcode(row["code"])
             industry = get_industry_fromxq(code)["industryname"]
             if not industry.strip():
