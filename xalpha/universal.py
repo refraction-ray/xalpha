@@ -1429,16 +1429,21 @@ def get_rt_from_ycharts(code):
     url = "https://ycharts.com/" + code
     r = rget(url)
     s = BeautifulSoup(r.text, "lxml")
-    qdiv = s.select("div[class=quoteData]")  # current
+    qdiv = s.select("div.index-rank.col-auto")  # current
     spans = [s for s in qdiv[0].contents if s != "\n" and s.contents]
     d = {}
     d["name"] = s.select("h1,h3[class=securityName]")[0].text.strip()
-    d["current"], d["percent"], d["currency"] = (
+    d["current"], d["percent"] = (
         _float(spans[0].string),  # current,
-        _float(spans[1].contents[-1].string[:-1]),  # percent
-        spans[-1].string,  # currency
+        _float(spans[1].contents[-2].string[1:-1]),  # percent
     )
-    d["time"] = s.select("span[class*=quoteDate]")[0].string
+    l = [
+        c.strip()
+        for c in s.select("span[class=index-info]")[0].string.split("\n")
+        if c.strip()
+    ]
+    d["time"] = l[1]
+    d["currency"] = l[0].split(" ")[0].strip()
     d["market"] = None
     return d
 
