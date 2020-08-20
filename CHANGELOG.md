@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.10.2 - 2020.08.20
 ### added
 * 添加了 a 股股票行业判断 API, 由此支持查看基金持仓的各行业占比， ``fundinfo.get_industry_holdings()``
 * 在 get_daily 之外，添加了 ``fundinfo.get_portfolio_holdings()`` API，查看底层股债占比的逻辑更自然
