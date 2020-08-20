@@ -1050,7 +1050,9 @@ class fundinfo(basicinfo):
         """
         d = self.get_industry_holdings()
         l = sorted([(k, v) for k, v in d.items()], key=lambda s: -s[1])
-        s0 = l[0][1]
+        s0 = 0
+        if l and l[0] and l[0][1]:
+            s0 = l[0][1]
         s1 = sum([l[i][1] for i in range(1, len(l))])
         if s0 > threhold * s1:
             return "行业基金： " + l[0][0]
