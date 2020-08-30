@@ -417,7 +417,6 @@ class mul:
                     "stock_ratio"
                 ]
                 scale = stock_ratio / sv
-                print(scale)
                 for k, v in industry_dict.items():
                     if k.strip():
                         d[k] = d.get(k, 0) + value * v / 100 * scale
