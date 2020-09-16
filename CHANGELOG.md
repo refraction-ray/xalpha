@@ -2,8 +2,8 @@
 ## Unreleased
 ### added
 * 增加动态平衡回测类
-### temporarily down
-* fundreport 类数据源重构
+### fixed
+* 修改 fundreport 类兼容新版本网站源
 
 ## v0.10.2 - 2020.08.20
 ### added

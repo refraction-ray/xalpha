@@ -13,7 +13,7 @@ hs300 = xa.fundinfo("000311")
 zogqb = xa.mfundinfo("001211", **ioconf)
 
 
-@pytest.mark.skip(reason="fund report utility to be repaired due to web refactort")
+# @pytest.mark.skip(reason="fund report utility to be repaired due to web refactort")
 def test_fundreport():
     # somehow fragile, to be checked
     r = xa.FundReport("000827")

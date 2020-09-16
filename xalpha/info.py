@@ -26,6 +26,7 @@ from xalpha.cons import (
     yesterdayobj,
     today_obj,
     rget,
+    rget_json,
     _float,
 )
 from xalpha.exceptions import FundTypeError, TradeBehaviorError, ParserFailure
@@ -109,26 +110,29 @@ class FundReport:
         :return:
         """
         if id_:
-            report_url = "http://fund.eastmoney.com/gonggao/{code},{id_}.html".format(
-                code=self.code, id_=id_
+            report_url = "https://np-cnotice-fund.eastmoney.com/api/content/ann?client_source=web_fund&show_all=1&art_code={id_}".format(
+                id_=id_
             )
-            r = rget(report_url)
-            b = BeautifulSoup(r.text, "lxml")
-            seasonr = b.find("pre")
-            sr = [s.string.strip() for s in seasonr.findAll("p") if s.string]
-            return sr
 
         if not self.report_detail.get(no):
-            report_url = "http://fund.eastmoney.com/gonggao/{code},{id_}.html".format(
-                code=self.code, id_=self.report_list[no]["ID"]
+            report_url = "https://np-cnotice-fund.eastmoney.com/api/content/ann?client_source=web_fund&show_all=1&art_code={id_}".format(
+                id_=self.report_list[no]["ID"]
             )
-            r = rget(report_url)
-            b = BeautifulSoup(r.text, "lxml")
-            seasonr = b.find("pre")
-            sr = [s.string.strip() for s in seasonr.findAll("p") if s.string]
-            self.report_detail[no] = sr
 
-        return self.report_detail[no]
+            # report_url = "http://fund.eastmoney.com/gonggao/{code},{id_}.html".format(
+            #     code=self.code, id_=self.report_list[no]["ID"]
+            # )
+            # r = rget(report_url)
+            # b = BeautifulSoup(r.text, "lxml")
+            # seasonr = b.find("pre")
+            # sr = [s.string.strip() for s in seasonr.findAll("p") if s.string]
+        r = rget_json(report_url)
+
+        sr = r["data"]["notice_content"]
+        sr = [s.strip() for s in sr.split("\n") if s.strip()]
+        self.report_detail[no] = sr
+
+        return sr
 
     def show_report_list(self, type_=3):
         """
