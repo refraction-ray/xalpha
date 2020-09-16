@@ -84,14 +84,16 @@ class BTE:
         else:
             return
 
-    def get_current_mulfix(self):
+    def get_current_mulfix(self, totmoney=None):
         """
         get ``xa.mulfix`` of the whole setup
 
         :return:
         """
         if self.trades:
-            return mulfix(*[v for _, v in self.trades.items()], totmoney=self.totmoney)
+            if totmoney is None:
+                totmoney = self.totmoney
+            return mulfix(*[v for _, v in self.trades.items()], totmoney=totmoney)
         else:
             return
 
@@ -106,14 +108,14 @@ class BTE:
         :return:
         """
         if code in self.infos:
-            self.infos[code].value_lable = value_label
-            self.infos[code].round_lable = round_label
-            self.infos[code].dividend_lable = dividend_label
+            self.infos[code].value_label = value_label
+            self.infos[code].round_label = round_label
+            self.infos[code].dividend_label = dividend_label
         else:
             self.infos[code] = self.get_info(code)
-            self.infos[code].value_lable = value_label
-            self.infos[code].round_lable = round_label
-            self.infos[code].dividend_lable = dividend_label
+            self.infos[code].value_label = value_label
+            self.infos[code].round_label = round_label
+            self.infos[code].dividend_label = dividend_label
 
     def get_info(self, code):
         """
@@ -378,3 +380,38 @@ class Tendency28(BTE):
                 self.sell(self.aim1, -0.005, date)
                 self.status = 2
                 self.buy(self.aim2, value, date)
+
+
+class Balance(BTE):
+    """
+    动态平衡
+    """
+
+    def prepare(self):
+        self.check_dates = self.kws.get("check_dates")
+        for i, s in enumerate(self.check_dates):
+            if isinstance(s, str):
+                self.check_dates[i] = pd.Timestamp(s)
+        self.portfolio_dict = self.kws.get(
+            "portfolio_dict"
+        )  # value is float with the sum as 1 instead of 100.
+        self.nill = True
+
+    def run(self, date):
+        if self.nill is True:  # 建仓买入
+            for fund, ratio in self.portfolio_dict.items():
+                self.set_fund(fund, dividend_label=1)
+                self.buy(fund, ratio * self.totmoney, date)
+            self.nill = False
+        if date in self.check_dates:
+            # 动态平衡
+            sys = self.get_current_mul()
+            df = sys.summary(date.strftime("%Y-%m-%d"))
+            total_value = df[df["基金名称"] == "总计"]["基金现值"].iloc[0]
+            for fund, ratio in self.portfolio_dict.items():
+                delta = df[df["基金代码"] == fund[1:]]["基金现值"].iloc[0] - total_value * ratio
+                if delta > 0:
+                    share = round(delta / df[df["基金代码"] == fund[1:]]["当日净值"].iloc[0], 2)
+                    self.sell(fund, share, date)  # 赎回份额属于未考虑赎回费的估算，会导致末态并非完全平衡
+                elif delta < 0:
+                    self.buy(fund, -delta, date)
