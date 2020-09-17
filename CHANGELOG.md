@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+## v0.10.3 - 2020.09.17
 ### added
 * 增加动态平衡回测类
 ### fixed
