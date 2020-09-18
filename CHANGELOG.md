@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+### fixed
+* 修复记账单.005 表记 0 申购费可能出现的 bug
 
 ## v0.10.3 - 2020.09.17
 ### added

@@ -367,11 +367,15 @@ class trade:
 
             if value > 0:
                 feelabel = 100 * value - int(100 * value)
-                if int(10 * feelabel) == 5:
+                if round(feelabel, 1) == 0.5:
+                    # binary encoding, 10000.005 is actually 10000.0050...1, see issue #59
                     feelabel = feelabel - 0.5
+                    if abs(feelabel) < 1e-4:
+                        feelabel = 0
                 else:
                     feelabel = None
                 value = int(value * 100) / 100
+                assert feelabel is None or feelabel >= 0.0, "自定义申购费必须为正值"
                 rdate, cash, share = self.aim.shengou(value, date, fee=feelabel)
                 rem = rm.buy([], share, rdate)
             else:

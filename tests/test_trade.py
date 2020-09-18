@@ -34,6 +34,13 @@ def test_customize_fee():
     dqzf = xa.trade(xa.fundinfo("519732"), df)
     assert dqzf.dailyreport("2020-06-02")["基金分红与赎回"].iloc[0] == 2.22
     assert dqzf.dailyreport("2020-05-31")["持有份额"].iloc[0] == 116.5
+    # issue 59
+    df = pd.DataFrame(
+        {"date": ["2020-05-28", "2020-06-01"], "519732": [10000.005, -0.505]}
+    )
+    df["date"] = pd.to_datetime(df["date"])
+    dqzf = xa.trade(xa.fundinfo("519732"), df)
+    assert round(dqzf.dailyreport("2020-05-28").iloc[0]["基金现值"], 0) == 10000.0
 
 
 def test_mul():
