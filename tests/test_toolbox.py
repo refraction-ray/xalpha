@@ -42,7 +42,10 @@ def test_qdii_predict():
     hb = xa.QDIIPredict(
         "SZ162411",
         t1dict={".SPSIOP": 91},
-        t0dict={"commodities/brent-oil": 40 * 0.9, "commodities/crude-oil": 60 * 0.9,},
+        t0dict={
+            "commodities/brent-oil": 40 * 0.9,
+            "commodities/crude-oil": 60 * 0.9,
+        },
         positions=True,
     )
     hb.get_t1()

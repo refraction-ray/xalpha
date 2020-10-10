@@ -250,13 +250,17 @@ def vtradecost(
 
     if unitcost:
         line.add_yaxis(
-            series_name="持仓成本", y_axis=costdata, is_symbol_show=False,
+            series_name="持仓成本",
+            y_axis=costdata,
+            is_symbol_show=False,
         )
     line.add_yaxis(
         series_name="基金净值",
         y_axis=funddata,
         is_symbol_show=False,
-        markpoint_opts=opts.MarkPointOpts(data=[marker_factory(*c) for c in coords],),
+        markpoint_opts=opts.MarkPointOpts(
+            data=[marker_factory(*c) for c in coords],
+        ),
     )
     line.set_global_opts(
         datazoom_opts=[

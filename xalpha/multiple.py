@@ -512,7 +512,11 @@ class mul:
         for date in times:
             sdata = sorted(
                 [
-                    (date, fob.briefdailyreport(date).get("currentvalue", 0), fob.name,)
+                    (
+                        date,
+                        fob.briefdailyreport(date).get("currentvalue", 0),
+                        fob.name,
+                    )
                     for fob in self.fundtradeobj
                 ],
                 key=lambda x: x[1],

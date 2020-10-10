@@ -1137,11 +1137,14 @@ def daily_increment(code, date, lastday=None, _check=False, warning_threhold=Non
         while tds.iloc[-1]["date"] < date_obj:
             # in case data is not up to date
             # 但是存在日本市场休市时间不一致的情况，估计美股也存在
-            if not is_on(
-                date_obj.strftime("%Y%m%d"),
-                get_market(code),
-                no_trading_days=no_trading_days,
-            ) or (date_obj.strftime("%Y-%m-%d") in gap_info.get(code, [])):
+            if (
+                not is_on(
+                    date_obj.strftime("%Y%m%d"),
+                    get_market(code),
+                    no_trading_days=no_trading_days,
+                )
+                or (date_obj.strftime("%Y-%m-%d") in gap_info.get(code, []))
+            ):
                 print("%s is closed on %s" % (code, date))
                 if not lastday:
                     return 1  # 当日没有涨跌，这里暂时为考虑 _check 和 lastday 相同的的情形
@@ -1388,7 +1391,7 @@ class RTPredict:
 class QDIIPredict:
     """
     T+2 确认份额的 QDII 型基金净值预测类
-    
+
     .. warning::
 
         由于该类与现实时间的强烈耦合和激进的缓存利用，该类的对象不能"过夜"使用，每天需声明新的对象

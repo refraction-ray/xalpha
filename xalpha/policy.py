@@ -15,7 +15,7 @@ class policy(record):
     :param infoobj: info object as evidence for policy making
     :param start: string or object of date, the starting date for policy running
     :param end: string or object of date, the ending date for policy running
-    :param totmoney: float or int, characteristic money value, 
+    :param totmoney: float or int, characteristic money value,
         not necessary to be the total amount of money
     """
 
@@ -195,8 +195,8 @@ class indicator_cross(policy):
     制定两个任意技术指标之间（或和净值之间）交叉时买入卖出的策略。若收盘时恰好交叉，不操作，等第二日趋势确认。
 
     :param info: info object, trading aim of the policy
-    :param col: a tuple with two strings, eg ('netvalue','MA10'), when the left one is over the 
-        right one, we buy and otherwise we sell, that is the core of cross policy, you can choose 
+    :param col: a tuple with two strings, eg ('netvalue','MA10'), when the left one is over the
+        right one, we buy and otherwise we sell, that is the core of cross policy, you can choose
         any two columns as you like, as long as you generate them on the info object before input
         也即左栏数据从下向上穿过右栏数据时，买入；反之亦然
     :param start: date str of policy starting

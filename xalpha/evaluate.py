@@ -17,7 +17,7 @@ class evaluate:
     :param fundobjs: info object，或者如前所述一切具有 price 表的对象
     :param start: date string or object, 比较的起始时间，默认使用所有 price 表中最近的起始时间。
         但需要注意，由于拉取的基金净值表，往往在开始几天缺失净值数据，即使使用默认时间也可能无法对齐所有净值数据。
-        因此建议手动设置起始时间到最近的起始时间一周后左右。 
+        因此建议手动设置起始时间到最近的起始时间一周后左右。
     """
 
     def __init__(self, *fundobjs, start=None):

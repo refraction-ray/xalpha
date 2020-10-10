@@ -188,7 +188,10 @@ class BTE:
             df2 = pd.DataFrame([[date, value]], columns=["date", self.get_code(code)])
             df = df.append(df2)
             self.trades[code] = trade(
-                self.infos[code], df, cftable=cftable, remtable=remtable,
+                self.infos[code],
+                df,
+                cftable=cftable,
+                remtable=remtable,
             )
         else:
             self.lastdates[code] = date
@@ -224,7 +227,10 @@ class BTE:
         if is_value:
             self.set_fund(code, value_label=1)
         self.trades[code] = trade(
-            self.infos[code], df, cftable=cftable, remtable=remtable,
+            self.infos[code],
+            df,
+            cftable=cftable,
+            remtable=remtable,
         )
         if is_value:
             self.set_fund(code, value_label=0)

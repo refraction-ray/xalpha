@@ -310,7 +310,10 @@ def get_investing_id(suburl, app=False):
             "Host": "cn.investing.com",
             "X-Requested-With": "XMLHttpRequest",
         }
-    r = rget(url, headers=headers,)
+    r = rget(
+        url,
+        headers=headers,
+    )
     s = BeautifulSoup(r.text, "lxml")
     pid = s.find("span", id="last_last")["class"][-1].split("-")[1]
     return pid
@@ -1252,7 +1255,10 @@ def get_cninvesting_rt(suburl, app=False):
             "X-Requested-With": "XMLHttpRequest",
         }
 
-    r = rget(url, headers=headers,)
+    r = rget(
+        url,
+        headers=headers,
+    )
     s = BeautifulSoup(r.text, "lxml")
     last_last = s.find("span", id="last_last")
     q = _float(last_last.string)
@@ -1370,12 +1376,16 @@ def make_ft_url(code, _type="indices"):
             code=code
         )
     elif _type == "commodities":
-        url = "https://markets.ft.com/data/commodities/tearsheet/summary?c={code}".format(
-            code=code
+        url = (
+            "https://markets.ft.com/data/commodities/tearsheet/summary?c={code}".format(
+                code=code
+            )
         )
     elif _type == "currencies":
-        url = "https://markets.ft.com/data/currencies/tearsheet/summary?s={code}".format(
-            code=code
+        url = (
+            "https://markets.ft.com/data/currencies/tearsheet/summary?s={code}".format(
+                code=code
+            )
         )
     elif _type == "funds":
         url = "https://markets.ft.com/data/funds/tearsheet/summary?s={code}".format(
@@ -1469,9 +1479,43 @@ def get_newest_netvalue(code):
     )
 
 
+def get_rt_from_ttjj_oversea(code):
+    if code.startswith("F"):
+        code = code[1:]
+    if not code.startswith("96"):
+        raise ValueError("%s is not an oversea fund" % code)
+    r = rget("http://overseas.1234567.com.cn/{code}.html".format(code=code))
+    r.encoding = "utf-8"
+    s = BeautifulSoup(r.text, "lxml")
+    name = s.select("div[class='fundDetail-tit']")[0].text.split("(")[0].strip()
+    value = _float(s.select("span[class='ui-font-large ui-color-red ui-num']")[0].text)
+    date = (
+        s.select("dl[class='dataItem01']")[0]
+        .find("p")
+        .text.split("(")[-1]
+        .split(")")[0]
+    )
+    infol = [
+        r for r in s.select("div[class='infoOfFund']")[0].text.split("\n") if r.strip()
+    ]
+    return {
+        "name": name,
+        "time": date,
+        "current": value,
+        "market": "CN",
+        "currency": "CNY",
+        "current_ext": None,
+        "type": infol[0].split("：")[1].strip(),
+        "scale": infol[1].split("：")[1].strip(),
+        "manager": infol[2].split("：")[1].strip(),
+    }
+
+
 @lru_cache_time(ttl=600, maxsize=512)
 def get_rt_from_ttjj(code):
     code = code[1:]
+    if code.startswith("96"):
+        return get_rt_from_ttjj_oversea(code)
     r = rget("http://fund.eastmoney.com/{code}.html".format(code=code))
     r.encoding = "utf-8"
     s = BeautifulSoup(r.text, "lxml")
