@@ -436,7 +436,10 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
 def get_fund(code):
     # 随意设置非空 path，防止嵌套缓存到 fundinfo
     if code[0] == "F":
-        df = fundinfo(code[1:], path="nobackend", priceonly=True).price
+        if code.startswith("F96"):
+            return get_historical_from_ttjj_oversea(code)
+        else:
+            df = fundinfo(code[1:], path="nobackend", priceonly=True).price
     elif code[0] == "T":
         df = fundinfo(code[1:], path="nobackend", priceonly=True).price
         df["netvalue"] = df["totvalue"]
@@ -446,6 +449,31 @@ def get_fund(code):
         raise ParserFailure("Unknown fund code %s" % code)
     df["close"] = df["netvalue"]
     return df[["date", "close"]]
+
+
+def get_historical_from_ttjj_oversea(code, start=None, end=None):
+    if code.startswith("F"):
+        code = code[1:]
+    pagesize = (
+        dt.datetime.strptime(end, "%Y%m%d") - dt.datetime.strptime(start, "%Y%m%d")
+    ).days + 1
+    r = rget_json(
+        "http://overseas.1234567.com.cn/overseasapi/OpenApiHander.ashx?api=HKFDApi&m=MethodJZ&hkfcode={hkfcode}&action=2&pageindex=0&pagesize={pagesize}&date1={startdash}&date2={enddash}&callback=".format(
+            hkfcode=get_hkfcode(code),
+            pagesize=pagesize,
+            startdash=start[:4] + "-" + start[4:6] + "-" + start[6:],
+            enddash=end[:4] + "-" + end[4:6] + "-" + end[6:],
+        )
+    )
+    datalist = {"date": [], "close": []}
+    for dd in r["Data"]:
+        datalist["date"].append(pd.to_datetime(dd["PDATE"]))
+        datalist["close"].append(dd["NAV"])
+    df = pd.DataFrame(datalist)
+    df = df[df["date"] <= end]
+    df = df[df["date"] >= start]
+    df = df.sort_values("date", ascending=True)
+    return df
 
 
 def get_portfolio_fromttjj(code, start=None, end=None):
@@ -1062,7 +1090,10 @@ def _get_daily(
     elif _from in ["zhongjianjia", "zjj", "chinamoney", "ZJJ"]:
         df = get_rmb(start, end, prev, currency=code)
     elif _from in ["ttjj", "tiantianjijin", "xalpha", "eastmoney"]:
-        df = get_fund(code)
+        if code.startswith("F96"):
+            df = get_historical_from_ttjj_oversea(code, start=start, end=end)
+        else:
+            df = get_fund(code)
 
     elif _from == "peb":
         if (
@@ -1479,6 +1510,23 @@ def get_newest_netvalue(code):
     )
 
 
+@lru_cache(maxsize=512)
+def get_hkfcode(code):
+    if code.startswith("F"):
+        code = code[1:]
+    page = rget("http://overseas.1234567.com.cn/{code}".format(code=code)).text
+    page.find("hkfcode")
+    hkfcode = (
+        page[page.find("hkfcode") :]
+        .split("=")[1]
+        .split(";")[0]
+        .lstrip()
+        .lstrip("'")
+        .strip("'")
+    )
+    return hkfcode
+
+
 def get_rt_from_ttjj_oversea(code):
     if code.startswith("F"):
         code = code[1:]
@@ -1488,7 +1536,7 @@ def get_rt_from_ttjj_oversea(code):
     r.encoding = "utf-8"
     s = BeautifulSoup(r.text, "lxml")
     name = s.select("div[class='fundDetail-tit']")[0].text.split("(")[0].strip()
-    value = _float(s.select("span[class='ui-font-large ui-color-red ui-num']")[0].text)
+    value = _float(s.select("span.ui-font-large.ui-num")[0].text)
     date = (
         s.select("dl[class='dataItem01']")[0]
         .find("p")
@@ -1503,7 +1551,7 @@ def get_rt_from_ttjj_oversea(code):
         "time": date,
         "current": value,
         "market": "CN",
-        "currency": "CNY",
+        "currency": None,  # 很可能存在非人民币计价的互认基金
         "current_ext": None,
         "type": infol[0].split("：")[1].strip(),
         "scale": infol[1].split("：")[1].strip(),

@@ -265,3 +265,8 @@ def test_get_bond_rates():
 def test_get_ttjj_rt_oversea():
     r = xa.get_rt("F968012")
     assert r["name"] == "中银香港高息债（968012）"
+
+
+def test_ttjj_oversea_daily():
+    df = xa.get_daily("F968054", start="2019-05-01", end="20190606")
+    assert df.iloc[-1]["close"] == 10.18

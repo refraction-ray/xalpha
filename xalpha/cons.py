@@ -430,7 +430,11 @@ def _float(n):
         elif n.endswith("G") or n.endswith("g") or n.endswith("B") or n.endswith("b"):
             n = float(n[:-1]) * 1000 * 1000 * 1000
         elif n == "-":
+            logger.info("_float met -, taken as 0")
             return 0
+        elif n.endswith("%"):
+            logger.warning("_float met with % as %s" % n)
+            return float(n[:-1] / 100)
     except AttributeError:
         pass
     if not n:
