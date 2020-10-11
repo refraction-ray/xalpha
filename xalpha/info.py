@@ -880,6 +880,7 @@ class fundinfo(basicinfo):
 
     def _hk_update(self):
         # 暂时不确定增量更新逻辑无 bug，需时间验证
+        # 注意增量更新时分红的同步更新
         lastdate = self.price.iloc[-1].date
         diffdays = (yesterdayobj() - lastdate).days
         if diffdays == 0:
@@ -893,6 +894,13 @@ class fundinfo(basicinfo):
         df = df[df["date"] > lastdate]
 
         if len(df) != 0:
+            r = self._hk_bonus(start=lastdate.strftime("%Y-%m-%d"))
+            df["comment"] = [0 for _ in range(len(df))]
+            df["netvalue"] = df["close"]
+            df = df.drop("close", axis=1)
+            df = df[df["date"].isin(opendate)]  # ? 是否会过滤掉分红日
+            for d in r:
+                df.loc[df["date"] == d["EXDDATE"], "comment"] = d["BONUS"]
             self.price = self.price.append(df, ignore_index=True, sort=True)
             return df
 
@@ -1107,9 +1115,31 @@ class fundinfo(basicinfo):
             .split("|")[-1]
             .strip()[:-1]
         )
+        r = self._hk_bonus()
+        df = self.price
+        df["comment"] = [0 for _ in range(len(df))]
+        df["netvalue"] = df["close"]
+        df["date"] = pd.to_datetime(df["date"])
+        df = df[df["date"].isin(opendate)]  # ? 是否会过滤掉分红日
+        for d in r:
+            df.loc[df["date"] == d["EXDDATE"], "comment"] = d["BONUS"]
+        df = df.drop("close", axis=1)
+        self.price = df
+
+    def _hk_bonus(self, start=None):
+        """
+        [summary]
+
+        :param start: "%Y-%m-%d", defaults to None
+        :type start: [type], optional
+        """
+        import xalpha.universal as xu
+
         todaydash = today_obj().strftime("%Y-%m-%d")
+        if not start:
+            start = self.price.iloc[0]["date"].strftime("%Y-%m-%d")
         pagesize = int(
-            (today_obj() - dt.datetime.strptime(self.start, "%Y-%m-%d")).days / 5
+            (today_obj() - dt.datetime.strptime(start, "%Y-%m-%d")).days / 5
         )  # 如果存在一周超过一次分红的基金，算我没说
         self.hkfcode = xu.get_hkfcode(self.code)
         r = rget_json(
@@ -1117,17 +1147,11 @@ class fundinfo(basicinfo):
 api=HKFDApi&m=MethodJZ&hkfcode={hkfcode}&action=3&pageindex=0&pagesize={pagesize}&date1={startdash}&date2={enddash}&callback=".format(
                 hkfcode=self.hkfcode,
                 pagesize=pagesize,
-                startdash=self.start,
+                startdash=start,
                 enddash=todaydash,
             )
         )
-        df = self.price
-        df["comment"] = [0 for _ in range(len(df))]
-        df["netvalue"] = df["close"]
-        df = df[df["date"].isin(opendate)]
-        for d in r["Data"]:
-            df.loc[df["date"] == d["EXDDATE"], "comment"] = d["BONUS"]
-        self.price = df
+        return r["Data"]
 
 
 class indexinfo(basicinfo):
