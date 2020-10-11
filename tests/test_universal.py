@@ -264,7 +264,7 @@ def test_get_bond_rates():
 
 def test_get_ttjj_rt_oversea():
     r = xa.get_rt("F968012")
-    assert r["name"] == "中银香港高息债（968012）"
+    assert r["name"] == "中银香港高息债"
 
 
 def test_ttjj_oversea_daily():

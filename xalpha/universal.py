@@ -555,7 +555,7 @@ selectedModule=PerformanceGraphView&selectedSubModule=Graph\
             "upgrade-insecure-requests": "1",
         },
     )
-    df = pd.read_excel(r.content)
+    df = pd.read_excel(r.content, engine="xlrd")
     # print(df.iloc[:10])
     df = df.iloc[6:]
     df = df.dropna()
@@ -1537,7 +1537,7 @@ def get_rt_from_ttjj_oversea(code):
     s = BeautifulSoup(r.text, "lxml")
     start = s.select("dl.dataItem02")[0].text
     start = start.split("(")[1].split(")")[0]
-    name = s.select("div[class='fundDetail-tit']")[0].text.split("(")[0].strip()
+    name = s.select("div[class='fundDetail-tit']")[0].text.split("（")[0].strip()
     name = name.split("(")[0].strip()
     value = _float(s.select("span.ui-font-large.ui-num")[0].text)
     date = (
