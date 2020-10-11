@@ -43,6 +43,13 @@ def test_customize_fee():
     assert round(dqzf.dailyreport("2020-05-28").iloc[0]["基金现值"], 0) == 10000.0
 
 
+def test_ttjj_oversea_trade():
+    stt = pd.DataFrame({"date": ["20200921"], "100032": [1000], "968012": [1034]})
+    s = xa.mul(status=xa.record(stt))
+    df = s.summary("2020-09-30")
+    assert df[df["基金代码"] == "968012"].iloc[0]["基金收益总额"] == -20.01
+
+
 def test_mul():
     with pytest.raises(Exception) as excinfo:
         cm_m = xa.mulfix(cm_t, totmoney=200)

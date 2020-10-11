@@ -1535,7 +1535,10 @@ def get_rt_from_ttjj_oversea(code):
     r = rget("http://overseas.1234567.com.cn/{code}.html".format(code=code))
     r.encoding = "utf-8"
     s = BeautifulSoup(r.text, "lxml")
+    start = s.select("dl.dataItem02")[0].text
+    start = start.split("(")[1].split(")")[0]
     name = s.select("div[class='fundDetail-tit']")[0].text.split("(")[0].strip()
+    name = name.split("(")[0].strip()
     value = _float(s.select("span.ui-font-large.ui-num")[0].text)
     date = (
         s.select("dl[class='dataItem01']")[0]
@@ -1556,6 +1559,7 @@ def get_rt_from_ttjj_oversea(code):
         "type": infol[0].split("：")[1].strip(),
         "scale": infol[1].split("：")[1].strip(),
         "manager": infol[2].split("：")[1].strip(),
+        "startdate": start,
     }
 
 

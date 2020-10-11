@@ -568,6 +568,9 @@ class fundinfo(basicinfo):
             print("There are still string comments for the fund!")
 
     def _basic_init(self):
+        if self.code.startswith("96"):
+            self._hkfund_init()  # 中港互认基金处理
+            return
         self._page = rget(self._url)
         if self._page.status_code == 404:
             raise ParserFailure("Unrecognized fund, please check fund code you input.")
@@ -875,10 +878,30 @@ class fundinfo(basicinfo):
             # print('no saved copy of %s' % self.code)
             raise e
 
+    def _hk_update(self):
+        # 暂时不确定增量更新逻辑无 bug，需时间验证
+        lastdate = self.price.iloc[-1].date
+        diffdays = (yesterdayobj() - lastdate).days
+        if diffdays == 0:
+            return None
+        import xalpha.universal as xu
+
+        df = xu.get_daily("F" + self.code, start=lastdate.strftime("%Y%m%d"))
+        df = df[df["date"].isin(opendate)]
+        df = df.reset_index(drop=True)
+        df = df[df["date"] <= yesterdayobj()]
+        df = df[df["date"] > lastdate]
+
+        if len(df) != 0:
+            self.price = self.price.append(df, ignore_index=True, sort=True)
+            return df
+
     def update(self):
         """
         function to incrementally update the pricetable after fetch the old one
         """
+        if self.code.startswith("96"):
+            return self._hk_update()
         lastdate = self.price.iloc[-1].date
         diffdays = (yesterdayobj() - lastdate).days
         if (
@@ -1062,6 +1085,49 @@ class fundinfo(basicinfo):
             return "行业基金： " + l[0][0]
         else:
             return "宽基基金"
+
+    def _hkfund_init(self):
+        import xalpha.universal as xu
+
+        # 互认基金国内休市日也有净值，暂时过滤，不确定是否会引起兼容性问题
+        self.meta = xu.get_rt("F" + self.code)
+        self.start = self.meta["startdate"]
+        self.name = self.meta["name"]
+        self.price = xu.get_daily("F" + self.code, start=self.start)
+        self.feeinfo = ["小于7天", "0.00%", "大于等于7天", "0.00%"]  # 似乎该类型基金都不收取赎回费
+        self.segment = fundinfo._piecewise(self.feeinfo)
+        r = rget("http://overseas.1234567.com.cn/f10/FundSaleInfo/968012#SaleInfo")
+        b = BeautifulSoup(r.text, "lxml")
+        self.rate = _float(
+            [
+                c.strip()
+                for c in b.select(".HK_Fund_Table.BigText")[5].text.split("\n")
+                if c.strip()
+            ][-1]
+            .split("|")[-1]
+            .strip()[:-1]
+        )
+        todaydash = today_obj().strftime("%Y-%m-%d")
+        pagesize = int(
+            (today_obj() - dt.datetime.strptime(self.start, "%Y-%m-%d")).days / 5
+        )  # 如果存在一周超过一次分红的基金，算我没说
+        self.hkfcode = xu.get_hkfcode(self.code)
+        r = rget_json(
+            "http://overseas.1234567.com.cn/overseasapi/OpenApiHander.ashx?\
+api=HKFDApi&m=MethodJZ&hkfcode={hkfcode}&action=3&pageindex=0&pagesize={pagesize}&date1={startdash}&date2={enddash}&callback=".format(
+                hkfcode=self.hkfcode,
+                pagesize=pagesize,
+                startdash=self.start,
+                enddash=todaydash,
+            )
+        )
+        df = self.price
+        df["comment"] = [0 for _ in range(len(df))]
+        df["netvalue"] = df["close"]
+        df = df[df["date"].isin(opendate)]
+        for d in r["Data"]:
+            df.loc[df["date"] == d["EXDDATE"], "comment"] = d["BONUS"]
+        self.price = df
 
 
 class indexinfo(basicinfo):
