@@ -211,7 +211,7 @@ def get_fund_list(ft):
     # hh, zq, zs, gp, qdii, fof
     r = rget(
         "http://fund.eastmoney.com/data/FundGuideapi.aspx?\
-dt=0&ft={ft}&sd=&ed=&sc=z&st=desc&pi=1&pn=5000&zf=diy&sh=list".format(
+dt=0&ft={ft}&sd=&ed=&sc=z&st=desc&pi=1&pn=10000&zf=diy&sh=list".format(
             ft=ft
         ),
         headers={
