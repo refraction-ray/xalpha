@@ -21,3 +21,4 @@ tests/AB.csv
 dist/
 xalpha.egg-info/
 .coverage
+.vscode/

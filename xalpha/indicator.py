@@ -523,27 +523,30 @@ class indicator:
             return line
 
 
-def plot_kline(df, rendered=True, col=""):
+def plot_kline(df, rendered=True, ucolor="#ef232a", dcolor="#14b143", col=""):
     """
     针对 dataframe 直接画出标准看盘软件的上k线图下成交量图的形式
 
     :param df:
     :param rendered:
+    :param ucolor: str for color when going up, default red in A stock as "#ef232a"
+    :param dcolor: str for color when going down, default green in A stock as "#14b143"
     :param col:
     :return:
     """
+    # TODO: color changing seems to make no effect, possible issue with pyecharts
     kline = (
         Kline()
         .add_xaxis(xaxis_data=list(df["date"]))
         .add_yaxis(
             series_name="",
             itemstyle_opts=opts.ItemStyleOpts(
-                color="#ef232a",
-                color0="#14b143",
-                border_color="#ef232a",
-                border_color0="#14b143",
+                color=ucolor,
+                color0=dcolor,
+                border_color=ucolor,
+                border_color0=dcolor,
             ),
-            y_axis=list(zip(df["open"], df["close"], df["high"], df["low"])),
+            y_axis=list(zip(df["open"], df["close"], df["low"], df["high"])),
             markpoint_opts=opts.MarkPointOpts(
                 data=[
                     opts.MarkPointItem(type_="max", name="最大值"),
@@ -610,17 +613,19 @@ def plot_kline(df, rendered=True, col=""):
             itemstyle_opts=opts.ItemStyleOpts(
                 color=JsCode(
                     """
-                function(params) {
+                function(params) {{
                     var colorList;
-                    if (barData[params.dataIndex]>0) {
-                        colorList = '#ef232a';
-                    } else {
-                        colorList = '#14b143';
-                    }
+                    if (barData[params.dataIndex]>0) {{
+                        colorList = '{ucolor}';
+                    }} else {{
+                        colorList = '{dcolor}';
+                    }}
                     return colorList;
-                }
-                """
-                )
+                }}
+                """.format(
+                        ucolor=ucolor, dcolor=dcolor
+                    )
+                )  # escape {} when using format
             ),
         )
         .set_global_opts(
