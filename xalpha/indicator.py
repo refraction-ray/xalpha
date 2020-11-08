@@ -523,7 +523,17 @@ class indicator:
             return line
 
 
-def plot_kline(df, rendered=True, ucolor="#ef232a", dcolor="#14b143", col=""):
+def plot_kline(
+    df,
+    rendered=True,
+    ucolor="#ef232a",
+    dcolor="#14b143",
+    ucolorborder=None,
+    dcolorborder=None,
+    ucolorvolume=None,
+    dcolorvolume=None,
+    col="",
+):
     """
     针对 dataframe 直接画出标准看盘软件的上k线图下成交量图的形式
 
@@ -535,6 +545,21 @@ def plot_kline(df, rendered=True, ucolor="#ef232a", dcolor="#14b143", col=""):
     :return:
     """
     # TODO: color changing seems to make no effect, possible issue with pyecharts
+    if ucolorborder is None:
+        ucolorborder = ucolor
+    if dcolorborder is None:
+        dcolorborder = dcolor
+    if ucolorvolume is None:
+        if ucolor != "#ffffff":
+            ucolorvolume = ucolor
+        else:
+            ucolorvolume = ucolorborder
+    if dcolorvolume is None:
+        if dcolor != "#ffffff":
+            dcolorvolume = dcolor
+        else:
+            dcolorvolume = dcolorborder
+
     kline = (
         Kline()
         .add_xaxis(xaxis_data=list(df["date"]))
@@ -543,8 +568,8 @@ def plot_kline(df, rendered=True, ucolor="#ef232a", dcolor="#14b143", col=""):
             itemstyle_opts=opts.ItemStyleOpts(
                 color=ucolor,
                 color0=dcolor,
-                border_color=ucolor,
-                border_color0=dcolor,
+                border_color=ucolorborder,  # ucolor,
+                border_color0=dcolorborder,  # dcolor,
             ),
             y_axis=list(zip(df["open"], df["close"], df["low"], df["high"])),
             markpoint_opts=opts.MarkPointOpts(
@@ -623,7 +648,7 @@ def plot_kline(df, rendered=True, ucolor="#ef232a", dcolor="#14b143", col=""):
                     return colorList;
                 }}
                 """.format(
-                        ucolor=ucolor, dcolor=dcolor
+                        ucolor=ucolorvolume, dcolor=dcolorvolume
                     )
                 )  # escape {} when using format
             ),

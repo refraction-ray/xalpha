@@ -58,7 +58,7 @@ def test_get_investing():
     )  ## never try -1, today's data is unpredictable
     df = xa.get_daily(code="/currencies/usd-cny", end="20200307", prev=20)
     assert round(df.iloc[-1]["close"], 4) == 6.9321
-    df.v_kline()
+    df.v_kline(ucolor="#ffffff", ucolorborder="#ef232a")
 
 
 @pytest.mark.local
