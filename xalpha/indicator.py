@@ -607,19 +607,20 @@ def plot_kline(
             ),
         )
     )
-    if col:
-        line = (
-            Line()
-            .add_xaxis(xaxis_data=list(df["date"]))
-            .add_yaxis(
-                series_name="",
-                y_axis=list(df[col]),
-                is_smooth=True,
-                linestyle_opts=opts.LineStyleOpts(opacity=0.5),
-                label_opts=opts.LabelOpts(is_show=False),
+    if col is not None:
+        for c in col:
+            line = (
+                Line()
+                .add_xaxis(xaxis_data=list(df["date"]))
+                .add_yaxis(
+                    series_name=c,
+                    y_axis=list(df[c]),
+                    is_smooth=True,
+                    linestyle_opts=opts.LineStyleOpts(opacity=0.5),
+                    label_opts=opts.LabelOpts(is_show=False),
+                )
             )
-        )
-        kline = kline.overlap(line)
+            kline = kline.overlap(line)
 
     if "volume" in df.columns:
         vl = list(df["volume"])

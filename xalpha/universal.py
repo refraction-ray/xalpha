@@ -2645,7 +2645,15 @@ class vinfo(basicinfo, indicator):
     """
 
     def __init__(
-        self, code, name=None, start=None, end=None, rate=0, col="close", **kws
+        self,
+        code,
+        name=None,
+        start=None,
+        end=None,
+        rate=0,
+        col="close",
+        normalization=True,
+        **kws
     ):
         if not name:
             try:
@@ -2659,7 +2667,10 @@ class vinfo(basicinfo, indicator):
         df = get_daily(code, start=start, end=end)
         df[col] = pd.to_numeric(df[col])  # in case the col is not float
         df["totvalue"] = df[col]
-        df["netvalue"] = df[col] / df.iloc[0][col]
+        if normalization:
+            df["netvalue"] = df[col] / df.iloc[0][col]
+        else:
+            df["netvalue"] = df[col]
         self.price = df
         self.round_label = kws.get("round_label", 0)
         self.dividend_label = kws.get("dividend_label", 0)
