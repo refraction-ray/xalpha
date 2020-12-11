@@ -780,6 +780,8 @@ class CBCalculator:
             self.zgj = zgj
         self.rating = b.select("td[id=rating_cd]")[0].string.strip()
         self.enddate = b.select("td[id=maturity_dt]")[0].string
+        self.zhanbi = b.select("td[id=convert_amt_ratio2]")[0].string.strip()
+        self.shares = float(b.select("td[id=curr_iss_amt]")[0].string.strip())
 
     def process_byday(self, date=None):
         if not date:
@@ -886,6 +888,8 @@ class CBCalculator:
             "years": self.days / 365,
             "issuedate": self.issuedate,
             "date": self.date_obj.strftime("%Y-%m-%d"),
+            "zhanbi": self.zhanbi,
+            "remaining": self.shares,
         }
         d["bond_value"] = cb_bond_value(self.issuedate, self.rlist, self.bondrate)
         d["ytm_wo_tax"] = cb_ytm(self.issuedate, self.rlist, self.cbp)
