@@ -751,6 +751,15 @@ class fundinfo(basicinfo):
                 return float(self.feeinfo[i].strip("%"))
         return 0  # error backup, in case there is sth wrong in segment
 
+    def set_feeinfo(self, feeinfo):
+        """
+        设置正确的赎回费率信息
+
+        :param feeinfo: List[string]
+        """
+        self.feeinfo = feeinfo
+        self.segment = self._piecewise(feeinfo)
+
     def shuhui(self, share, date, rem, value_label=None, fee=None):
         """
         give the cashout based on rem term considering redemption rates

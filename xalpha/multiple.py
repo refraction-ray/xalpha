@@ -67,6 +67,7 @@ class mul:
             property = {}
         self.is_in = False
         if fundtradeobj:
+            fundtradeobj = list(fundtradeobj)
             for t in fundtradeobj:
                 if isinstance(t, itrade):
                     self.is_in = True
