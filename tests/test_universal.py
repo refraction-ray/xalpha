@@ -227,7 +227,7 @@ def test_get_hzindex():
     assert len(xa.get_daily("HZ999002")) > 100
 
 
-@pytest.mark.skip(reason="esunny website down")
+# @pytest.mark.skip(reason="esunny website down")
 def test_get_es():
     df = xa.get_daily("ESCI000302", start="20190419", end="2019/04/22")
     assert round(df.iloc[-1]["settlement"], 2) == 1074.80
