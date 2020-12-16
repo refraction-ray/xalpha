@@ -60,7 +60,7 @@ opendate = list(caldate[caldate["is_open"] == 1]["cal_date"])
 opendate_set = set(opendate)  # for speed checking?
 
 # fund code list which always round down for the purchase share approximation
-droplist = ["003318", "000311"]
+droplist = ["003318", "000311", "000601"]
 
 region_trans = {
     "瑞士": "CH",
