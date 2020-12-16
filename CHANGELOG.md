@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### added
+
+- 修复了 `get_rt` 获取基金实时净值
+
 ## v0.11.1 - 2020.12.12
 
 ### added

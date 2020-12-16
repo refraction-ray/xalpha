@@ -1583,9 +1583,21 @@ def get_rt_from_ttjj(code):
             ),
             str(s.findAll("dt")[1]).split("(")[1].split(")")[0][7:],
         )
-        estimate = s.select("#gz_gsz")[0].text
+        estimate = s.select("span[id=gz_gsz]")[0].text  # after loading
         if estimate == "--":
-            estimate = None
+            gsz = rget(
+                "http://fundgz.1234567.com.cn/js/{code}.js".format(code=code),
+                headers={
+                    "Host": "fundgz.1234567.com.cn",
+                    "Referer": "http://fund.eastmoney.com/",
+                },
+            )
+            try:  # in case eval error
+                gsz_dict = eval(gsz.text[8:-2])
+                estimate = _float(gsz_dict["gsz"])
+                estimate_time = gsz_dict["gztime"]
+            except:
+                estimate = None
         else:
             try:
                 estimate = _float(estimate)
@@ -1601,7 +1613,10 @@ def get_rt_from_ttjj(code):
     status = s.select("span[class='staticCell']")[0].text.strip()
     tb = s.select("div.infoOfFund > table >tr>td")
     infol = [i.text for i in tb]
-
+    try:
+        estimate_time
+    except NameError:
+        estimate_time = None
     return {
         "name": name,
         "time": date,
@@ -1615,6 +1630,7 @@ def get_rt_from_ttjj(code):
         "manager": infol[2].split("：")[1],
         "company": infol[4].split("：")[1],
         "estimate": estimate,
+        "estimate_time": estimate_time,
     }
     # 是否有美元份额计价的基金会出问题？
 
