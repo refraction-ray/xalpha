@@ -23,6 +23,7 @@ feeinfo = [
     "0.00%",
 ]  # 老赎回信息
 cm.set_feeinfo(feeinfo)
+cm.set_price("comment", "20201125", -1.041)
 statb = xa.record(path).status
 statl = xa.record(path1, format="list").status
 statnb = xa.record(path2)

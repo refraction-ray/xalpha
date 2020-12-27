@@ -396,7 +396,7 @@ class basicinfo(indicator):
         :param value_label: default None, value_label will be chosen by info.value_label, determining
                 whether shuhui by share 0 or value 1. value_label = 0 will rewrite self.value_label = 1
         :param fee: default None, determined automatically, suggested for most of the cases.
-                Otherwise 0.015 means 1.5% in shuhui
+                Otherwise 0.015 means 1.5% in shuhui, this is different than fee in shengou, where 1.5 is for 1.5% fee
         :returns: three elements tuple, the first is dateobj
             the second is a positive float for cashout,
             the third is a negative float for share decrease
@@ -759,6 +759,19 @@ class fundinfo(basicinfo):
         """
         self.feeinfo = feeinfo
         self.segment = self._piecewise(feeinfo)
+
+    def set_price(self, col, date, value):
+        """
+        设置修正 price 表中单日的 comment 或价格信息
+
+        :param col: str. "comment", "netvalue" or "totvalue"
+        :param date: “%Y%m%d”
+        :param value:
+        """
+        self.price.loc[self.price["date"] == date, col] = value
+        ## update special in case new comment is added
+        self.special = self.price[self.price["comment"] != 0]
+        self.specialdate = list(self.special["date"])
 
     def shuhui(self, share, date, rem, value_label=None, fee=None):
         """

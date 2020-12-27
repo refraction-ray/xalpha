@@ -433,12 +433,12 @@ def _float(n):
             logger.info("_float met -, taken as 0")
             return 0
         elif n.endswith("%"):
-            logger.warning("_float met with % as %s" % n)
+            logger.info("_float met with % as %s" % n)
             return float(n[:-1] / 100)
     except AttributeError:
         pass
     if not n:
-        logger.warning("_float met with None as input arguments")
+        logger.info("_float met with None as input arguments")
         return 0.0
     return float(n)
 
