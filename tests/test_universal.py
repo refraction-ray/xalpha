@@ -46,7 +46,7 @@ def test_get_fund():
 
 
 def test_get_fund_pt():
-    df = xa.get_daily("pt-F100032")
+    df = xa.get_daily("pt-F100032", start="20191201")
     assert round(df[df["date"] < "2020-01-01"].iloc[-1]["bond_ratio"], 2) == 0.08
 
 
