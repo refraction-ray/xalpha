@@ -383,8 +383,7 @@ def convert_date(date):
 def _date_check(dtobj, check=False):
     if not isinstance(dtobj, dt.datetime):
         dtobj = dt.datetime.strptime(dtobj.replace("/", "").replace("-", ""), "%Y%m%d")
-    if check and (dtobj.year > 2020 or dtobj.year < 1991):
-        # TODO: remember change 2020 every year!
+    if check and (dtobj.year > dt.datetime.now().year or dtobj.year < 1991):
         raise ValueError(
             "date goes beyond market range: %s" % dtobj.strftime("%Y-%m-%d")
         )
