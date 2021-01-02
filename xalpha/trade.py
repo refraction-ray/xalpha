@@ -376,11 +376,13 @@ class trade:
                     feelabel = feelabel - 0.5
                     if abs(feelabel) < 1e-4:
                         feelabel = 0
+                    else:
+                        feelabel *= 100
                 else:
                     feelabel = None
                 value = int(value * 100) / 100
                 assert feelabel is None or feelabel >= 0.0, "自定义申购费必须为正值"
-                rdate, cash, share = self.aim.shengou(value, date, fee=feelabel * 100)
+                rdate, cash, share = self.aim.shengou(value, date, fee=feelabel)
                 rem = rm.buy([], share, rdate)
             else:
                 raise TradeBehaviorError("You cannot sell first when you never buy")
