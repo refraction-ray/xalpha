@@ -432,8 +432,8 @@ def _float(n):
             logger.info("_float met -, taken as 0")
             return 0
         elif n.endswith("%"):
-            logger.info("_float met with % as %s" % n)
-            return float(n[:-1] / 100)
+            logger.info("_float met with %% as %s" % n)
+            return float(n[:-1]) / 100
     except AttributeError:
         pass
     if not n:

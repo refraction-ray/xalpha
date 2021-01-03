@@ -80,7 +80,7 @@ class mul:
         fundcodelist = [f.code for f in fundtradeobj]
         if status is not None:
             for code in status.columns:
-                if code == "date":
+                if code == "date" or code.startswith("#"):
                     continue
                 # r1, d2, v4 p = r+d+v
                 if code in fundcodelist:
