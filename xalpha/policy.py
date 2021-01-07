@@ -133,8 +133,8 @@ class scheduled_window(scheduled):
         :param window: window width.
         :param window_dist: the distance between current date and window's end date.
         :param piece: list of tuples, eg.[(-3,2),(3,0.5)]. In this example, it meanswhen the fund netvalue
-            drop 3%, we choose to buy 2*totmoney, if the netvalue rise large then 3%,
-            then we only buy 0.5*totmoney.
+            drop 3%, we choose to buy 2*totmoney, if the netvalue rise smaller then 3%,
+            then we only buy 0.5*totmoney, if the the netvalue rise larger then 3%, then no purchase happen at all.
         :param method: MAX, MIN, AVG, default value is AVG.
         """
         self.window = window
