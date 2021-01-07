@@ -151,8 +151,10 @@ class scheduled_window(scheduled):
         if date in self.times[0:self.window+self.window_dist-1]:
             return 0
         if date in self.times:
-            value = self.price[self.price["date"] >= date].iloc[0].netvalue
             price_range = self.price[self.price["date"] < date]
+            if len(price_range) < self.window+self.window_dist-1:
+                return 0
+            value = self.price[self.price["date"] >= date].iloc[0].netvalue
             window_values = [price_range.iloc[-1*i].netvalue
                              for i in range(self.window_dist, self.window+self.window_dist)]
             if self.method == 'MAX':
