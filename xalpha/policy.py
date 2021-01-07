@@ -128,7 +128,9 @@ class scheduled_window(scheduled):
     通常用于跌了多投，跌越多投越多；涨了少投，涨越多投越少。
     """
 
-    def __init__(self, infoobj, totmoney, times, piece, window=7, window_dist=1, method='AVG'):
+    def __init__(
+        self, infoobj, totmoney, times, piece, window=7, window_dist=1, method="AVG"
+    ):
         """
         :param window: window width, means the total trading days in the window.
         :param window_dist: the total trading days after window's end date and up to current date.
@@ -148,25 +150,27 @@ class scheduled_window(scheduled):
         self.window_dist = window_dist
         self.piece = piece
         self.method = method
-        assert self.method in ['MAX', 'MIN', 'AVG']
+        assert self.method in ["MAX", "MIN", "AVG"]
         assert self.window >= 1
-        assert self.window_dist >=1
+        assert self.window_dist >= 1
         super().__init__(infoobj, totmoney, times)
 
     def status_gen(self, date):
         # skip the date in the first window
-        if date in self.times[0:self.window+self.window_dist-1]:
+        if date in self.times[0 : self.window + self.window_dist - 1]:
             return 0
         if date in self.times:
             price_range = self.price[self.price["date"] < date]
-            if len(price_range) < self.window+self.window_dist-1:
+            if len(price_range) < self.window + self.window_dist - 1:
                 return 0
             value = self.price[self.price["date"] >= date].iloc[0].netvalue
-            window_values = [price_range.iloc[-1*i].netvalue
-                             for i in range(self.window_dist, self.window+self.window_dist)]
-            if self.method == 'MAX':
+            window_values = [
+                price_range.iloc[-1 * i].netvalue
+                for i in range(self.window_dist, self.window + self.window_dist)
+            ]
+            if self.method == "MAX":
                 base_value = max(window_values)
-            elif self.method == 'MIN':
+            elif self.method == "MIN":
                 base_value = min(window_values)
             else:
                 base_value = sum(window_values) / len(window_values)
