@@ -51,7 +51,7 @@ class policy(record):
         give policy decision based on given date
 
         :param date: date object
-        :returns: float, positive for buying money, negative for \
+        :returns: float, positive for buying money, negative for selling shares
         """
         raise NotImplementedError
 
