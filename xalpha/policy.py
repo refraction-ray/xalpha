@@ -130,12 +130,19 @@ class scheduled_window(scheduled):
 
     def __init__(self, infoobj, totmoney, times, piece, window=7, window_dist=1, method='AVG'):
         """
-        :param window: window width.
-        :param window_dist: the distance between current date and window's end date.
-        :param piece: list of tuples, eg.[(-3,2),(3,0.5)]. In this example, it means when the fund netvalue
-            drop 3%, we will buy 2*totmoney, if the netvalue rise smaller then 3%, then we only buy 0.5*totmoney,
-            if the the netvalue rise larger then 3%, then no purchase happen at all.
-        :param method: MAX, MIN, AVG, default value is AVG.
+        :param window: window width, means the total trading days in the window.
+        :param window_dist: the total trading days after window's end date and up to current date.
+            Sometimes we only use the data some days before, so we need window_dist to control the
+            distance between window and current date. eg. the window is [2021-01-04, 2021-01-05, 2021-01-06],
+            current date is 2021-01-07. In this example, the window width is 3, because there are three
+            trading days in this window, the window dist for current date is 1, because there is only
+            one trading date after 2021-01-06 and up to 2021-01-07.
+        :param piece: list of tuples, eg.[(-3,2),(0,1),(3,0.5)]. In this example, it means if the
+            fund netvalue rise in the range of (-100%, -3%], we will buy 2*totmoney,
+            if the fund netvalue rise in the range of (-3%, 0%], we will buy 1*totmoney,
+            if the fund netvalue rise in the range of (0%, 3%], we will buy 0.5*totmoney,
+            if the fund netvalue rise in the range of (3%, +infinity), then no purchase happen at all.
+        :param method: MAX, MIN, AVG, default value is AVG. It means how we process the data in the window.
         """
         self.window = window
         self.window_dist = window_dist
