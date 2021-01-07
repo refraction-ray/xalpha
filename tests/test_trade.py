@@ -147,6 +147,12 @@ def test_policy_scheduled():
         pd.date_range("2015-07-01", "2018-07-01", freq="M"),
         [(0.9, 2), (1.2, 1)],
     )
+    auto3 = xa.policy.scheduled_window(
+        cm,
+        1000,
+        pd.date_range("2015-07-01", "2018-07-01", freq="M"),
+        [(-1, 2), (1.5, 1)],
+    )
 
 
 def test_policy_grid():
