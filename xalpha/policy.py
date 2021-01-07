@@ -51,7 +51,7 @@ class policy(record):
         give policy decision based on given date
 
         :param date: date object
-        :returns: float, positive for buying money, negative for selling shares
+        :returns: float, positive for buying money, negative for \
         """
         raise NotImplementedError
 
@@ -120,6 +120,52 @@ class scheduled_tune(scheduled):
             return 0
         else:
             return 0
+
+
+class scheduled_window(scheduled):
+    """
+    在定投点前面设置一个滑动窗口，根据滑动窗口中的净值与当前净值进行比较，满足一定条件则进行定投。
+    通常用于跌了多投，跌越多投越多；涨了少投，涨越多投越少。
+    """
+
+    def __init__(self, infoobj, totmoney, times, piece, window=7, window_dist=1, method='AVG'):
+        """
+        :param window: window width.
+        :param window_dist: the distance between current date and window's end date.
+        :param piece: list of tuples, eg.[(-3,2),(3,0.5)]. In this example, it meanswhen the fund netvalue
+            drop 3%, we choose to buy 2*totmoney, if the netvalue rise large then 3%,
+            then we only buy 0.5*totmoney.
+        :param method: MAX, MIN, AVG, default value is AVG.
+        """
+        self.window = window
+        self.window_dist = window_dist
+        self.piece = piece
+        self.method = method
+        assert self.method in ['MAX', 'MIN', 'AVG']
+        assert self.window >= 1
+        assert self.window_dist >=1
+        super().__init__(infoobj, totmoney, times)
+
+    def status_gen(self, date):
+        # skip the date in the first window
+        if date in self.times[0:self.window+self.window_dist-1]:
+            return 0
+        if date in self.times:
+            value = self.price[self.price["date"] >= date].iloc[0].netvalue
+            price_range = self.price[self.price["date"] < date]
+            window_values = [price_range.iloc[-1*i].netvalue
+                             for i in range(self.window_dist, self.window+self.window_dist)]
+            if self.method == 'MAX':
+                base_value = max(window_values)
+            elif self.method == 'MIN':
+                base_value = min(window_values)
+            else:
+                base_value = sum(window_values) / len(window_values)
+            for term in self.piece:
+                if (value - base_value) / base_value * 100 <= term[0]:
+                    return term[1] * self.totmoney
+            return 0
+        return 0
 
 
 class grid(policy):
