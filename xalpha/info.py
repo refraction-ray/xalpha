@@ -347,7 +347,7 @@ class basicinfo(indicator):
                 if (df is not None) and save is True:
                     self.save(path, self.format, option="a", delta=df)
 
-            except (FileNotFoundError, exc.ProgrammingError) as e:
+            except (FileNotFoundError, exc.ProgrammingError, exc.OperationalError) as e:
                 logger.info("no saved copy of %s" % self.code)
                 fetch = False
                 self._basic_init()
