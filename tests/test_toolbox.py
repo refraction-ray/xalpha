@@ -69,3 +69,7 @@ def test_cbcaculator():
     c = xa.CBCalculator("SH113577")
     d = c.analyse()
     assert d["name"] == "春秋转债"
+    # obtain correct redeem_price from superscipt
+    c = xa.CBCalculator("SH113604")
+    d = c.analyse()
+    assert d["name"] == "多伦转债"
