@@ -771,15 +771,13 @@ class CBCalculator:
         td_redeem_price = b.select("td[id=redeem_price]")[0];
         if td_redeem_price.sup:
             redeem_price = float(re.match(r"\S+，合计到期赎回价(\d\d\d\.\d\d)元",td_redeem_price.sup['title']).group(1))
-            logger.warning("{}: redeem_price {} obtained from superscript".format(code, redeem_price))
+            logger.info("{}: redeem_price {} obtained from superscript".format(code, redeem_price))
         else:
             redeem_price = float(td_redeem_price.string)
         self.rlist.append(redeem_price)
         self.rlist[-1] -= self.rlist[-2]  # 最后一年不含息返多少
-        td_scode = b.select("td[class=jisilu_nav]")[0].contents[1]
-        if td_scode.sup: td_scode = td_scode.contents[2]
         self.scode = (
-            td_scode.string.split("-")[1].strip()
+            b.select("td[class=jisilu_nav]")[0].contents[1].text.split("-")[1].strip()
         )
         self.scode = ttjjcode(self.scode)  # 标准化股票代码
         if not zgj:
