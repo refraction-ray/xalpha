@@ -768,10 +768,18 @@ class CBCalculator:
             float(re.search(r"[\D]*([\d]*.[\d]*)[\s]*\%", s).group(1))
             for s in re.split("、|，", b.select("td[id=cpn_desc]")[0].string)
         ]
-        td_redeem_price = b.select("td[id=redeem_price]")[0];
+        td_redeem_price = b.select("td[id=redeem_price]")[0]
         if td_redeem_price.sup:
-            redeem_price = float(re.match(r"\S+，合计到期赎回价(\d\d\d\.\d\d)元",td_redeem_price.sup['title']).group(1))
-            logger.info("{}: redeem_price {} obtained from superscript".format(code, redeem_price))
+            redeem_price = float(
+                re.match(
+                    r"\S+，合计到期赎回价(\d\d\d\.\d\d)元", td_redeem_price.sup["title"]
+                ).group(1)
+            )
+            logger.info(
+                "{}: redeem_price {} obtained from superscript".format(
+                    code, redeem_price
+                )
+            )
         else:
             redeem_price = float(td_redeem_price.string)
         self.rlist.append(redeem_price)
