@@ -754,7 +754,7 @@ class itrade(trade):
             ):
                 self.type_ = "场内基金"
             elif code.startswith("SH11") or code.startswith("SZ12"):
-                if self.name.endswith("转债"):
+                if self.name.endswith("转债") or self.name.endswith("转2"):
                     self.type_ = "可转债"
                 else:
                     self.type_ = "债券"

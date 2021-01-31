@@ -869,7 +869,7 @@ def get_bond_rates(rating, date=None):
     """
     rating = rating.strip()
     rating_uid = {
-        "N": "2c9081e50a2f9606010a3068cae70001",
+        "N": "2c9081e50a2f9606010a3068cae70001",  # 国债
         "AAA": "2c9081e50a2f9606010a309f4af50111",
         "AAA-": "8a8b2ca045e879bf014607ebef677f8e",
         "AA+": "2c908188138b62cd01139a2ee6b51e25",
@@ -878,6 +878,11 @@ def get_bond_rates(rating, date=None):
         "A+": "2c9081e91b55cc84011be40946ca0925",
         "A": "2c9081e91e6a3313011e6d438a58000d",
         "A-": "8a8b2ca04142df6a014148ca880f3046",
+        "A": "2c9081e91e6a3313011e6d438a58000d",
+        "BBB+": "2c9081e91ea160e5011eab1f116c1a59",
+        "BBB": "8a8b2ca0455847ac0145650780ad68fb",
+        "BB": "8a8b2ca0455847ac0145650ba23b68ff",
+        "B": "8a8b2ca0455847ac0145650c3d726901",
     }
     # 上边字典不全，非常欢迎贡献 ：）
     def _fetch(date):

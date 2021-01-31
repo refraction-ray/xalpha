@@ -829,7 +829,7 @@ class CBCalculator:
         ) * np.sqrt(244)
         if not self.refvolatility:
             self.volatility = 0.17
-            if self.rating in ["A-", "A", "A+"]:
+            if self.rating in ["A-", "A", "A+"] or self.rating.startswith("B"):
                 self.volatility = 0.25
             elif self.rating in ["AA-"]:
                 self.volatility = 0.2
@@ -855,9 +855,9 @@ class CBCalculator:
         ).days
         if not self.refbondrate:
             ratestable = get_bond_rates(self.rating, self.date_obj.strftime("%Y-%m-%d"))
-            if self.rating in ["A", "A+", "AA-"]:
+            if self.rating in ["A", "A+", "AA-"] or self.rating.startswith("B"):
                 ## AA 到 AA- 似乎是利率跳高的一个坎
-                cutoff = 2
+                cutoff = 3  # changed from 2 by considering more credit risk
             else:
                 cutoff = 4
             if self.days / 365 > cutoff:
