@@ -32,6 +32,14 @@ class TradeBehaviorError(XalphaException):
     pass
 
 
+class HttpStatusError(XalphaException):
+    """
+    Used when the return request has http code beyond 200
+    """
+
+    pass
+
+
 class ParserFailure(XalphaException):
     """
     Used for exception when parsing fund APIs

@@ -24,6 +24,7 @@ from pyecharts.options import (
 from scipy import optimize
 
 from xalpha import __path__
+from .exceptions import HttpStatusError
 
 logger = logging.getLogger(__name__)
 
@@ -441,6 +442,7 @@ holidays = {
 }
 
 connection_errors = (
+    HttpStatusError,
     ConnectionResetError,
     requests.exceptions.RequestException,
     requests.exceptions.ConnectionError,
@@ -635,6 +637,10 @@ def reconnect(tries=5, timeout=12):
                         % (url, inspect.stack()[1].function)
                     )
                     r = f(*args, **kws)
+                    if (
+                        getattr(r, "status_code", 200) != 200
+                    ):  # in case r is a json dict
+                        raise HttpStatusError
                     return r
                 except connection_errors as e:
                     logger.warning("Fails at fetching url: %s. Try again." % url)
