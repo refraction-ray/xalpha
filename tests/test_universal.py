@@ -270,3 +270,9 @@ def test_get_ttjj_rt_oversea():
 def test_ttjj_oversea_daily():
     df = xa.get_daily("F968054", start="2019-05-01", end="20190606")
     assert df.iloc[-1]["close"] == 10.18
+
+
+def test_get_futu():
+    df = xa.get_daily("fu-03690.HK", start="2021-01-01")
+    assert df.iloc[0]["open"] == 293.4
+    df = xa.get_daily("fu-BNO.US", start="2021-01-01")

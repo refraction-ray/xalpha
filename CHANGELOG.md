@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### added
+
+- get_daily 增加富途数据源，包括了港股和美股的日线数据
+
 ### fixed
 
 - 实现 rget 状态码非 200 的自动重连
