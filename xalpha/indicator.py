@@ -8,7 +8,7 @@ from pyecharts import options as opts
 from pyecharts.charts import Kline, Line, Bar, Grid
 from pyecharts.commons.utils import JsCode
 
-from xalpha.cons import line_opts, opendate, yesterdayobj
+from xalpha.cons import line_opts, opendate, yesterdayobj, sqrt_days_in_year
 
 
 def _upcount(ls):
@@ -187,7 +187,7 @@ class indicator:
     @staticmethod
     def volatility(price, date=yesterdayobj()):
         df = pd.DataFrame(data={"rate": indicator.ratedaily(price, date)})
-        return df.std().rate * 15.8144
+        return df.std().rate * sqrt_days_in_year
 
     def algorithm_volatility(self, date=yesterdayobj()):
         return indicator.volatility(self.price, date)
@@ -207,7 +207,7 @@ class indicator:
         diff = [vp[i] - vm[i] for i in range(len(vm))]
         df = pd.DataFrame(data={"rate": diff})
         var = df.std().rate
-        var = var * 15.8144
+        var = var * sqrt_days_in_year
         return (rp - rm) / var
 
     def max_drawdown(self, date=yesterdayobj()):
