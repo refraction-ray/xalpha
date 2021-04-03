@@ -39,4 +39,4 @@ def test_balance():
     bt.backtest()
     sys = bt.get_current_mul()
     sys.summary("2020-08-15")
-    assert round(sys.xirrrate("2020-08-14"), 2) == 0.17
+    assert round(sys.xirrrate("2020-08-14"), 2) == 0.18

@@ -8,7 +8,7 @@ import pandas as pd
 from xalpha.info import fundinfo, mfundinfo
 from xalpha.trade import trade
 from xalpha.multiple import mul, mulfix
-from xalpha.cons import yesterdayobj
+from xalpha.cons import yesterdayobj, avail_dates
 from xalpha.exceptions import TradeBehaviorError, FundTypeError
 from xalpha.cons import opendate_set, next_onday, convert_date
 from xalpha.universal import vinfo
@@ -69,9 +69,8 @@ class BTE:
         self.prepare()
         dates = pd.bdate_range(self.start, self.end)
         for d in dates:  # 考虑到暂时只支持基金，只在国内交易日运行
-            if d not in opendate_set:
-                d = next_onday(d)
-            self.run(d)
+            if d.strftime("%Y-%m-%d") in opendate_set:
+                self.run(d)
 
     def get_current_mul(self):
         """
@@ -328,7 +327,9 @@ class Tendency28(BTE):
         self.aim2 = self.kws.get("aim2", "SH000905")
         self.aim0 = self.kws.get("aim0", "M000198")
         self.freq = self.kws.get("freq", "W-THU")
-        self.check_dates = pd.date_range(self.start, self.end, freq=self.freq)
+        self.check_dates = avail_dates(
+            pd.date_range(self.start, self.end, freq=self.freq)
+        )
         self.upthrehold = self.kws.get("upthrehold", 1.0)
         self.diffthrehold = self.kws.get("diffthrehold", self.upthrehold)
         self.prev = self.kws.get("prev", 10)
@@ -394,7 +395,7 @@ class Balance(BTE):
     """
 
     def prepare(self):
-        self.check_dates = self.kws.get("check_dates")
+        self.check_dates = avail_dates(self.kws.get("check_dates"))
         for i, s in enumerate(self.check_dates):
             if isinstance(s, str):
                 self.check_dates[i] = pd.Timestamp(s)

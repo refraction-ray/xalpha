@@ -572,9 +572,30 @@ def next_onday(dtobj):
 def last_onday(dtobj):
     dtobj = _date_check(dtobj, check=True)
     dtobj -= dt.timedelta(1)
-    while dtobj.strftime("%Y-%m-%d") not in opendate:
+    while dtobj.strftime("%Y-%m-%d") not in opendate_set:
         dtobj -= dt.timedelta(1)
     return dtobj
+
+
+def avail_dates(dtlist, future=False):
+    """
+    make every day in the list the next open day
+
+    :param dtlist: datetime obj list
+    :param future: bool, default False, indicating the latest day in the list is yesterday
+    :return: datetime obj list
+    """
+    ndtlist = []
+    for d in dtlist:
+        if d.strftime("%Y-%m-%d") not in opendate_set:
+            nd = next_onday(d)
+        else:
+            nd = d
+        if future is False:
+            if (nd - yesterdayobj()).days > 0:
+                continue
+        ndtlist.append(nd)
+    return ndtlist
 
 
 def scale_dict(d, scale=1, ulimit=100, dlimit=50, aim=None):
