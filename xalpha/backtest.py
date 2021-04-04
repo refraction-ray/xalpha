@@ -418,7 +418,12 @@ class Balance(BTE):
             for fund, ratio in self.portfolio_dict.items():
                 delta = df[df["基金代码"] == fund[1:]]["基金现值"].iloc[0] - total_value * ratio
                 if delta > 0:
-                    share = round(delta / df[df["基金代码"] == fund[1:]]["当日净值"].iloc[0], 2)
-                    self.sell(fund, share, date)  # 赎回份额属于未考虑赎回费的估算，会导致末态并非完全平衡
+                    share = round(
+                        delta
+                        / (1 - 0.005)
+                        / df[df["基金代码"] == fund[1:]]["当日净值"].iloc[0],
+                        2,
+                    )
+                    self.sell(fund, share, date)  # 赎回份额考虑赎回费估算为千五，会导致末态并非完全平衡
                 elif delta < 0:
                     self.buy(fund, -delta, date)
