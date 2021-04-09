@@ -2369,7 +2369,7 @@ def get_peb(index, date=None, table=False):
     ).replace(day=1)
     iwdf = get_index_weight_range(
         index,
-        start=(middle - dt.timedelta(days=6)).strftime("%Y-%m-%d"),
+        start=(middle - dt.timedelta(days=10)).strftime("%Y-%m-%d"),
         end=(middle + dt.timedelta(days=6)).strftime("%Y-%m-%d"),
     )
     q = query(valuation).filter(valuation.code.in_(list(iwdf.code)))
@@ -2383,7 +2383,10 @@ def get_peb(index, date=None, table=False):
     totb = df.b.sum()
     if table:
         return df
-    return {"pe": (round(100.0 / tote, 3) if tote != 0 else np.inf), "pb": (round(100.0 / totb, 3) if totb != 0 else np.inf)}
+    return {
+        "pe": (round(100.0 / tote, 3) if tote != 0 else np.inf),
+        "pb": (round(100.0 / totb, 3) if totb != 0 else np.inf),
+    }
 
 
 @data_source("jq")
