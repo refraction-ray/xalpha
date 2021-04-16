@@ -1053,7 +1053,7 @@ def get_alt(code):
     """
     if code in alt_info:
         return alt_info[code]
-    elif len(code[1:].split("/")) == 2:
+    elif len(code[1:].split("/")) == 2 and len(code.split("/")[-1]) > 6:
         return "INA-" + code  # 英为 app 源替代网页源
     elif code.startswith("SP") and code[2:].isdigit():
         return "SPC" + code[2:]  # 中国区标普源替代美国源

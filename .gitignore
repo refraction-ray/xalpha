@@ -1,5 +1,6 @@
 htmlcov/
 holdings.py
+investinghooks.py
 tests/SH000807.csv
 *auth.txt
 pytest*.csv

@@ -14,6 +14,8 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
 
+from xalpha import investinghooks
+
 
 @xa.universal.lru_cache_time(ttl=180)
 def cached_get_rt(code, **kws):
@@ -28,8 +30,8 @@ def cached_get_bar(code, *args, **kws):
     return None
 
 
-xa.set_handler(method="rt", f=cached_get_rt)
-xa.set_handler(method="bar", f=cached_get_bar)
+# xa.set_handler(method="rt", f=cached_get_rt)
+# xa.set_handler(method="bar", f=cached_get_bar)
 
 
 qdiis = [
@@ -47,11 +49,11 @@ qdiis = [
     "SZ164701",
     "SZ160719",
     "SZ164824",
-    "SH513030",
-    "SZ160140",
-    "SZ165510",
-    "SZ164906",
-    "SH513050",
+    #    "SH513030",
+    #    "SZ160140",
+    #    "SZ165510",
+    #    "SZ164906",
+    #    "SH513050",
 ]
 nonqdiis = [
     "SH501021",
