@@ -1034,7 +1034,7 @@ def get_market(code):
             return "CM"  # china money 中间价市场标记
         elif code.startswith("HK") and code[2:].isdigit():
             return "HK"
-        market = get_rt(code)["market"]
+        market = get_rt(code).get("market", None)
         if market is None:
             market = get_currency(code)
             market = trans.get(market, market)
