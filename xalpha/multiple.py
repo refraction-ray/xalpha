@@ -139,7 +139,7 @@ class mul:
         """
         res = 0
         for fund in self.fundtradeobj:
-            res += fund.dailyreport().iloc[0][prop]
+            res += fund.dailyreport(date).iloc[0][prop]
         return res
 
     def combsummary(self, date=yesterdayobj()):
