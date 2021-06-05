@@ -8,7 +8,7 @@ xa.set_backend(backend="memory", prefix="pytest-")
 
 
 def test_compare():
-    c = xa.Compare(("37450", "USD"), "SH501018", start="20200101")
+    c = xa.Compare(("FT-JBGOUA:SWX:USD", "USD"), "SH501018", start="20200101")
     c.corr()
     c.v()
 
@@ -54,7 +54,8 @@ def test_qdii_predict():
     hb.analyse()
 
 
-@pytest.mark.local
+# @pytest.mark.local
+@pytest.mark.skip(reason="cninvesting server check")
 def test_qdii_predict_local():
     xc = xa.QDIIPredict("SZ165513", positions=True)
     xc.get_t0_rate()

@@ -50,6 +50,7 @@ def test_get_fund_pt():
     assert round(df[df["date"] < "2020-01-01"].iloc[-1]["bond_ratio"], 2) == 0.08
 
 
+@pytest.mark.skip(reason="cninvesting explorer check")
 def test_get_investing():
     df1 = xa.get_daily(code="indices/germany-30")
     df2 = xa.get_daily(code="172")
@@ -61,7 +62,8 @@ def test_get_investing():
     df.v_kline(ucolor="#ffffff", ucolorborder="#ef232a")
 
 
-@pytest.mark.local
+# @pytest.mark.local
+@pytest.mark.skip(reason="cninvesting explorer check")
 def test_get_investng_app():
     df = xa.get_daily(
         code="INA-currencies/usd-cny", end="20200307", prev=30
@@ -105,7 +107,8 @@ def test_get_sp_daily():
     assert round(df.iloc[-1]["close"], 3) == 1349.31
 
 
-@pytest.mark.local
+# @pytest.mark.local
+@pytest.mark.skip(reason="blommberg network connection issue")
 def test_get_bb_daily(proxy):
     df = xa.get_daily("BB-FGERBIU:ID", prev=10)
 
@@ -174,7 +177,7 @@ def test_cache_mm():
 def test_get_bar_xq():
     xa.get_bar("HK00700", interval=60)
     xa.get_bar("SH600000", interval=3600)
-    xa.get_bar("commodities/brent-oil", interval=300, prev=20)
+    # xa.get_bar("commodities/brent-oil", interval=300, prev=20)
 
 
 def test_set_handler():
