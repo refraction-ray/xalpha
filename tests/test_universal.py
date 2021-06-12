@@ -84,6 +84,7 @@ def test_get_sina_rt():
     xa.get_rt("SH600000", double_check=True)
 
 
+@pytest.mark.skip(reason="cninvesting explorer check")
 def test_get_investing_rt():
     assert xa.get_rt("currencies/usd-cny")["currency"] == None
     assert xa.get_rt("/indices/germany-30")["name"] == "德国DAX30指数 (GDAXI)"

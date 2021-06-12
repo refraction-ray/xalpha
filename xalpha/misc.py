@@ -30,6 +30,9 @@ from xalpha.exceptions import ParserFailure
 
 @lru_cache_time(ttl=600, maxsize=64)
 def get_ri_status(suburl=None):
+    """
+    broken due to the website redesign
+    """
     if not suburl:
         suburl = "m=cb&a=cb_all"  # 可转债
 
@@ -52,7 +55,7 @@ def get_ri_status(suburl=None):
     return pd.DataFrame(rl, columns=cl)
 
 
-@lru_cache_time(ttl=60)
+@lru_cache_time(ttl=120)
 def get_jsl_cb_status():
     url = "https://www.jisilu.cn/data/cbnew/cb_list/?___jsl=LST___t=%s" % (
         int(dt.datetime.now().timestamp() * 100)
