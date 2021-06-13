@@ -218,6 +218,7 @@ def test_get_ttjj():
     assert xa.get_rt("F511600")["type"] == "货币型"
 
 
+@pytest.mark.local
 def test_get_zzindex():
     assert len(xa.get_daily("ZZH30533")) > 100
 
