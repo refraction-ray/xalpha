@@ -1626,27 +1626,32 @@ def get_rt_from_ttjj(code):
             ),
             str(s.findAll("dt")[1]).split("(")[1].split(")")[0][7:],
         )
-        estimate = s.select("span[id=gz_gsz]")[0].text  # after loading
-        if estimate == "--":
-            gsz = rget(
-                "http://fundgz.1234567.com.cn/js/{code}.js".format(code=code),
-                headers={
-                    "Host": "fundgz.1234567.com.cn",
-                    "Referer": "http://fund.eastmoney.com/",
-                },
-            )
-            try:  # in case eval error
-                gsz_dict = eval(gsz.text[8:-2])
-                estimate = _float(gsz_dict["gsz"])
-                estimate_time = gsz_dict["gztime"]
-            except:
-                estimate = None
+        estimate = s.select("span[id=gz_gsz]")
+        if not estimate:
+            estimate = None
+            estimate_time = None
         else:
-            try:
-                estimate = _float(estimate)
-            except ValueError:
-                logger.warning("unrecognized estimate netvalue %s" % estimate)
-                estimate = None
+            estimate = estimate[0].text  # after loading
+            if estimate == "--":
+                gsz = rget(
+                    "http://fundgz.1234567.com.cn/js/{code}.js".format(code=code),
+                    headers={
+                        "Host": "fundgz.1234567.com.cn",
+                        "Referer": "http://fund.eastmoney.com/",
+                    },
+                )
+                try:  # in case eval error
+                    gsz_dict = eval(gsz.text[8:-2])
+                    estimate = _float(gsz_dict["gsz"])
+                    estimate_time = gsz_dict["gztime"]
+                except:
+                    estimate = None
+            else:
+                try:
+                    estimate = _float(estimate)
+                except ValueError:
+                    logger.warning("unrecognized estimate netvalue %s" % estimate)
+                    estimate = None
     else:
         value, date = (
             s.findAll("dd", class_="dataNums")[1].text,
