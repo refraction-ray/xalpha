@@ -765,7 +765,7 @@ class CBCalculator:
         r.encoding = "utf-8"
         b = BeautifulSoup(r.text, "lxml")
         self.rlist = [
-            float(re.search(r"[\D]*([\d]*.[\d]*)[\s]*\%", s).group(1))
+            float(re.search(r"[\D]*([\d]*.[\d]*)[\s]*[\%]*", s).group(1))
             for s in re.split("、|，", b.select("td[id=cpn_desc]")[0].string)
         ]
         td_redeem_price = b.select("td[id=redeem_price]")[0]
