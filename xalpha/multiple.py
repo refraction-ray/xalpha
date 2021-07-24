@@ -119,13 +119,13 @@ class mul:
                             status,
                         )
                     )
-            if istatus is not None:
-                self.is_in = True
-                if isinstance(istatus, irecord):
-                    istatus = istatus.status
-                for code in istatus.code.unique():
-                    if code not in fundcodelist and not code.startswith("#"):
-                        fundtradeobj.append(itrade(code, istatus))
+        if istatus is not None:
+            self.is_in = True
+            if isinstance(istatus, irecord):
+                istatus = istatus.status
+            for code in istatus.code.unique():
+                if code not in fundcodelist and not code.startswith("#"):
+                    fundtradeobj.append(itrade(code, istatus))
         self.fundtradeobj = tuple(fundtradeobj)
         self.totcftable = self._mergecftb()
 

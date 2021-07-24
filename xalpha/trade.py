@@ -777,6 +777,10 @@ class itrade(trade):
         d = {"date": [], "cash": [], "share": []}
         for _, r in self.status.iterrows():
             d["date"].append(r.date)
+            if r.value < 0:
+                r.value = xu.get_daily(
+                    self.code, end=r.date.strftime("%Y-%m-%d"), prev=15
+                ).iloc[-1]["close"]
             if r.share == 0:
                 d["cash"].append(-r.value)
                 d["share"].append(0)
