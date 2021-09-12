@@ -777,19 +777,21 @@ class itrade(trade):
         d = {"date": [], "cash": [], "share": []}
         for _, r in self.status.iterrows():
             d["date"].append(r.date)
-            if r.value < 0:
-                r.value = xu.get_daily(
-                    self.code, end=r.date.strftime("%Y-%m-%d"), prev=15
-                ).iloc[-1]["close"]
+
             if r.share == 0:
                 d["cash"].append(-r.value)
                 d["share"].append(0)
-            elif r.value == 0:
-                d["cash"].append(0)
-                d["share"].append(r.share)  # 直接记录总的应增加+或减少的份额数
             else:
-                d["cash"].append(-r.value * r.share - abs(r.fee))  # 手续费总是正的，和买入同号
-                d["share"].append(r.share)
+                if r.value < 0:
+                    r.value = xu.get_daily(
+                        self.code, end=r.date.strftime("%Y-%m-%d"), prev=15
+                    ).iloc[-1]["close"]
+                if r.value == 0:
+                    d["cash"].append(0)
+                    d["share"].append(r.share)  # 直接记录总的应增加+或减少的份额数
+                else:
+                    d["cash"].append(-r.value * r.share - abs(r.fee))  # 手续费总是正的，和买入同号
+                    d["share"].append(r.share)
         self.cftable = pd.DataFrame(d)
 
     def get_netvalue(self, date=yesterdayobj()):
