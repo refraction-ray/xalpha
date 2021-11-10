@@ -141,7 +141,7 @@ def set_display(env=""):
         raise ParserFailure("unknown env %s" % env)
 
 
-def PEBHistory(code, start=None, end=None):
+def PEBHistory(code, start=None, end=None, **kwargs):
     """
     历史估值分析工具箱
 
@@ -155,13 +155,13 @@ def PEBHistory(code, start=None, end=None):
     :return: some object of PEBHistory class
     """
     if code.startswith("SH000") or code.startswith("SZ399"):
-        return IndexPEBHistory(code, start, end)
+        return IndexPEBHistory(code, start, end, kwargs)
     elif code.startswith("F"):
-        return FundPEBHistory(code, start, end)
+        return FundPEBHistory(code, start, end, kwargs)
     elif code.startswith("8"):
-        return SWPEBHistory(code, start, end)
+        return SWPEBHistory(code, start, end, kwargs)
     else:
-        return StockPEBHistory(code, start, end)
+        return StockPEBHistory(code, start, end, kwargs)
 
 
 class IndexPEBHistory:
@@ -192,7 +192,7 @@ class IndexPEBHistory:
 
     # 聚宽数据源支持的指数列表： https://www.joinquant.com/indexData
 
-    def __init__(self, code, start=None, end=None):
+    def __init__(self, code, start=None, end=None, **kwargs):
         """
 
         :param code: str. 形式可以是 399971.XSHE 或者 SH000931
@@ -220,7 +220,7 @@ class IndexPEBHistory:
         self.start = start
         if not end:
             end = yesterday_str
-        self.df = xu.get_daily("peb-" + self.scode, start=self.start, end=end)
+        self.df = xu.get_daily("peb-" + self.scode, start=self.start, end=end, kwargs)
         self.ratio = None
         self.title = "指数"
         self._gen_percentile()
@@ -335,7 +335,7 @@ class StockPEBHistory(IndexPEBHistory):
     个股历史估值封装
     """
 
-    def __init__(self, code, start=None, end=None):
+    def __init__(self, code, start=None, end=None,**kwargs):
         """
 
         :param code: 801180 申万行业指数
@@ -349,7 +349,7 @@ class StockPEBHistory(IndexPEBHistory):
         if not start:
             start = "2012-01-01"
         self.start = start
-        self.df = xu.get_daily("peb-" + code, start=start, end=end)
+        self.df = xu.get_daily("peb-" + code, start=start, end=end,kwargs)
         self.name = get_rt(code)["name"]
         self.ratio = 1
         self.title = "个股"
@@ -361,7 +361,7 @@ class FundPEBHistory(IndexPEBHistory):
     基金历史估值封装
     """
 
-    def __init__(self, code, start=None, end=None):
+    def __init__(self, code, start=None, end=None, **kwargs):
         self.code = code
         self.scode = code
         if not end:
@@ -369,7 +369,7 @@ class FundPEBHistory(IndexPEBHistory):
         if not start:
             start = "2016-01-01"  # 基金历史通常比较短
         self.start = start
-        self.df = xu.get_daily("peb-" + code, start=start, end=end)
+        self.df = xu.get_daily("peb-" + code, start=start, end=end,kwargs)
         self.name = get_rt(code)["name"]
         self.title = "基金"
         self.ratio = None
@@ -415,7 +415,7 @@ class SWPEBHistory(IndexPEBHistory):
         "801150",
     ]
 
-    def __init__(self, code, start=None, end=None):
+    def __init__(self, code, start=None, end=None,**kwargs):
         """
 
         :param code: 801180 申万行业指数
@@ -429,7 +429,7 @@ class SWPEBHistory(IndexPEBHistory):
         if not start:
             start = "2012-01-01"
         self.start = start
-        self.df = xu.get_daily("sw-" + code, start=start, end=end)
+        self.df = xu.get_daily("sw-" + code, start=start, end=end,kwargs)
         self.name = self.df.iloc[0]["name"]
         self.ratio = 1
         self.title = "申万行业指数"
@@ -441,14 +441,14 @@ class TEBHistory:
     指数总盈利和总净资产变化的分析工具箱
     """
 
-    def __init__(self, code, start=None, end=None):
+    def __init__(self, code, start=None, end=None,**kwargs):
         """
 
         :param code: str. 指数代码，eg. SH000016
         :param start:
         :param end:
         """
-        df = xu.get_daily("teb-" + code, start=start, end=end)
+        df = xu.get_daily("teb-" + code, start=start, end=end,kwargs)
         df["e"] = pd.to_numeric(df["e"])
         df["b"] = pd.to_numeric(df["b"])
         df["lnb"] = df["b"].apply(lambda s: np.log(s))
