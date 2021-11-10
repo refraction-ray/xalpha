@@ -335,7 +335,7 @@ class StockPEBHistory(IndexPEBHistory):
     个股历史估值封装
     """
 
-    def __init__(self, code, start=None, end=None,**kwargs):
+    def __init__(self, code, start=None, end=None, **kwargs):
         """
 
         :param code: 801180 申万行业指数
@@ -349,7 +349,7 @@ class StockPEBHistory(IndexPEBHistory):
         if not start:
             start = "2012-01-01"
         self.start = start
-        self.df = xu.get_daily("peb-" + code, start=start, end=end,**kwargs)
+        self.df = xu.get_daily("peb-" + code, start=start, end=end, **kwargs)
         self.name = get_rt(code)["name"]
         self.ratio = 1
         self.title = "个股"
@@ -369,7 +369,7 @@ class FundPEBHistory(IndexPEBHistory):
         if not start:
             start = "2016-01-01"  # 基金历史通常比较短
         self.start = start
-        self.df = xu.get_daily("peb-" + code, start=start, end=end,**kwargs)
+        self.df = xu.get_daily("peb-" + code, start=start, end=end, **kwargs)
         self.name = get_rt(code)["name"]
         self.title = "基金"
         self.ratio = None
@@ -415,7 +415,7 @@ class SWPEBHistory(IndexPEBHistory):
         "801150",
     ]
 
-    def __init__(self, code, start=None, end=None,**kwargs):
+    def __init__(self, code, start=None, end=None, **kwargs):
         """
 
         :param code: 801180 申万行业指数
@@ -429,7 +429,7 @@ class SWPEBHistory(IndexPEBHistory):
         if not start:
             start = "2012-01-01"
         self.start = start
-        self.df = xu.get_daily("sw-" + code, start=start, end=end,**kwargs)
+        self.df = xu.get_daily("sw-" + code, start=start, end=end, **kwargs)
         self.name = self.df.iloc[0]["name"]
         self.ratio = 1
         self.title = "申万行业指数"
@@ -441,14 +441,14 @@ class TEBHistory:
     指数总盈利和总净资产变化的分析工具箱
     """
 
-    def __init__(self, code, start=None, end=None,**kwargs):
+    def __init__(self, code, start=None, end=None, **kwargs):
         """
 
         :param code: str. 指数代码，eg. SH000016
         :param start:
         :param end:
         """
-        df = xu.get_daily("teb-" + code, start=start, end=end,**kwargs)
+        df = xu.get_daily("teb-" + code, start=start, end=end, **kwargs)
         df["e"] = pd.to_numeric(df["e"])
         df["b"] = pd.to_numeric(df["b"])
         df["lnb"] = df["b"].apply(lambda s: np.log(s))
