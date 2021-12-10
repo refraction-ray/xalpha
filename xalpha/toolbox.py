@@ -769,10 +769,10 @@ class CBCalculator:
             for s in re.split("、|，", b.select("td[id=cpn_desc]")[0].string)
         ]
         td_redeem_price = b.select("td[id=redeem_price]")[0]
-        if td_redeem_price.sup:
+        if td_redeem_price.span:
             redeem_price = float(
                 re.match(
-                    r"\S+，合计到期赎回价(\d\d\d\.\d\d)元", td_redeem_price.sup["title"]
+                    r"\S+，合计到期赎回价(\d\d\d\.\d\d)元", td_redeem_price.span["title"]
                 ).group(1)
             )
             logger.info(

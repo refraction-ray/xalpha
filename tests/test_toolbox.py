@@ -38,6 +38,7 @@ def test_get_currency():
     assert xa.toolbox._get_currency_code("JPY") == "100JPY/CNY"
 
 
+@pytest.mark.skip(reason="cninvesting server check")
 def test_qdii_predict():
     hb = xa.QDIIPredict(
         "SZ162411",

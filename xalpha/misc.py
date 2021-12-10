@@ -20,6 +20,7 @@ from xalpha.cons import (
     rpost_json,
     today_obj,
     region_trans,
+    holidays,
     _float,
 )
 from xalpha.universal import lru_cache_time
@@ -154,7 +155,7 @@ def get_tdx_holidays(holidays=None, format="%Y-%m-%d"):
                 tstr = tobj.strftime(format)
                 if rg not in holidays:
                     holidays[rg] = [tstr]
-                else:
+                elif tstr not in holidays[rg]:
                     holidays[rg].append(tstr)
     return holidays
 
@@ -224,6 +225,29 @@ dt=0&ft={ft}&sd=&ed=&sc=z&st=desc&pi=1&pn=10000&zf=diy&sh=list".format(
     )
     d = eval(r.text.split("=")[1].replace("null", "None"))
     return [code.split(",")[0] for code in d["datas"] if code.strip()]
+
+
+def update_caldate(path, year, path_out=None):
+    """
+    Update caldate.csv based on ``cons.holidays["CN"]``
+    """
+    r = {"cal_date": [], "is_open": []}
+    for d in pd.date_range(str(year) + "-01-01", str(year) + "-12-31"):
+        r["cal_date"].append(d.strftime("%Y-%m-%d"))
+        if d.weekday() in [5, 6]:
+            r["is_open"].append(0)
+        elif d.strftime("%Y-%m-%d") in holidays["CN"]:
+            r["is_open"].append(0)
+        else:
+            r["is_open"].append(1)
+    ncal = pd.DataFrame(r)
+    cal = pd.read_csv(path)
+    if int(year) <= int(cal.iloc[-1]["cal_date"][:4]):
+        raise ValueError("We already have cal date for year %s" % year)
+    tcal = pd.concat([cal, ncal], ignore_index=True)
+    if path_out is None:
+        path_out = path
+    tcal.to_csv(path_out, index=False)
 
 
 ## 常见标的合集列表，便于共同分析, 欢迎贡献:)
