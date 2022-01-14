@@ -1214,7 +1214,7 @@ class indexinfo(basicinfo):
 
     def _basic_init(self):
         raw = rget(self._url)
-        raw.encoding = 'gbk'
+        raw.encoding = "gbk"
         cr = csv.reader(raw.text.splitlines(), delimiter=",")
         my_list = list(cr)
         factor = float(my_list[-1][3])
