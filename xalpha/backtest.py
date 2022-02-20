@@ -5,7 +5,7 @@ modules for dynamical backtesting framework
 
 import pandas as pd
 
-from xalpha.info import fundinfo, mfundinfo
+from xalpha.info import fundinfo, mfundinfo, cashinfo
 from xalpha.trade import trade
 from xalpha.multiple import mul, mulfix
 from xalpha.cons import yesterdayobj, avail_dates
@@ -92,7 +92,7 @@ class BTE:
         if self.trades:
             if totmoney is None:
                 totmoney = self.totmoney
-            return mulfix(*[v for _, v in self.trades.items()], totmoney=totmoney)
+            return mulfix(*[v for _, v in self.trades.items()], totmoney=totmoney, cashobj=cashinfo(start=self.start))
         else:
             return
 
