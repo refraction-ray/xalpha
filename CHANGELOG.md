@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## v0.11.6 - 2022.03.01
+
+### fixed
+
+- 网易数据源 encoding 修复
+
+- 回测 cashobj 起始日期修复
+
 ## v0.11.5 - 2021.12.10
 
 ### added
