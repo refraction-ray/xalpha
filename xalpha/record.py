@@ -146,7 +146,9 @@ class irecord(record):
         ]
         if "fee" not in df.columns:
             df = df.assign(fee=[0] * len(df))
-        df = df.sort_values(by="date", ascending=True)
+        # 优先使用date进行排序，date相同的时候，使用index排序，即使用记录的顺序
+        df = df.reset_index()
+        df = df.sort_values(by=["date","index"], ascending=True)
         self.status = df
 
     def filter(self, code, start=None, end=None):
