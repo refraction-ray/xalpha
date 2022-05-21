@@ -92,7 +92,11 @@ class BTE:
         if self.trades:
             if totmoney is None:
                 totmoney = self.totmoney
-            return mulfix(*[v for _, v in self.trades.items()], totmoney=totmoney, cashobj=cashinfo(start=self.start))
+            return mulfix(
+                *[v for _, v in self.trades.items()],
+                totmoney=totmoney,
+                cashobj=cashinfo(start=self.start),
+            )
         else:
             return
 
