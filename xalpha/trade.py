@@ -221,7 +221,10 @@ def vtradecost(
     coords = []
     # pcftable = pcftable[abs(pcftable["cash"]) > threhold]
     for i, r in pcftable.iterrows():
-        coords.append([r.date, pprice[pprice["date"] <= r.date].iloc[-1]["netvalue"]])
+        if r.cash != 0:
+            coords.append(
+                [r.date, pprice[pprice["date"] <= r.date].iloc[-1]["netvalue"]]
+            )
 
     upper = pcftable.cash.abs().max()
     lower = pcftable.cash.abs().min()
