@@ -221,7 +221,10 @@ def vtradecost(
     coords = []
     # pcftable = pcftable[abs(pcftable["cash"]) > threhold]
     for i, r in pcftable.iterrows():
-        coords.append([r.date, pprice[pprice["date"] <= r.date].iloc[-1]["netvalue"]])
+        if r.cash != 0:
+            coords.append(
+                [r.date, pprice[pprice["date"] <= r.date].iloc[-1]["netvalue"]]
+            )
 
     upper = pcftable.cash.abs().max()
     lower = pcftable.cash.abs().min()
@@ -370,7 +373,7 @@ class trade:
             # 凭直觉这个地方的处理很可能还有其他 issue
 
             if value > 0:
-                feelabel = 100 * value - int(100 * value)
+                feelabel = 100 * value - int(100 * value + 1e-6)
                 if round(feelabel, 1) == 0.5:
                     # binary encoding, 10000.005 is actually 10000.0050...1, see issue #59
                     feelabel = feelabel - 0.5
@@ -380,7 +383,7 @@ class trade:
                         feelabel *= 100
                 else:
                     feelabel = None
-                value = int(value * 100) / 100
+                value = int(value * 100 + 1e-6) / 100
                 assert feelabel is None or feelabel >= 0.0, "自定义申购费必须为正值"
                 rdate, cash, share = self.aim.shengou(value, date, fee=feelabel)
                 rem = rm.buy([], share, rdate)
@@ -434,6 +437,7 @@ class trade:
                 value = self.status[self.status["date"] <= lastdate].iloc[-1].loc[code]
                 if date in self.aim.fenhongdate:  # 0.05 的分红行为标记，只有分红日才有效
                     fenhongmark = round(10 * value - int(10 * value), 1)
+                    # TODO: any rounding issue here for th int
                     if fenhongmark == 0.5 and label == 0:
                         label = 1  # fenhong reinvest
                         value = value - math.copysign(0.05, value)
@@ -442,25 +446,25 @@ class trade:
                         value = value - math.copysign(0.05, value)
 
                 if value > 0:  # value stands for purchase money
-                    feelabel = 100 * value - int(100 * value)
+                    feelabel = 100 * value - int(100 * value + 1e-6)
 
-                    if int(10 * feelabel) == 5:
+                    if int(10 * feelabel + 1e-6) == 5:
                         feelabel = (feelabel - 0.5) * 100
                     else:
                         feelabel = None
-                    value = int(value * 100) / 100
+                    value = int(value * 100 + 1e-6) / 100
                     rdate, dcash, dshare = self.aim.shengou(
                         value, date, fee=feelabel
                     )  # shengou fee is in the unit of percent, different than shuhui case
                     rem = rm.buy(rem, dshare, rdate)
 
                 elif value < -0.005:  # value stands for redemp share
-                    feelabel = int(100 * value) - 100 * value
-                    if int(10 * feelabel) == 5:
+                    feelabel = int(100 * value - 1e-6) - 100 * value
+                    if int(10 * feelabel + 1e-6) == 5:
                         feelabel = feelabel - 0.5
                     else:
                         feelabel = None
-                    value = int(value * 100) / 100
+                    value = int(value * 100 - 1e-6) / 100
                     rdate, dcash, dshare = self.aim.shuhui(
                         -value, date, self.remtable.iloc[-1].rem, fee=feelabel
                     )
