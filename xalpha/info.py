@@ -66,16 +66,16 @@ def _nfloat(string):
         try:
             result = float(string)
         except ValueError:
-            if re.match(r'"分红\D*(\d*\.\d*)\D*"', string):
-                result = float(re.match(r'"分红\D*(\d*\.\d*)\D*"', string).group(1))
-            elif re.match(r".*现金(\d*\.\d*)\D*", string):
-                result = float(re.match(r".*现金(\d*\.\d*)\D*", string).group(1))
-            elif re.match(r".*折算(\d*\.\d*)\D*", string):
-                result = -float(re.match(r".*折算(\d*\.\d*)\D*", string).group(1))
-            elif re.match(r'"拆分\D*(\d*\.\d*)\D*"', string):
-                result = -float(re.match(r'"拆分\D*(\d*\.\d*)\D*"', string).group(1))
-            elif re.match(r"\D*分拆(\d*\.\d*)\D*", string):
-                result = -float(re.match(r"\D*分拆(\d*\.\d*)\D*", string).group(1))
+            if re.match(r'"分红\D*(\d*(?:\.\d*)?)\D*"', string):
+                result = float(re.match(r'"分红\D*(\d*(?:\.\d*)?)\D*"', string).group(1))
+            elif re.match(r".*现金(\d*(?:\.\d*)?)\D*", string):
+                result = float(re.match(r".*现金(\d*(?:\.\d*)?)\D*", string).group(1))
+            elif re.match(r".*折算(\d*(?:\.\d*)?)\D*", string):
+                result = -float(re.match(r".*折算(\d*(?:\.\d*)?)\D*", string).group(1))
+            elif re.match(r'"拆分\D*(\d*(?:\.\d*)?)\D*"', string):
+                result = -float(re.match(r'"拆分\D*(\d*(?:\.\d*)?)\D*"', string).group(1))
+            elif re.match(r"\D*分拆(\d*(?:\.\d*)?)\D*", string):
+                result = -float(re.match(r"\D*分拆(\d*(?:\.\d*)?)\D*", string).group(1))
             else:
                 logger.warning("The comment col cannot be converted: %s" % string)
                 result = string
@@ -1303,7 +1303,14 @@ class indexinfo(basicinfo):
             + yesterday()
             + "&fields=TCLOSE"
         )
-        df = pd.read_csv(self._updateurl, encoding="gb2312")
+        try:
+            df = pd.read_csv(self._updateurl, encoding="gb2312")
+            # 163 source is failing now
+        except Exception:
+            raise ValueError(
+                "don't use indexinfo currently, see \
+            https://github.com/refraction-ray/xalpha/issues/133#issuecomment-865447292"
+            )
         self.name = df.iloc[0].loc["名称"]
         if len(df) > 1:
             df = df.rename(columns={"收盘价": "totvalue"})

@@ -8,7 +8,7 @@ import pytest
 
 ioconf = {"save": True, "fetch": True, "path": "pytest", "form": "csv"}
 ca = xa.cashinfo(interest=0.0002, start="2015-01-01")
-zzhb = xa.indexinfo("0000827", **ioconf)
+# zzhb = xa.indexinfo("0000827", **ioconf)
 hs300 = xa.fundinfo("000311")
 zogqb = xa.mfundinfo("001211", **ioconf)
 
@@ -39,6 +39,7 @@ def test_cash():
     assert round(ca.total_annualized_returns("2018-01-01"), 4) == 0.0757
 
 
+@pytest.mark.skip(reason="disable indexinfo currently")
 def test_index():
     assert (
         round(zzhb.price[zzhb.price["date"] == "2012-02-01"].iloc[0].totvalue, 3)

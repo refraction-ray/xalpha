@@ -18,7 +18,7 @@ setuptools.setup(
     name="xalpha",
     version="0.11.7",
     author="refraction-ray",
-    author_email="znfesnpbh.@gmail.com",
+    author_email="znfesnpbh@gmail.com",
     description="all about fund investment",
     long_description=long_description,
     long_description_content_type="text/markdown",

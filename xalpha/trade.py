@@ -236,7 +236,6 @@ def vtradecost(
         if buy < 0:
             color = "#ff7733"
         else:
-
             color = "#3366ff"
         size = (abs(buy) - lower) / (upper - lower) * 5 + 5
         return opts.MarkPointItem(

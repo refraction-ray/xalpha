@@ -916,6 +916,7 @@ def get_bond_rates(rating, date=None):
         "BB": "8a8b2ca0455847ac0145650ba23b68ff",
         "B": "8a8b2ca0455847ac0145650c3d726901",
     }
+
     # 上边字典不全，非常欢迎贡献 ：）
     def _fetch(date):
         r = rpost(
@@ -2146,7 +2147,6 @@ def _get_index_weight_range(code, start, end):
     df = pd.DataFrame({"code": [], "weight": [], "display_name": [], "date": []})
     while True:
         if d > end_m:
-
             df["date"] = pd.to_datetime(df["date"])
             return df
         logger.debug("fetch index weight on %s for %s" % (d, code))
