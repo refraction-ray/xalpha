@@ -189,7 +189,7 @@ class BTE:
             remtable = remtable[remtable["date"] <= self.lastdates[code]]
             self.lastdates[code] = date
             df2 = pd.DataFrame([[date, value]], columns=["date", self.get_code(code)])
-            df = df.append(df2)
+            df = pd.concat([df, df2], ignore_index=True, sort=False)
             self.trades[code] = trade(
                 self.infos[code],
                 df,
@@ -226,7 +226,7 @@ class BTE:
         self.lastdates[code] = date
         self.lastdates[code] = date
         df2 = pd.DataFrame([[date, -share]], columns=["date", self.get_code(code)])
-        df = df.append(df2)
+        df = pd.concat([df, df2], ignore_index=True, sort=False)
         if is_value:
             self.set_fund(code, value_label=1)
         self.trades[code] = trade(

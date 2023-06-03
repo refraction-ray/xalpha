@@ -2005,7 +2005,10 @@ def cachedio(**ioconf):
                                     df1 = df1[df1["date"] <= kws["end"]]
                                 if df1 is not None and len(df1) > 0:
                                     is_changed = True
-                                    df0 = df1.append(df0, ignore_index=True, sort=False)
+                                    df0 = pd.concat(
+                                        [df1, df0], ignore_index=True, sort=False
+                                    )
+                                    # df0 = df1.append(df0, ignore_index=True, sort=False)
                         # 向后延拓
                         if df0.iloc[-1][date] < end_obj and not fetchonly:
                             nextday_str = (
@@ -2027,7 +2030,10 @@ def cachedio(**ioconf):
                                         == 1
                                     ):
                                         df0 = df0.iloc[:-1]
-                                    df0 = df0.append(df2, ignore_index=True, sort=False)
+                                    # df0 = df0.append(df2, ignore_index=True, sort=False)
+                                    df0 = pd.concat(
+                                        [df0, df2], ignore_index=True, sort=False
+                                    )
                             # 注意这里抹去更新了原有最后一天的缓存，这是因为日线最新一天可能有实时数据污染
 
                     except (FileNotFoundError, exc.ProgrammingError, KeyError) as e:
@@ -2152,7 +2158,8 @@ def _get_index_weight_range(code, start, end):
         logger.debug("fetch index weight on %s for %s" % (d, code))
         df0 = get_index_weights(index_id=code, date=d.strftime("%Y-%m-%d"))
         df0["code"] = df0.index
-        df = df.append(df0, ignore_index=True, sort=False)
+        df = pd.concat([df, df0], ignore_index=True, sort=False)
+        # df = df.append(df0, ignore_index=True, sort=False)
         d = d + relativedelta(months=1)
 
 

@@ -122,12 +122,24 @@ def rfundinfo(
     rtdate = dt.datetime.combine(rt.time, dt.time.min)
     rtvalue = rt.rtvalue
     if (rtdate - fundobj.price.iloc[-1].date).days > 0:
-        fundobj.price = fundobj.price.append(
-            pd.DataFrame(
-                [[rtdate, rtvalue, fundobj.price.iloc[-1].totvalue, 0]],
-                columns=["date", "netvalue", "totvalue", "comment"],
-            ),
+        # fundobj.price = fundobj.price.append(
+        #     pd.DataFrame(
+        #         [[rtdate, rtvalue, fundobj.price.iloc[-1].totvalue, 0]],
+        #         columns=["date", "netvalue", "totvalue", "comment"],
+        #     ),
+        #     ignore_index=True,
+        # )
+
+        fundobj.price = pd.concat(
+            [
+                fundobj.price,
+                pd.DataFrame(
+                    [[rtdate, rtvalue, fundobj.price.iloc[-1].totvalue, 0]],
+                    columns=["date", "netvalue", "totvalue", "comment"],
+                ),
+            ],
             ignore_index=True,
+            sort=False,
         )
     return fundobj
 
