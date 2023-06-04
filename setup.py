@@ -16,7 +16,7 @@ for f in excludes:
 
 setuptools.setup(
     name="xalpha",
-    version="0.11.7",
+    version="0.11.8",
     author="refraction-ray",
     author_email="znfesnpbh@gmail.com",
     description="all about fund investment",
@@ -27,7 +27,7 @@ setuptools.setup(
     include_package_data=True,
     install_requires=[
         "lxml",
-        "pandas",
+        "pandas<2.0",
         "xlrd>=1.0.0",  #  read excel support
         "numpy",
         "scipy",

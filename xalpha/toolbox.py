@@ -643,7 +643,7 @@ def BlackScholes(S, K, t, v, r=0.02, CallPutFlag="C"):
     def CND(X):
         return stats.norm.cdf(X)
 
-    d1 = (np.log(S / K) + (r + (v**2) / 2) * t) / (v * np.sqrt(t))
+    d1 = (np.log(S / K) + (r + (v ** 2) / 2) * t) / (v * np.sqrt(t))
     d2 = d1 - v * np.sqrt(t)
 
     if CallPutFlag in ["c", "C"]:
@@ -1155,11 +1155,14 @@ def daily_increment(code, date, lastday=None, _check=False, warning_threhold=Non
         while tds.iloc[-1]["date"] < date_obj:
             # in case data is not up to date
             # 但是存在日本市场休市时间不一致的情况，估计美股也存在
-            if not is_on(
-                date_obj.strftime("%Y%m%d"),
-                get_market(code),
-                no_trading_days=no_trading_days,
-            ) or (date_obj.strftime("%Y-%m-%d") in gap_info.get(code, [])):
+            if (
+                not is_on(
+                    date_obj.strftime("%Y%m%d"),
+                    get_market(code),
+                    no_trading_days=no_trading_days,
+                )
+                or (date_obj.strftime("%Y-%m-%d") in gap_info.get(code, []))
+            ):
                 print("%s is closed on %s" % (code, date))
                 if not lastday:
                     return 1  # 当日没有涨跌，这里暂时为考虑 _check 和 lastday 相同的的情形
@@ -1198,7 +1201,7 @@ def _smooth_pos(r, e, o):
     if pos > 1:
         pos = 1
     elif pos < 0.5:
-        pos = pos**0.6
+        pos = pos ** 0.6
 
     if abs(r) < 0.6:  # 实际波动小时参考意义有限，进行削弱
         pos = (pos + (3 - 5 * abs(r)) * o) / (4 - 5 * abs(r))
@@ -1801,8 +1804,8 @@ class QDIIPredict:
                     lastday=last_onday(d).strftime("%Y-%m-%d"),
                 )
                 posl.append(s(real, pred, posl[-1]))
-            current_pos = sum([q**i * posl[l - i - 1] for i in range(l)]) / sum(
-                [q**i for i in range(l)]
+            current_pos = sum([q ** i * posl[l - i - 1] for i in range(l)]) / sum(
+                [q ** i for i in range(l)]
             )
             self.position_cache[date] = current_pos
         if not return_date:
@@ -1858,8 +1861,8 @@ class QDIIPredict:
             fq.append(pos)
             fq[0] = c / 100  ## 模拟实际的无状态仓位分析
             if self.positions:
-                current_pos = sum([q**i * fq[l - i - 1] for i in range(l)]) / sum(
-                    [q**i for i in range(l)]
+                current_pos = sum([q ** i * fq[l - i - 1] for i in range(l)]) / sum(
+                    [q ** i for i in range(l)]
                 )
                 if current_pos > 1:
                     current_pos = 1
@@ -1942,5 +1945,5 @@ class QDIIPredict:
     @staticmethod
     def analyse_deviate(cpdf, col):
         l = np.array(cpdf[col])
-        d1, d2 = np.mean(np.abs(l)), np.sqrt(np.mean(l**2))
+        d1, d2 = np.mean(np.abs(l)), np.sqrt(np.mean(l ** 2))
         print("\n平均偏离: ", d1, "\n标准差偏离： ", d2)

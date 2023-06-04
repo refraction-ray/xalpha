@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v0.11.8 -2022.06.04
+
+### fixed
+
+- 将 pandas 固定在 v1
+
 ## v0.11.7 - 2022.12.20
 
 ### updated
