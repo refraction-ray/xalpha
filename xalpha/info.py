@@ -540,6 +540,8 @@ class fundinfo(basicinfo):
                 "This code seems to be a mfund, use ``mfundinfo`` instead"
             )
         code = code.zfill(6)  # 1234 is the same as 001234
+        assert code.isdigit(), "fund code must be a strin of six digits"
+        assert len(code) == 6, "fund code must be a strin of six digits"
         self._url = (
             "http://fund.eastmoney.com/pingzhongdata/" + code + ".js"
         )  # js url api for info of certain fund
