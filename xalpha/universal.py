@@ -1621,11 +1621,11 @@ def get_rt_from_ttjj(code):
     ):  # 非货币基金
         value, date = (
             float(
-                s.findAll("dd", class_="dataNums")[1]
+                s.findAll("dd", class_="dataNums")[0]
                 .find("span", class_="ui-font-large")
                 .string
             ),
-            str(s.findAll("dt")[1]).split("(")[1].split(")")[0][7:],
+            str(s.findAll("dt")[0]).split("(")[1].split(")")[0][7:],
         )
         estimate = s.select("span[id=gz_gsz]")
         if not estimate:
