@@ -1619,18 +1619,12 @@ def get_rt_from_ttjj(code):
     if s.findAll("dd", class_="dataNums")[1].find(
         "span", class_="ui-font-large"
     ):  # 非货币基金
-        value, date = (
-            float(
-                s.findAll("dd", class_="dataNums")[0]
-                .find("span", class_="ui-font-large")
-                .string
-            ),
-            str(s.findAll("dt")[0]).split("(")[1].split(")")[0][7:],
-        )
         estimate = s.select("span[id=gz_gsz]")
+        ind = 1
         if not estimate:
             estimate = None
             estimate_time = None
+            ind = 0
         else:
             estimate = estimate[0].text  # after loading
             if estimate == "--":
@@ -1653,6 +1647,15 @@ def get_rt_from_ttjj(code):
                 except ValueError:
                     logger.warning("unrecognized estimate netvalue %s" % estimate)
                     estimate = None
+        value, date = (
+            float(
+                s.findAll("dd", class_="dataNums")[ind]
+                .find("span", class_="ui-font-large")
+                .string
+            ),
+            str(s.findAll("dt")[ind]).split("(")[1].split(")")[0][7:],
+        )
+
     else:
         value, date = (
             s.findAll("dd", class_="dataNums")[1].text,
