@@ -364,7 +364,7 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
     if (currency[:3] in al) or (currency[4:] in bl):
         is_inverse = True
         currency = currency[4:] + "/" + currency[:3]
-    url = "http://www.chinamoney.com.cn/ags/ms/cm-u-bk-ccpr/CcprHisNew?startDate={start_str}&endDate={end_str}&currency={currency}&pageNum=1&pageSize=300"
+    url = "http://www.chinamoney.com.cn/ags/ms/cm-u-bk-ccpr/CcprHisNew?startDate={start_str}&endDate={end_str}&currency={currency}&pageNum=1&pageSize=30"
     if not end:
         end_obj = today_obj()
     else:
@@ -385,8 +385,8 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
         "Host": "www.chinamoney.com.cn",
         "X-Requested-With": "XMLHttpRequest",
     }
-
-    if count <= 360:
+    segs = 30
+    if count <= segs:
         headers.update({"user-agent": _variate_ua()})
         r = rpost_json(
             url.format(start_str=start_str, end_str=end_str, currency=currency),
@@ -395,7 +395,7 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
         rl.extend(r["records"])
     else:  # data more than 1 year cannot be fetched once due to API limitation
         sepo_obj = end_obj
-        sepn_obj = sepo_obj - dt.timedelta(360)
+        sepn_obj = sepo_obj - dt.timedelta(segs)
         #         sep0_obj = end_obj - dt.timedelta(361)
         while sepn_obj > start_obj:  # [sepn sepo]
             headers.update({"user-agent": _variate_ua()})
@@ -410,7 +410,7 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
             rl.extend(r["records"])
 
             sepo_obj = sepn_obj - dt.timedelta(1)
-            sepn_obj = sepo_obj - dt.timedelta(360)
+            sepn_obj = sepo_obj - dt.timedelta(segs)
         headers.update({"user-agent": _variate_ua()})
         r = rpost_json(
             url.format(
@@ -546,7 +546,7 @@ def get_futu_historical(code, start=None, end=None):
     return df
 
 
-def get_historical_fromsp(code, start=None, end=None, region="us", **kws):
+def get_historical_fromsp(code, start=None, end=None, region="www", **kws):
     """
     标普官网数据源
 
