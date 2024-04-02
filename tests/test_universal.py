@@ -261,6 +261,8 @@ def test_get_ycharts():
     )
     assert d.iloc[0]["close"] == 169.821
 
+    d = xa.get_daily("yc-indicators/I:CPPI")
+
     assert xa.get_rt("yc-companies/DBO")["currency"] == "USD"
 
 

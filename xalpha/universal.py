@@ -1092,7 +1092,11 @@ def _get_daily(
             _from = "HZ"
         elif code.startswith("ESCI") and code[4:].isdigit():
             _from = "ES"
-        elif code.startswith("yc-companies/") or code.startswith("yc-indices/"):
+        elif (
+            code.startswith("yc-companies/")
+            or code.startswith("yc-indices/")
+            or code.startswith("yc-indicators/")
+        ):
             _from = "ycharts"
             params = code.split("/")
             code = params[1]
@@ -1104,6 +1108,8 @@ def _get_daily(
                     metric = "price"
                 elif category == "indices":
                     metric = "level"
+                elif category == "indicators":
+                    metric = "1"  # seems not important
         elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             # peb-000807.XSHG
             _from = code.split("-")[0]
