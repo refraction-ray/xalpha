@@ -81,7 +81,7 @@ pip install xalpha
 
 ```bash
 $ git clone https://github.com/refraction-ray/xalpha.git
-$ cd xalpha && python3 setup.py install
+$ cd xalpha && pip3 install .
 ```
 
 ## 用法
