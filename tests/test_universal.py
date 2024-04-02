@@ -114,6 +114,7 @@ def test_get_bb_daily(proxy):
     df = xa.get_daily("BB-FGERBIU:ID", prev=10)
 
 
+# the API is ok for IP beyond mainland cn
 def test_get_yahoo_daily():
     df = xa.get_daily("YH-CSGOLD.SW", end="20200323")
     assert round(df.iloc[-1]["close"], 1) == 149.4

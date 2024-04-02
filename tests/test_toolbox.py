@@ -8,7 +8,10 @@ xa.set_backend(backend="memory", prefix="pytest-")
 
 
 def test_compare():
-    c = xa.Compare(("FT-JBGOUA:SWX:USD", "USD"), "SH501018", start="20200101")
+    # c = xa.Compare(("FT-JBGOUA:SWX:USD", "USD"), "SH501018", start="20200101")
+    # no code can be found for the previous one,
+    # seems to me lots of funds cannot be found in FT now
+    c = xa.Compare(("FT-GLD:PCQ:USD", "USD"), "SH501018", start="20200101")
     c.corr()
     c.v()
 

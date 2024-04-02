@@ -744,32 +744,30 @@ def get_historical_fromzzindex(code, start, end=None):
         code = code[2:]
     start_obj = dt.datetime.strptime(start, "%Y%m%d")
     fromnow = (today_obj() - start_obj).days
-    if fromnow < 20:
-        flag = "1%E4%B8%AA%E6%9C%88"
-    elif fromnow < 60:
-        flag = "3%E4%B8%AA%E6%9C%88"  # 个月
-    elif fromnow < 200:
-        flag = "1%E5%B9%B4"  # 年
-    else:
-        flag = "5%E5%B9%B4"
+    # if fromnow < 20:
+    #     flag = "1%E4%B8%AA%E6%9C%88"
+    # elif fromnow < 60:
+    #     flag = "3%E4%B8%AA%E6%9C%88"  # 个月
+    # elif fromnow < 200:
+    #     flag = "1%E5%B9%B4"  # 年
+    # else:
+    #     flag = "5%E5%B9%B4"
+
     r = rget_json(
-        "http://www.csindex.com.cn/zh-CN/indices/index-detail/\
-{code}?earnings_performance={flag}&data_type=json".format(
-            code=code, flag=flag
+        "https://www.csindex.com.cn/csindex-home/perf/index-perf?indexCode={code}&startDate={start}&endDate={end}".format(
+            code=code, start=start, end=end
         ),
         headers={
             "Host": "www.csindex.com.cn",
-            "Referer": "http://www.csindex.com.cn/zh-CN/indices/index-detail/{code}".format(
-                code=code
-            ),
+            "Referer": "http://www.csindex.com.cn/",
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36",
             "X-Requested-With": "XMLHttpRequest",
             "Accept": "application/json, text/javascript, */*; q=0.01",
         },
     )
-    df = pd.DataFrame(r)
-    df["date"] = pd.to_datetime(df["tradedate"])
-    df["close"] = df["tclose"].apply(_float)
+    df = pd.DataFrame(r["data"])
+    df["date"] = pd.to_datetime(df["tradeDate"])
+    df["close"] = df["close"].apply(_float)
     return df[["date", "close"]]
 
 
@@ -819,7 +817,7 @@ def get_historical_fromhzindex(code, start, end):
         code = code[2:]
 
     r = rget_json(
-        "http://www.chindices.com/index/values.val?code={code}".format(code=code)
+        "https://www.chindices.com/index/values.val?code={code}".format(code=code)
     )
     df = pd.DataFrame(r["data"])
     df["date"] = pd.to_datetime(df["date"])
@@ -842,7 +840,7 @@ def get_historical_fromesunny(code, start=None, end=None):
     if code.startswith("ESCI"):
         code = code[4:] + ".ESCI"
     r = rget(
-        "http://www.esunny.com.cn/chartES/csv/shareday/day_易盛指数_{code}.es".format(
+        "https://www.esunny.com.cn/chartES/csv/shareday/day_易盛指数_{code}.es".format(
             code=code
         )
     )
