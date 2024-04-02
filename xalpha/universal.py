@@ -1519,7 +1519,7 @@ def get_rt_from_ycharts(code):
     qdiv = s.select("div.index-rank.col-auto")  # current
     spans = [s for s in qdiv[0].contents if s != "\n" and s.contents]
     d = {}
-    d["name"] = s.select("h1,h3[class=securityName]")[0].text.strip()
+    d["name"] = s.find("ycn-quickflows-menu").get("securityname")
     d["current"], d["percent"] = (
         _float(spans[0].string),  # current,
         _float(spans[1].contents[-2].string[1:-1]),  # percent
@@ -1529,7 +1529,7 @@ def get_rt_from_ycharts(code):
         for c in s.select("span[class=index-info]")[0].string.split("\n")
         if c.strip()
     ]
-    d["time"] = l[1]
+    d["time"] = l[-1]
     d["currency"] = l[0].split(" ")[0].strip()
     d["market"] = None
     return d
