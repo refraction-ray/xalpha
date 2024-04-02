@@ -1400,7 +1400,11 @@ def get_rt_from_sina(code):
         if code.startswith("."):
             code = code[1:]
         tinycode += code.lower()
-    r = rget("https://hq.sinajs.cn/list={tinycode}".format(tinycode=tinycode))
+    headers = {"Referer": "https://finance.sina.com.cn"}
+    r = rget(
+        "https://hq.sinajs.cn/list={tinycode}".format(tinycode=tinycode),
+        headers=headers,
+    )
     l = r.text.split("=")[1].split(",")
     d = {}
     d["name"] = l[0].strip('"')

@@ -183,7 +183,7 @@ def test_policy_indicator_points():
     )
     zz500_t = xa.trade(zz500, st.status)
     assert (
-        zz500_t.dailyreport("2018-05-01").iloc[0].loc["基金收益总额"] == -6302.32
+        zz500_t.dailyreport("2018-05-01").iloc[0].loc["基金收益总额"] == -6302.25
     )  # -6302.26
     # still confused about this, seems to be a data source change, as old commits gives new results as well
 

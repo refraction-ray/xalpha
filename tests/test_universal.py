@@ -215,7 +215,7 @@ def test_cache_time():
 
 def test_get_ttjj():
     assert xa.get_rt("F501018")["name"] == "南方原油A"
-    assert xa.get_rt("F511600")["type"] == "货币型"
+    assert xa.get_rt("F511600")["type"][:2] == "货币型"
     assert xa.get_rt("F003816")["market"] == "CN"
 
 

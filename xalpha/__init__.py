@@ -9,13 +9,13 @@ import xalpha.exceptions
 from xalpha.evaluate import evaluate
 from xalpha.info import (
     fundinfo,
-    indexinfo,
     cashinfo,
     mfundinfo,
+    indexinfo,
     FundInfo,
-    IndexInfo,
     CashInfo,
     MFundInfo,
+    IndexInfo,
     FundReport,
     get_fund_holdings,
 )

@@ -1178,154 +1178,168 @@ api=HKFDApi&m=MethodJZ&hkfcode={hkfcode}&action=3&pageindex=0&pagesize={pagesize
         return r["Data"]
 
 
-class indexinfo(basicinfo):
-    """
-    Get everyday close price of specific index.
-    In self.price table, totvalue column is the real index
-    while netvalue comlumn is normalized to 1 for the start date.
-    In principle, this class can also be used to save stock prices but the price is without adjusted.
+def indexinfo(code, **kws):
+    # backward compatibility
+    if code.isdigit() and len(code) == 7:
+        if code[0] == "0":
+            code = "SH" + code[1:]
+        elif code[0] == "1":
+            code = "SZ" + code[1:]
+    if "start" not in kws:
+        kws["start"] = "20120101"
 
-    :param code: string with seven digitals! note the code here has an extra digit at the beginning,
-        0 for sh and 1 for sz.
-    :param value_label: int, default 0 or 1. If set to 1, 记账单数字按金额赎回。
-    :param fetch: boolean, when open the fetch option, the class will try fetching from local files first in the init
-    :param save: boolean, when open the save option, automatically save the class to files
-    :param path: string, the file path prefix of IO
-    :param form: string, the format of IO, options including: 'csv'
-    """
+    from xalpha.universal import vinfo
 
-    def __init__(
-        self, code, value_label=0, fetch=False, save=False, path="", form="csv"
-    ):
-        date = yesterday()
-        if code.startswith("SH") and code[2:].isdigit():
-            code = "0" + code[2:]
-        elif code.startswith("SZ") and code[2:].isdigit():
-            code = "1" + code[2:]
-        self.rate = 0
-        self._url = (
-            "http://quotes.money.163.com/service/chddata.html?code="
-            + code
-            + "&start=19901219&end="
-            + date
-            + "&fields=TCLOSE"
-        )
-        super().__init__(
-            code, value_label=value_label, fetch=fetch, save=save, path=path, form=form
-        )
+    return vinfo(code, **kws)
 
-    def _basic_init(self):
-        raw = rget(self._url)
-        raw.encoding = "gbk"
-        cr = csv.reader(raw.text.splitlines(), delimiter=",")
-        my_list = list(cr)
-        factor = float(my_list[-1][3])
-        dd = {
-            "date": [
-                dt.datetime.strptime(my_list[i + 1][0], "%Y-%m-%d")
-                for i in range(len(my_list) - 1)
-            ],
-            "netvalue": [
-                float(my_list[i + 1][3]) / factor for i in range(len(my_list) - 1)
-            ],
-            "totvalue": [float(my_list[i + 1][3]) for i in range(len(my_list) - 1)],
-            "comment": [0 for _ in range(len(my_list) - 1)],
-        }
-        index = pd.DataFrame(data=dd)
-        index = index.iloc[::-1]
-        index = index.reset_index(drop=True)
-        self.price = index[index["date"].isin(opendate)]
-        self.price = self.price[self.price["date"] <= yesterdaydash()]
-        self.name = my_list[-1][2]
 
-    def _save_csv(self, path):
-        """
-        save the information and pricetable into path+code.csv, not recommend to use manually,
-        just set the save label to be true when init the object
+# class indexinfo(basicinfo):
+#     """
+#     Get everyday close price of specific index.
+#     In self.price table, totvalue column is the real index
+#     while netvalue comlumn is normalized to 1 for the start date.
+#     In principle, this class can also be used to save stock prices but the price is without adjusted.
 
-        :param path:  string of folder path
-        """
-        self.price.sort_index(axis=1).to_csv(
-            path + self.code + ".csv", index=False, date_format="%Y-%m-%d"
-        )
+#     :param code: string with seven digitals! note the code here has an extra digit at the beginning,
+#         0 for sh and 1 for sz.
+#     :param value_label: int, default 0 or 1. If set to 1, 记账单数字按金额赎回。
+#     :param fetch: boolean, when open the fetch option, the class will try fetching from local files first in the init
+#     :param save: boolean, when open the save option, automatically save the class to files
+#     :param path: string, the file path prefix of IO
+#     :param form: string, the format of IO, options including: 'csv'
+# """
+# def __init__(
+#     self, code, value_label=0, fetch=False, save=False, path="", form="csv"
+# ):
+#     date = yesterday()
+#     if code.startswith("SH") and code[2:].isdigit():
+#         code = "0" + code[2:]
+#     elif code.startswith("SZ") and code[2:].isdigit():
+#         code = "1" + code[2:]
+#     self.rate = 0
+#     self._url = (
+#         "http://quotes.money.163.com/service/chddata.html?code="
+#         + code
+#         + "&start=19901219&end="
+#         + date
+#         + "&fields=TCLOSE"
+#     )
+#     super().__init__(
+#         code, value_label=value_label, fetch=fetch, save=save, path=path, form=form
+#     )
 
-    def _fetch_csv(self, path):
-        """
-        fetch the information and pricetable from path+code.csv, not recommend to use manually,
-        just set the fetch label to be true when init the object
+# def _basic_init(self):
+#     raw = rget(self._url)
+#     raw.encoding = "gbk"
+#     cr = csv.reader(raw.text.splitlines(), delimiter=",")
+#     my_list = list(cr)
+#     factor = float(my_list[-1][3])
+#     dd = {
+#         "date": [
+#             dt.datetime.strptime(my_list[i + 1][0], "%Y-%m-%d")
+#             for i in range(len(my_list) - 1)
+#         ],
+#         "netvalue": [
+#             float(my_list[i + 1][3]) / factor for i in range(len(my_list) - 1)
+#         ],
+#         "totvalue": [float(my_list[i + 1][3]) for i in range(len(my_list) - 1)],
+#         "comment": [0 for _ in range(len(my_list) - 1)],
+#     }
+#     index = pd.DataFrame(data=dd)
+#     index = index.iloc[::-1]
+#     index = index.reset_index(drop=True)
+#     self.price = index[index["date"].isin(opendate)]
+#     self.price = self.price[self.price["date"] <= yesterdaydash()]
+#     self.name = my_list[-1][2]
 
-        :param path:  string of folder path
-        """
-        try:
-            pricetable = pd.read_csv(path + self.code + ".csv")
-            datel = list(pd.to_datetime(pricetable.date))
-            self.price = pricetable[["netvalue", "totvalue", "comment"]]
-            self.price["date"] = datel
+# def _save_csv(self, path):
+#     """
+#     save the information and pricetable into path+code.csv, not recommend to use manually,
+#     just set the save label to be true when init the object
 
-        except FileNotFoundError as e:
-            # print('no saved copy of %s' % self.code)
-            raise e
+#     :param path:  string of folder path
+#     """
+#     self.price.sort_index(axis=1).to_csv(
+#         path + self.code + ".csv", index=False, date_format="%Y-%m-%d"
+#     )
 
-    def _save_sql(self, path):
-        """
-        save the information and pricetable into sql, not recommend to use manually,
-        just set the save label to be true when init the object
+# def _fetch_csv(self, path):
+#     """
+#     fetch the information and pricetable from path+code.csv, not recommend to use manually,
+#     just set the fetch label to be true when init the object
 
-        :param path:  engine object from sqlalchemy
-        """
-        self.price.sort_index(axis=1).to_sql(
-            "xa" + self.code, con=path, if_exists="replace", index=False
-        )
+#     :param path:  string of folder path
+#     """
+#     try:
+#         pricetable = pd.read_csv(path + self.code + ".csv")
+#         datel = list(pd.to_datetime(pricetable.date))
+#         self.price = pricetable[["netvalue", "totvalue", "comment"]]
+#         self.price["date"] = datel
 
-    def _fetch_sql(self, path):
-        """
-        fetch the information and pricetable from sql, not recommend to use manually,
-        just set the fetch label to be true when init the object
+#     except FileNotFoundError as e:
+#         # print('no saved copy of %s' % self.code)
+#         raise e
 
-        :param path:  engine object from sqlalchemy
-        """
-        try:
-            pricetable = pd.read_sql("xa" + self.code, path)
-            self.price = pricetable
+# def _save_sql(self, path):
+#     """
+#     save the information and pricetable into sql, not recommend to use manually,
+#     just set the save label to be true when init the object
 
-        except exc.ProgrammingError as e:
-            # print('no saved copy of %s' % self.code)
-            raise e
+#     :param path:  engine object from sqlalchemy
+#     """
+#     self.price.sort_index(axis=1).to_sql(
+#         "xa" + self.code, con=path, if_exists="replace", index=False
+#     )
 
-    def update(self):
-        lastdate = self.price.iloc[-1].date
-        lastdatestr = lastdate.strftime("%Y%m%d")
-        weight = self.price.iloc[1].totvalue
-        self._updateurl = (
-            "http://quotes.money.163.com/service/chddata.html?code="
-            + self.code
-            + "&start="
-            + lastdatestr
-            + "&end="
-            + yesterday()
-            + "&fields=TCLOSE"
-        )
-        try:
-            df = pd.read_csv(self._updateurl, encoding="gb2312")
-            # 163 source is failing now
-        except Exception:
-            raise ValueError(
-                "don't use indexinfo currently, see \
-            https://github.com/refraction-ray/xalpha/issues/133#issuecomment-865447292"
-            )
-        self.name = df.iloc[0].loc["名称"]
-        if len(df) > 1:
-            df = df.rename(columns={"收盘价": "totvalue"})
-            df["date"] = pd.to_datetime(df.日期)
-            df = df.drop(["股票代码", "名称", "日期"], axis=1)
-            df["netvalue"] = df.totvalue / weight
-            df["comment"] = [0 for _ in range(len(df))]
-            df = df.iloc[::-1].iloc[1:]
-            df = df[df["date"].isin(opendate)]
-            df = df.reset_index(drop=True)
-            df = df[df["date"] <= yesterdayobj()]
-            self.price = self.price.append(df, ignore_index=True, sort=True)
-            return df
+# def _fetch_sql(self, path):
+#     """
+#     fetch the information and pricetable from sql, not recommend to use manually,
+#     just set the fetch label to be true when init the object
+
+#     :param path:  engine object from sqlalchemy
+#     """
+#     try:
+#         pricetable = pd.read_sql("xa" + self.code, path)
+#         self.price = pricetable
+
+#     except exc.ProgrammingError as e:
+#         # print('no saved copy of %s' % self.code)
+#         raise e
+
+# def update(self):
+#     lastdate = self.price.iloc[-1].date
+#     lastdatestr = lastdate.strftime("%Y%m%d")
+#     weight = self.price.iloc[1].totvalue
+#     self._updateurl = (
+#         "http://quotes.money.163.com/service/chddata.html?code="
+#         + self.code
+#         + "&start="
+#         + lastdatestr
+#         + "&end="
+#         + yesterday()
+#         + "&fields=TCLOSE"
+#     )
+#     try:
+#         df = pd.read_csv(self._updateurl, encoding="gb2312")
+#         # 163 source is failing now
+#     except Exception:
+#         raise ValueError(
+#             "don't use indexinfo currently, see \
+#         https://github.com/refraction-ray/xalpha/issues/133#issuecomment-865447292"
+#         )
+#     self.name = df.iloc[0].loc["名称"]
+#     if len(df) > 1:
+#         df = df.rename(columns={"收盘价": "totvalue"})
+#         df["date"] = pd.to_datetime(df.日期)
+#         df = df.drop(["股票代码", "名称", "日期"], axis=1)
+#         df["netvalue"] = df.totvalue / weight
+#         df["comment"] = [0 for _ in range(len(df))]
+#         df = df.iloc[::-1].iloc[1:]
+#         df = df[df["date"].isin(opendate)]
+#         df = df.reset_index(drop=True)
+#         df = df[df["date"] <= yesterdayobj()]
+#         self.price = self.price.append(df, ignore_index=True, sort=True)
+#         return df
 
 
 class cashinfo(basicinfo):
