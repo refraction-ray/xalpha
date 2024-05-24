@@ -572,7 +572,12 @@ def get_historical_fromsp(code, start=None, end=None, region="www", **kws):
         flag = "three"
     else:
         flag = "ten"
-    url = "https://{region}.spindices.com/idsexport/file.xls?\
+    #     url = "https://{region}.spindices.com/idsexport/file.xls?\
+    # selectedModule=PerformanceGraphView&selectedSubModule=Graph\
+    # &yearFlag={flag}YearFlag&indexId={code}".format(
+    #         region=region, flag=flag, code=code
+    #     )
+    url = "https://{region}.spglobal.com/spdji/en/idsexport/file.xls?\
 selectedModule=PerformanceGraphView&selectedSubModule=Graph\
 &yearFlag={flag}YearFlag&indexId={code}".format(
         region=region, flag=flag, code=code
@@ -585,6 +590,7 @@ selectedModule=PerformanceGraphView&selectedSubModule=Graph\
             "sec-fetch-site": "same-origin",
             "sec-fetch-user": "?1",
             "upgrade-insecure-requests": "1",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko)",
         },
     )
     df = pd.read_excel(r.content, engine="xlrd")
