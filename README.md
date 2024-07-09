@@ -1,9 +1,7 @@
-xalpha
-========
+# xalpha
 
 [![version](https://img.shields.io/pypi/v/xalpha.svg)](https://pypi.org/project/xalpha/)
-[![doc](https://readthedocs.org/projects/xalpha/badge/?style=flat)](https://xalpha.readthedocs.io/) 	
-[![Travis](https://api.travis-ci.org/refraction-ray/xalpha.svg)](https://travis-ci.org/refraction-ray/xalpha)
+[![doc](https://readthedocs.org/projects/xalpha/badge/?style=flat)](https://xalpha.readthedocs.io/)
 [![codecov](https://codecov.io/gh/refraction-ray/xalpha/branch/master/graph/badge.svg)](https://codecov.io/gh/refraction-ray/xalpha)
 [![license](https://img.shields.io/:license-mit-blue.svg)](https://badges.mit-license.org/)
 
@@ -60,10 +58,9 @@ xa.QDIIPredict("SH501018", positions=True).get_t0_rate()
 
 xalpha 不止如此，更多特性，欢迎探索。不只是数据，更是工具！
 
-
 ## 文档
 
-在线文档地址： https://xalpha.readthedocs.io/ 
+在线文档地址： https://xalpha.readthedocs.io/
 
 或者通过以下命令，在本地`doc/build/html`内阅读文档。
 
@@ -71,7 +68,6 @@ xalpha 不止如此，更多特性，欢迎探索。不只是数据，更是工�
 $ cd doc
 $ make html
 ```
-
 
 ## 安装
 
@@ -85,7 +81,7 @@ pip install xalpha
 
 ```bash
 $ git clone https://github.com/refraction-ray/xalpha.git
-$ cd xalpha && python3 setup.py install
+$ cd xalpha && pip3 install .
 ```
 
 ## 用法
@@ -101,8 +97,6 @@ $ cd xalpha && python3 setup.py install
 <img src="doc/source/tradecost.png" width="90%">
 
 <img src="doc/source/positions.png" width="80%">
-
-
 
 ### 在量化平台使用
 
@@ -127,7 +121,7 @@ $ cd xalpha && python3 setup.py install
 >>> import xalpha as xa
 ```
 
-由于 xalpha 整合了部分聚宽数据源的 API，在云端直接 ``xa.provider.set_jq_data(debug=True)`` 即可激活聚宽数据源。
+由于 xalpha 整合了部分聚宽数据源的 API，在云端直接 `xa.provider.set_jq_data(debug=True)` 即可激活聚宽数据源。
 
 ## 致谢
 
@@ -135,6 +129,6 @@ $ cd xalpha && python3 setup.py install
 
 ## 博客
 
-* [xalpha 诞生记](https://re-ra.xyz/xalpha-%E8%AF%9E%E7%94%9F%E8%AE%B0/)
+- [xalpha 诞生记](https://re-ra.xyz/xalpha-%E8%AF%9E%E7%94%9F%E8%AE%B0/)
 
-* [xalpha 设计哲学及其他](https://re-ra.xyz/xalpha-%E8%AE%BE%E8%AE%A1%E5%93%B2%E5%AD%A6%E5%8F%8A%E5%85%B6%E4%BB%96/)
+- [xalpha 设计哲学及其他](https://re-ra.xyz/xalpha-%E8%AE%BE%E8%AE%A1%E5%93%B2%E5%AD%A6%E5%8F%8A%E5%85%B6%E4%BB%96/)

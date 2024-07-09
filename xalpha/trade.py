@@ -177,8 +177,8 @@ def vtradevolume(cftable, freq="D", rendered=True):
     datedata = list(datedata)
     bar.add_xaxis(xaxis_data=datedata)
     # buydata should before selldata, since emptylist in the first line would make the output fig empty: may be bug in pyecharts
-    bar.add_yaxis(series_name="买入", yaxis_data=buydata)
-    bar.add_yaxis(series_name="卖出", yaxis_data=selldata)
+    bar.add_yaxis("买入", buydata)
+    bar.add_yaxis("卖出", selldata)
     bar.set_global_opts(
         tooltip_opts=opts.TooltipOpts(
             is_show=True,
@@ -236,7 +236,6 @@ def vtradecost(
         if buy < 0:
             color = "#ff7733"
         else:
-
             color = "#3366ff"
         size = (abs(buy) - lower) / (upper - lower) * 5 + 5
         return opts.MarkPointItem(

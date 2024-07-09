@@ -1,4 +1,4 @@
-__version__ = "0.11.7"
+__version__ = "0.12.0"
 __author__ = "refraction-ray"
 __name__ = "xalpha"
 
@@ -9,13 +9,13 @@ import xalpha.exceptions
 from xalpha.evaluate import evaluate
 from xalpha.info import (
     fundinfo,
-    indexinfo,
     cashinfo,
     mfundinfo,
+    indexinfo,
     FundInfo,
-    IndexInfo,
     CashInfo,
     MFundInfo,
+    IndexInfo,
     FundReport,
     get_fund_holdings,
 )

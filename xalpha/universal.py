@@ -364,7 +364,7 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
     if (currency[:3] in al) or (currency[4:] in bl):
         is_inverse = True
         currency = currency[4:] + "/" + currency[:3]
-    url = "http://www.chinamoney.com.cn/ags/ms/cm-u-bk-ccpr/CcprHisNew?startDate={start_str}&endDate={end_str}&currency={currency}&pageNum=1&pageSize=300"
+    url = "http://www.chinamoney.com.cn/ags/ms/cm-u-bk-ccpr/CcprHisNew?startDate={start_str}&endDate={end_str}&currency={currency}&pageNum=1&pageSize=30"
     if not end:
         end_obj = today_obj()
     else:
@@ -385,8 +385,8 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
         "Host": "www.chinamoney.com.cn",
         "X-Requested-With": "XMLHttpRequest",
     }
-
-    if count <= 360:
+    segs = 30
+    if count <= segs:
         headers.update({"user-agent": _variate_ua()})
         r = rpost_json(
             url.format(start_str=start_str, end_str=end_str, currency=currency),
@@ -395,7 +395,7 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
         rl.extend(r["records"])
     else:  # data more than 1 year cannot be fetched once due to API limitation
         sepo_obj = end_obj
-        sepn_obj = sepo_obj - dt.timedelta(360)
+        sepn_obj = sepo_obj - dt.timedelta(segs)
         #         sep0_obj = end_obj - dt.timedelta(361)
         while sepn_obj > start_obj:  # [sepn sepo]
             headers.update({"user-agent": _variate_ua()})
@@ -410,7 +410,7 @@ def get_rmb(start=None, end=None, prev=360, currency="USD/CNY"):
             rl.extend(r["records"])
 
             sepo_obj = sepn_obj - dt.timedelta(1)
-            sepn_obj = sepo_obj - dt.timedelta(360)
+            sepn_obj = sepo_obj - dt.timedelta(segs)
         headers.update({"user-agent": _variate_ua()})
         r = rpost_json(
             url.format(
@@ -546,7 +546,7 @@ def get_futu_historical(code, start=None, end=None):
     return df
 
 
-def get_historical_fromsp(code, start=None, end=None, region="us", **kws):
+def get_historical_fromsp(code, start=None, end=None, region="www", **kws):
     """
     标普官网数据源
 
@@ -572,7 +572,12 @@ def get_historical_fromsp(code, start=None, end=None, region="us", **kws):
         flag = "three"
     else:
         flag = "ten"
-    url = "https://{region}.spindices.com/idsexport/file.xls?\
+    #     url = "https://{region}.spindices.com/idsexport/file.xls?\
+    # selectedModule=PerformanceGraphView&selectedSubModule=Graph\
+    # &yearFlag={flag}YearFlag&indexId={code}".format(
+    #         region=region, flag=flag, code=code
+    #     )
+    url = "https://{region}.spglobal.com/spdji/en/idsexport/file.xls?\
 selectedModule=PerformanceGraphView&selectedSubModule=Graph\
 &yearFlag={flag}YearFlag&indexId={code}".format(
         region=region, flag=flag, code=code
@@ -585,6 +590,7 @@ selectedModule=PerformanceGraphView&selectedSubModule=Graph\
             "sec-fetch-site": "same-origin",
             "sec-fetch-user": "?1",
             "upgrade-insecure-requests": "1",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko)",
         },
     )
     df = pd.read_excel(r.content, engine="xlrd")
@@ -744,32 +750,30 @@ def get_historical_fromzzindex(code, start, end=None):
         code = code[2:]
     start_obj = dt.datetime.strptime(start, "%Y%m%d")
     fromnow = (today_obj() - start_obj).days
-    if fromnow < 20:
-        flag = "1%E4%B8%AA%E6%9C%88"
-    elif fromnow < 60:
-        flag = "3%E4%B8%AA%E6%9C%88"  # 个月
-    elif fromnow < 200:
-        flag = "1%E5%B9%B4"  # 年
-    else:
-        flag = "5%E5%B9%B4"
+    # if fromnow < 20:
+    #     flag = "1%E4%B8%AA%E6%9C%88"
+    # elif fromnow < 60:
+    #     flag = "3%E4%B8%AA%E6%9C%88"  # 个月
+    # elif fromnow < 200:
+    #     flag = "1%E5%B9%B4"  # 年
+    # else:
+    #     flag = "5%E5%B9%B4"
+
     r = rget_json(
-        "http://www.csindex.com.cn/zh-CN/indices/index-detail/\
-{code}?earnings_performance={flag}&data_type=json".format(
-            code=code, flag=flag
+        "https://www.csindex.com.cn/csindex-home/perf/index-perf?indexCode={code}&startDate={start}&endDate={end}".format(
+            code=code, start=start, end=end
         ),
         headers={
             "Host": "www.csindex.com.cn",
-            "Referer": "http://www.csindex.com.cn/zh-CN/indices/index-detail/{code}".format(
-                code=code
-            ),
+            "Referer": "http://www.csindex.com.cn/",
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36",
             "X-Requested-With": "XMLHttpRequest",
             "Accept": "application/json, text/javascript, */*; q=0.01",
         },
     )
-    df = pd.DataFrame(r)
-    df["date"] = pd.to_datetime(df["tradedate"])
-    df["close"] = df["tclose"].apply(_float)
+    df = pd.DataFrame(r["data"])
+    df["date"] = pd.to_datetime(df["tradeDate"])
+    df["close"] = df["close"].apply(_float)
     return df[["date", "close"]]
 
 
@@ -819,7 +823,7 @@ def get_historical_fromhzindex(code, start, end):
         code = code[2:]
 
     r = rget_json(
-        "http://www.chindices.com/index/values.val?code={code}".format(code=code)
+        "https://www.chindices.com/index/values.val?code={code}".format(code=code)
     )
     df = pd.DataFrame(r["data"])
     df["date"] = pd.to_datetime(df["date"])
@@ -842,7 +846,7 @@ def get_historical_fromesunny(code, start=None, end=None):
     if code.startswith("ESCI"):
         code = code[4:] + ".ESCI"
     r = rget(
-        "http://www.esunny.com.cn/chartES/csv/shareday/day_易盛指数_{code}.es".format(
+        "https://www.esunny.com.cn/chartES/csv/shareday/day_易盛指数_{code}.es".format(
             code=code
         )
     )
@@ -916,6 +920,7 @@ def get_bond_rates(rating, date=None):
         "BB": "8a8b2ca0455847ac0145650ba23b68ff",
         "B": "8a8b2ca0455847ac0145650c3d726901",
     }
+
     # 上边字典不全，非常欢迎贡献 ：）
     def _fetch(date):
         r = rpost(
@@ -1093,7 +1098,11 @@ def _get_daily(
             _from = "HZ"
         elif code.startswith("ESCI") and code[4:].isdigit():
             _from = "ES"
-        elif code.startswith("yc-companies/") or code.startswith("yc-indices/"):
+        elif (
+            code.startswith("yc-companies/")
+            or code.startswith("yc-indices/")
+            or code.startswith("yc-indicators/")
+        ):
             _from = "ycharts"
             params = code.split("/")
             code = params[1]
@@ -1105,6 +1114,8 @@ def _get_daily(
                     metric = "price"
                 elif category == "indices":
                     metric = "level"
+                elif category == "indicators":
+                    metric = "1"  # seems not important
         elif len(code.split("-")) >= 2 and len(code.split("-")[0]) <= 3:
             # peb-000807.XSHG
             _from = code.split("-")[0]
@@ -1399,7 +1410,11 @@ def get_rt_from_sina(code):
         if code.startswith("."):
             code = code[1:]
         tinycode += code.lower()
-    r = rget("https://hq.sinajs.cn/list={tinycode}".format(tinycode=tinycode))
+    headers = {"Referer": "https://finance.sina.com.cn"}
+    r = rget(
+        "https://hq.sinajs.cn/list={tinycode}".format(tinycode=tinycode),
+        headers=headers,
+    )
     l = r.text.split("=")[1].split(",")
     d = {}
     d["name"] = l[0].strip('"')
@@ -1516,7 +1531,7 @@ def get_rt_from_ycharts(code):
     qdiv = s.select("div.index-rank.col-auto")  # current
     spans = [s for s in qdiv[0].contents if s != "\n" and s.contents]
     d = {}
-    d["name"] = s.select("h1,h3[class=securityName]")[0].text.strip()
+    d["name"] = s.find("ycn-quickflows-menu").get("securityname")
     d["current"], d["percent"] = (
         _float(spans[0].string),  # current,
         _float(spans[1].contents[-2].string[1:-1]),  # percent
@@ -1526,7 +1541,7 @@ def get_rt_from_ycharts(code):
         for c in s.select("span[class=index-info]")[0].string.split("\n")
         if c.strip()
     ]
-    d["time"] = l[1]
+    d["time"] = l[-1]
     d["currency"] = l[0].split(" ")[0].strip()
     d["market"] = None
     return d
@@ -1618,18 +1633,12 @@ def get_rt_from_ttjj(code):
     if s.findAll("dd", class_="dataNums")[1].find(
         "span", class_="ui-font-large"
     ):  # 非货币基金
-        value, date = (
-            float(
-                s.findAll("dd", class_="dataNums")[1]
-                .find("span", class_="ui-font-large")
-                .string
-            ),
-            str(s.findAll("dt")[1]).split("(")[1].split(")")[0][7:],
-        )
         estimate = s.select("span[id=gz_gsz]")
+        ind = 1
         if not estimate:
             estimate = None
             estimate_time = None
+            ind = 0
         else:
             estimate = estimate[0].text  # after loading
             if estimate == "--":
@@ -1652,6 +1661,15 @@ def get_rt_from_ttjj(code):
                 except ValueError:
                     logger.warning("unrecognized estimate netvalue %s" % estimate)
                     estimate = None
+        value, date = (
+            float(
+                s.findAll("dd", class_="dataNums")[ind]
+                .find("span", class_="ui-font-large")
+                .string
+            ),
+            str(s.findAll("dt")[ind]).split("(")[1].split(")")[0][7:],
+        )
+
     else:
         value, date = (
             s.findAll("dd", class_="dataNums")[1].text,
@@ -2146,7 +2164,6 @@ def _get_index_weight_range(code, start, end):
     df = pd.DataFrame({"code": [], "weight": [], "display_name": [], "date": []})
     while True:
         if d > end_m:
-
             df["date"] = pd.to_datetime(df["date"])
             return df
         logger.debug("fetch index weight on %s for %s" % (d, code))

@@ -39,6 +39,7 @@ def test_cash():
     assert round(ca.total_annualized_returns("2018-01-01"), 4) == 0.0757
 
 
+# @pytest.mark.skip(reason="disable indexinfo currently")
 def test_index():
     assert (
         round(zzhb.price[zzhb.price["date"] == "2012-02-01"].iloc[0].totvalue, 3)

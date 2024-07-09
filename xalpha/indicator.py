@@ -632,8 +632,8 @@ def plot_kline(
         .add_js_funcs("var barData = {}".format(list(df["close"] - df["open"])))
         .add_xaxis(xaxis_data=list(df["date"]))
         .add_yaxis(
-            series_name="",
-            yaxis_data=vl,
+            "",
+            vl,
             label_opts=opts.LabelOpts(is_show=False),
             itemstyle_opts=opts.ItemStyleOpts(
                 color=JsCode(

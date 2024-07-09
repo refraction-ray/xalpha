@@ -114,6 +114,7 @@ def test_get_bb_daily(proxy):
     df = xa.get_daily("BB-FGERBIU:ID", prev=10)
 
 
+# the API is ok for IP beyond mainland cn
 def test_get_yahoo_daily():
     df = xa.get_daily("YH-CSGOLD.SW", end="20200323")
     assert round(df.iloc[-1]["close"], 1) == 149.4
@@ -215,7 +216,7 @@ def test_cache_time():
 
 def test_get_ttjj():
     assert xa.get_rt("F501018")["name"] == "南方原油A"
-    assert xa.get_rt("F511600")["type"] == "货币型"
+    assert xa.get_rt("F511600")["type"][:3] == "货币型"
     assert xa.get_rt("F003816")["market"] == "CN"
 
 
@@ -259,6 +260,8 @@ def test_get_ycharts():
         end="20200402",
     )
     assert d.iloc[0]["close"] == 169.821
+
+    d = xa.get_daily("yc-indicators/I:CPPI")
 
     assert xa.get_rt("yc-companies/DBO")["currency"] == "USD"
 

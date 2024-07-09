@@ -784,9 +784,12 @@ class CBCalculator:
             redeem_price = float(td_redeem_price.string)
         self.rlist.append(redeem_price)
         self.rlist[-1] -= self.rlist[-2]  # 最后一年不含息返多少
-        self.scode = (
-            b.select("td[class=jisilu_nav]")[0].contents[1].text.split("-")[1].strip()
-        )
+        stock_nm_div = b.find("div", class_="stock_nm")
+        self.scode = stock_nm_div.find("a", href=True)["href"].split("/")[-1]
+
+        # self.scode = (
+        #     b.select("td[class=jisilu_nav]")[0].contents[1].text.split("-")[1].strip()
+        # )
         self.scode = ttjjcode(self.scode)  # 标准化股票代码
         if not zgj:
             self.zgj = float(b.select("td[id=convert_price]")[0].string)  # 转股价
@@ -1251,7 +1254,6 @@ def evaluate_fluctuation(hdict, date, lastday=None, _check=None, warning_threhol
     for fundid, percent in hdict.items():
         ratio = daily_increment(fundid, date, lastday, _check, warning_threhold)
         if warning_threhold:
-
             # 额外检查，防止误算大幅分红和拆合股等为本身的价格变化，对于变化幅度小的拆合股与分红无法区别与价格变化
             if ratio > warning_threhold[0] or ratio < warning_threhold[1]:
                 logger.warning(
@@ -1783,7 +1785,6 @@ class QDIIPredict:
         else:
             date = date.replace("/", "").replace("-", "")
         if date not in self.position_cache or refresh:
-
             fdict = scale_dict(self.t1dict.copy(), aim=100)
             l = kws.get("window", 4)
             q = kws.get("decay", 0.8)

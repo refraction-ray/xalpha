@@ -1,4 +1,5 @@
 htmlcov/
+api.token
 caldate.csv.bkp
 holdings.py
 investinghooks.py
