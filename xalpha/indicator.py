@@ -218,15 +218,14 @@ class indicator:
         :returns: three elements tuple, the first two are the date obj of
             start and end of the time window, the third one is the drawdown amplitude in unit 1.
         """
-        li = [
-            (row["date"], row["netvalue"])
-            for i, row in self.price[self.price["date"] <= date].iterrows()
-        ]
-        res = []
-        for i, _ in enumerate(li):
-            for j in range(i + 1, len(li)):
-                res.append((li[i][0], li[j][0], (li[j][1] - li[i][1]) / li[i][1]))
-        return min(res, key=lambda x: x[2])
+        tmpprice = self.price.loc[:,:]
+        tmpprice.loc[:,'drawdown'] = (tmpprice['netvalue']-tmpprice['netvalue'].expanding(1).max())/tmpprice['netvalue'].expanding(1).max()
+        tmpprice = tmpprice.loc[tmpprice['date']<=date,:]
+        iid = tmpprice.loc[:,'drawdown'].argmin()
+        lastrow = tmpprice.iloc[iid]
+        newhigh = tmpprice.loc[tmpprice.loc[:,'drawdown']>=-0.0001,:]
+        beginrow = newhigh.loc[newhigh['date']<=lastrow['date'],:].iloc[-1]
+        return beginrow['date'],lastrow['date'],lastrow['drawdown']
 
     ## 以上基本为聚宽提供的整体量化指标，以下是其他短线技术面指标
 

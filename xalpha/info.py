@@ -935,11 +935,16 @@ class fundinfo(basicinfo):
         if self.code.startswith("96"):
             return self._hk_update()
         lastdate = self.price.iloc[-1].date
-        diffdays = (yesterdayobj() - lastdate).days
-        if (
-            diffdays == 0
-        ):  ## for some QDII, this value is 1, anyways, trying update is compatible (d+2 update)
-            return None
+        if dt.datetime.today().time()>=dt.time(20,00):
+            # if over 20:00, update today's netvalue
+            # diffdays = (today_obj() - lastdate).days
+            diffdays = 0
+        else:
+            diffdays = (yesterdayobj() - lastdate).days
+            if (
+                diffdays == 0
+            ):  ## for some QDII, this value is 1, anyways, trying update is compatible (d+2 update)
+                return None
         self._updateurl = (
             "http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code="
             + self.code
@@ -1004,7 +1009,8 @@ class fundinfo(basicinfo):
         df = df.iloc[::-1]  ## reverse the time order
         df = df[df["date"].isin(opendate)]
         df = df.reset_index(drop=True)
-        df = df[df["date"] <= yesterdayobj()]
+        #df = df[df["date"] <= yesterdayobj()]
+        df = df[df["date"] <= today_obj()]
         if len(df) != 0:
             self.price = self.price.append(df, ignore_index=True, sort=True)
             return df

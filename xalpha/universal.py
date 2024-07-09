@@ -142,7 +142,7 @@ def get_token():
     :return:
     """
     r = rget("https://xueqiu.com", headers={"user-agent": "Mozilla"})
-    return r.cookies["xq_a_token"]
+    return r.cookies["xq_a_token"],r.cookies["u"]
 
 
 def get_historical_fromxq(code, count, type_="before", full=False):
@@ -162,7 +162,7 @@ def get_historical_fromxq(code, count, type_="before", full=False):
         url.format(
             code=code, tomorrow=int(tomorrow_ts() * 1000), count=count, type_=type_
         ),
-        cookies={"xq_a_token": get_token()},
+        cookies={"xq_a_token": get_token()[0],"u":get_token()[1]},
         headers={"user-agent": "Mozilla/5.0"},
     )
     df = pd.DataFrame(data=r["data"]["item"], columns=r["data"]["column"])
