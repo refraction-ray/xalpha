@@ -142,7 +142,7 @@ def get_token():
     :return:
     """
     r = rget("https://xueqiu.com", headers={"user-agent": "Mozilla"})
-    return r.cookies["xq_a_token"]
+    return {"xq_a_token": r.cookies["xq_a_token"],"u": r.cookies["u"]}
 
 
 def get_historical_fromxq(code, count, type_="before", full=False):
@@ -162,7 +162,7 @@ def get_historical_fromxq(code, count, type_="before", full=False):
         url.format(
             code=code, tomorrow=int(tomorrow_ts() * 1000), count=count, type_=type_
         ),
-        cookies={"xq_a_token": get_token()},
+        cookies=get_token(),
         headers={"user-agent": "Mozilla/5.0"},
     )
     df = pd.DataFrame(data=r["data"]["item"], columns=r["data"]["column"])
@@ -182,7 +182,7 @@ def get_industry_fromxq(code):
         "https://xueqiu.com/stock/industry/stockList.json?code=%s&type=1&size=100"
         % code
     )
-    r = rget_json(url, cookies={"xq_a_token": get_token()})
+    r = rget_json(url, cookies=get_token())
     return r
 
 
@@ -1259,13 +1259,13 @@ def _get_daily(
         return df
 
 
-def get_xueqiu_rt(code, token="a664afb60c7036c7947578ac1a5860c4cfb6b3b5"):
+def get_xueqiu_rt(code):
     if code.startswith("HK") and code[2:].isdigit():
         code = code[2:]
     url = "https://stock.xueqiu.com/v5/stock/quote.json?symbol={code}&extend=detail"
     r = rget_json(
         url.format(code=code),
-        cookies={"xq_a_token": token},
+        cookies=get_token(),
         headers={"user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4)"},
     )
     n = r["data"]["quote"]["name"]
@@ -1778,14 +1778,14 @@ def get_rt(
             )
             return get_cninvesting_rt(code, app=True)
     elif double_check and _from in ["xueqiu", "sina"]:
-        r1 = get_xueqiu_rt(code, token=get_token())
+        r1 = get_xueqiu_rt(code)
         r2 = get_rt_from_sina(code)
         if abs(r1["current"] / r2["current"] - 1) > double_check_threhold:
             raise DataPossiblyWrong("realtime data unmatch for %s" % code)
         return r2
     elif _from in ["xueqiu", "xq", "snowball"]:
         try:
-            return get_xueqiu_rt(code, token=get_token())
+            return get_xueqiu_rt(code)
         except (IndexError, ValueError, AttributeError, TypeError) as e:  # 默认雪球实时引入备份机制
             logging.warning(
                 "Fails due to %s, now trying backup data source from sina" % e.args[0]
@@ -1798,7 +1798,7 @@ def get_rt(
             logging.warning(
                 "Fails due to %s, now trying backup data source from xueqiu" % e.args[0]
             )
-            return get_xueqiu_rt(code, token=get_token())
+            return get_xueqiu_rt(code)
     elif _from in ["ttjj"]:
         return get_rt_from_ttjj(code)
     elif _from in ["FT", "ft", "FTI"]:
@@ -2652,7 +2652,7 @@ def get_bar_fromxq(code, prev, interval=3600):
         type_=type_,
     )
     r = rget(
-        url, headers={"user-agent": "Mozilla/5.0"}, cookies={"xq_a_token": get_token()}
+        url, headers={"user-agent": "Mozilla/5.0"}, cookies=get_token()
     )
     if not r.text:
         return  # None
