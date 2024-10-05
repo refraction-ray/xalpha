@@ -133,16 +133,28 @@ def lru_cache_time(ttl=None, maxsize=None):
     return wrapper
 
 
+tokens = {}
+
 # TODO: 缓存 token 的合适时间尺度
 @lru_cache_time(ttl=300)
-def get_token():
+def get_token(source="xq"):
     """
     获取雪球的验权 token，匿名也可获取，而且似乎永远恒定(大时间范围内会改变)
 
     :return:
     """
-    r = rget("https://xueqiu.com", headers={"user-agent": "Mozilla"})
-    return {"xq_a_token": r.cookies["xq_a_token"],"u": r.cookies["u"]}
+    if source in tokens:
+        return tokens[source]
+    if source in ["xq", "xueqiu"]:
+        r = rget("https://xueqiu.com", headers={"user-agent": "Mozilla"})
+        return {"xq_a_token": r.cookies["xq_a_token"], "u": r.cookies["u"]}
+    else:
+        raise ValueError("`get_token` doesn't support %s source" % source)
+
+
+def set_token(key, source="xq"):
+    global tokens
+    tokens[source] = key
 
 
 def get_historical_fromxq(code, count, type_="before", full=False):
@@ -2651,9 +2663,7 @@ def get_bar_fromxq(code, prev, interval=3600):
         interval=interval,
         type_=type_,
     )
-    r = rget(
-        url, headers={"user-agent": "Mozilla/5.0"}, cookies=get_token()
-    )
+    r = rget(url, headers={"user-agent": "Mozilla/5.0"}, cookies=get_token())
     if not r.text:
         return  # None
     else:
