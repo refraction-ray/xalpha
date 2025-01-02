@@ -125,7 +125,18 @@ def get_sz_status(category="cb", date=None):
         df["未转股数量"] = df["kzsl"]
         df["未转股比例"] = df["kzbl"]
         df["转股截止日期"] = pd.to_datetime(df["kzzzrq"])
-        df = df[["证券代码", "证券简称", "上市日期", "发行量", "换股价格", "未转股数量", "未转股比例", "转股截止日期"]]
+        df = df[
+            [
+                "证券代码",
+                "证券简称",
+                "上市日期",
+                "发行量",
+                "换股价格",
+                "未转股数量",
+                "未转股比例",
+                "转股截止日期",
+            ]
+        ]
         return df
 
 
@@ -303,7 +314,14 @@ def summary_cb(df, l=None, cutoff=5):
     if l is not None:
         df = df[df["转债代码"].isin(l)]
     d = {}
-    for c in ["老式双低", "转债价格", "转股溢价率", "价值溢价", "税后收益率", "股票市值"]:
+    for c in [
+        "老式双低",
+        "转债价格",
+        "转股溢价率",
+        "价值溢价",
+        "税后收益率",
+        "股票市值",
+    ]:
         if cutoff == 0:
             yj = sorted(df[c])
         else:

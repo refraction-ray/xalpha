@@ -135,6 +135,7 @@ def lru_cache_time(ttl=None, maxsize=None):
 
 tokens = {}
 
+
 # TODO: 缓存 token 的合适时间尺度
 @lru_cache_time(ttl=300)
 def get_token(source="xq"):
@@ -1798,7 +1799,12 @@ def get_rt(
     elif _from in ["xueqiu", "xq", "snowball"]:
         try:
             return get_xueqiu_rt(code)
-        except (IndexError, ValueError, AttributeError, TypeError) as e:  # 默认雪球实时引入备份机制
+        except (
+            IndexError,
+            ValueError,
+            AttributeError,
+            TypeError,
+        ) as e:  # 默认雪球实时引入备份机制
             logging.warning(
                 "Fails due to %s, now trying backup data source from sina" % e.args[0]
             )
@@ -1806,7 +1812,12 @@ def get_rt(
     elif _from in ["sina", "sn", "xinlang"]:
         try:
             return get_rt_from_sina(code)
-        except (IndexError, ValueError, AttributeError, TypeError) as e:  # 默认雪球实时引入备份机制
+        except (
+            IndexError,
+            ValueError,
+            AttributeError,
+            TypeError,
+        ) as e:  # 默认雪球实时引入备份机制
             logging.warning(
                 "Fails due to %s, now trying backup data source from xueqiu" % e.args[0]
             )
@@ -2454,7 +2465,11 @@ def get_teb(code, date):
     df = get_fundamentals(query(valuation).filter(valuation.code.in_(sl)), date=date)
     df["e"] = df["market_cap"] / df["pe_ratio"]
     df["b"] = df["market_cap"] / df["pb_ratio"]
-    return {"e": df["e"].sum(), "b": df["b"].sum(), "m": df["market_cap"].sum()}  # 亿人民币
+    return {
+        "e": df["e"].sum(),
+        "b": df["b"].sum(),
+        "m": df["market_cap"].sum(),
+    }  # 亿人民币
 
 
 def get_teb_range(code, start, end, freq="W-FRI"):

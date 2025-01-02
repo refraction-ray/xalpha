@@ -772,7 +772,8 @@ class CBCalculator:
         if td_redeem_price.span:
             redeem_price = float(
                 re.match(
-                    r"\S+，合计到期赎回价(\d\d\d\.\d\d)元", td_redeem_price.span["title"]
+                    r"\S+，合计到期赎回价(\d\d\d\.\d\d)元",
+                    td_redeem_price.span["title"],
                 ).group(1)
             )
             logger.info(
@@ -1106,7 +1107,11 @@ def is_on(date, market="CN", no_trading_days=None):
         code = "indices/us-spx-500"
     elif market in ["GBP", "UK", "GB"]:
         code = "indices/uk-100"
-    elif market in ["GER", "EUR", "DE"]:  # 是否可以代表欧洲待考量, 还要警惕欧洲市场的美元计价标的
+    elif market in [
+        "GER",
+        "EUR",
+        "DE",
+    ]:  # 是否可以代表欧洲待考量, 还要警惕欧洲市场的美元计价标的
         code = "indices/germany-30"
     elif market in ["CHF", "SWI", "CH"]:
         code = "indices/switzerland-20"

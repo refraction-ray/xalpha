@@ -1126,7 +1126,12 @@ class fundinfo(basicinfo):
         self.start = self.meta["startdate"]
         self.name = self.meta["name"]
         self.price = xu.get_daily("F" + self.code, start=self.start)
-        self.feeinfo = ["小于7天", "0.00%", "大于等于7天", "0.00%"]  # 似乎该类型基金都不收取赎回费
+        self.feeinfo = [
+            "小于7天",
+            "0.00%",
+            "大于等于7天",
+            "0.00%",
+        ]  # 似乎该类型基金都不收取赎回费
         self.segment = fundinfo._piecewise(self.feeinfo)
         r = rget("http://overseas.1234567.com.cn/f10/FundSaleInfo/968012#SaleInfo")
         b = BeautifulSoup(r.text, "lxml")
