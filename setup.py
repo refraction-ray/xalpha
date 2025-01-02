@@ -16,7 +16,7 @@ for f in excludes:
 
 setuptools.setup(
     name="xalpha",
-    version="0.12.1",
+    version="0.12.2",
     author="refraction-ray",
     author_email="znfesnpbh@gmail.com",
     description="all about fund investment",
