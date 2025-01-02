@@ -80,7 +80,9 @@ def calendar_selfcheck():
         logger.warning(
             "Please update xalpha via `pip install -U xalpha` to keep the trade calendar up-to-date"
         )
-        print("请更新 xalpha 版本以更新最新年份的 A 股交易日历, 否则将可能无法正确获取和处理最新的基金净值")
+        print(
+            "请更新 xalpha 版本以更新最新年份的 A 股交易日历, 否则将可能无法正确获取和处理最新的基金净值"
+        )
 
 
 calendar_selfcheck()

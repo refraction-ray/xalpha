@@ -64,7 +64,9 @@ def mail(
             receivestr += " <"
             receivestr += s
             receivestr += ">, "
-        msg["To"] = _format_addr(receivestr)  # 括号里的对应收件人邮箱昵称、收件人邮箱账号
+        msg["To"] = _format_addr(
+            receivestr
+        )  # 括号里的对应收件人邮箱昵称、收件人邮箱账号
         msg["Subject"] = title  # 邮件的主题，即标题
 
         server = smtplib.SMTP_SSL(server, port)  # 发件人邮箱中的SMTP服务器和端口号

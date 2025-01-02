@@ -313,7 +313,9 @@ class ScheduledSellonXIRR(Scheduled):
                 except RuntimeError:
                     xirr = 0.0
                 if self.verbose:
-                    print(f"{date.strftime('%Y-%m-%d')} 内部年化收益率为 {round(xirr*100, 0)}%")
+                    print(
+                        f"{date.strftime('%Y-%m-%d')} 内部年化收益率为 {round(xirr*100, 0)}%"
+                    )
                 if xirr > self.threhold:
                     self.sold = True
                     self.sell(self.code, -0.005, date)
@@ -420,7 +422,10 @@ class Balance(BTE):
             df = sys.summary(date.strftime("%Y-%m-%d"))
             total_value = df[df["基金名称"] == "总计"]["基金现值"].iloc[0]
             for fund, ratio in self.portfolio_dict.items():
-                delta = df[df["基金代码"] == fund[1:]]["基金现值"].iloc[0] - total_value * ratio
+                delta = (
+                    df[df["基金代码"] == fund[1:]]["基金现值"].iloc[0]
+                    - total_value * ratio
+                )
                 if delta > 0:
                     share = round(
                         delta
@@ -428,6 +433,8 @@ class Balance(BTE):
                         / df[df["基金代码"] == fund[1:]]["当日净值"].iloc[0],
                         2,
                     )
-                    self.sell(fund, share, date)  # 赎回份额考虑赎回费估算为千五，会导致末态并非完全平衡
+                    self.sell(
+                        fund, share, date
+                    )  # 赎回份额考虑赎回费估算为千五，会导致末态并非完全平衡
                 elif delta < 0:
                     self.buy(fund, -delta, date)

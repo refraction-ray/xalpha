@@ -80,7 +80,9 @@ def test_get_xueqiu_rt():
 
 def test_get_sina_rt():
     assert xa.get_rt("PDD", _from="sina")["currency"] == "USD"
-    xa.get_rt("HK00700", double_check=True)  # 港股 sina 实时数据延迟, 代码前需加 rt_ 方可获取实时
+    xa.get_rt(
+        "HK00700", double_check=True
+    )  # 港股 sina 实时数据延迟, 代码前需加 rt_ 方可获取实时
     xa.get_rt("SH600000", double_check=True)
 
 
@@ -95,7 +97,7 @@ def test_get_investing_rt():
 @pytest.mark.local
 def test_get_ft_rt():
     assert xa.get_rt("FT-INX:IOM")["currency"] == "USD"
-    assert xa.get_rt("FTC-WTI+Crude+Oil")["name"] == "NYMEX Crude Oil Front Month"
+    assert xa.get_rt("FTC-WTI+Crude+Oil")["name"] == "WTI Crude Oil"
 
 
 # @pytest.mark.skip(

@@ -434,7 +434,9 @@ class trade:
             if (lastdate in self.recorddate_set) and (date not in self.aim.zhesuandate):
                 # deal with buy and sell and label the fenhongzaitouru, namely one label a 0.05 in the original table to label fenhongzaitouru
                 value = self.status[self.status["date"] <= lastdate].iloc[-1].loc[code]
-                if date in self.aim.fenhongdate:  # 0.05 的分红行为标记，只有分红日才有效
+                if (
+                    date in self.aim.fenhongdate
+                ):  # 0.05 的分红行为标记，只有分红日才有效
                     fenhongmark = round(10 * value - int(10 * value), 1)
                     # TODO: any rounding issue here for th int
                     if fenhongmark == 0.5 and label == 0:
@@ -793,7 +795,9 @@ class itrade(trade):
                     d["cash"].append(0)
                     d["share"].append(r.share)  # 直接记录总的应增加+或减少的份额数
                 else:
-                    d["cash"].append(-r.value * r.share - abs(r.fee))  # 手续费总是正的，和买入同号
+                    d["cash"].append(
+                        -r.value * r.share - abs(r.fee)
+                    )  # 手续费总是正的，和买入同号
                     d["share"].append(r.share)
         self.cftable = pd.DataFrame(d)
 

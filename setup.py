@@ -29,7 +29,7 @@ setuptools.setup(
         "lxml",
         "pandas<2.0",
         "xlrd>=1.0.0",  #  read excel support
-        "numpy",
+        "numpy<2.0",
         "scipy",
         "matplotlib",
         "requests",

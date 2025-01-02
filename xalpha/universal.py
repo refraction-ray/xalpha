@@ -147,7 +147,7 @@ def get_token(source="xq"):
     if source in tokens:
         return tokens[source]
     if source in ["xq", "xueqiu"]:
-        r = rget("https://xueqiu.com", headers={"user-agent": "Mozilla"})
+        r = rget("https://xueqiu.com/hq", headers={"user-agent": "Mozilla"})
         return {"xq_a_token": r.cookies["xq_a_token"], "u": r.cookies["u"]}
     else:
         raise ValueError("`get_token` doesn't support %s source" % source)
@@ -501,9 +501,15 @@ def get_portfolio_fromttjj(code, start=None, end=None):
     table = s.find("table", class_="tzxq")
     df = pd.read_html(str(table))[0]
     df["date"] = pd.to_datetime(df["报告期"])
-    df["stock_ratio"] = df["股票占净比"].replace("---", "0%").apply(lambda s: _float(s[:-1]))
-    df["bond_ratio"] = df["债券占净比"].replace("---", "0%").apply(lambda s: _float(s[:-1]))
-    df["cash_ratio"] = df["现金占净比"].replace("---", "0%").apply(lambda s: _float(s[:-1]))
+    df["stock_ratio"] = (
+        df["股票占净比"].replace("---", "0%").apply(lambda s: _float(s[:-1]))
+    )
+    df["bond_ratio"] = (
+        df["债券占净比"].replace("---", "0%").apply(lambda s: _float(s[:-1]))
+    )
+    df["cash_ratio"] = (
+        df["现金占净比"].replace("---", "0%").apply(lambda s: _float(s[:-1]))
+    )
     #     df["dr_ratio"] = df["存托凭证占净比"].replace("---", "0%").apply(lambda s: xa.cons._float(s[:-1]))
     df["assets"] = df["净资产（亿元）"]
     df = df[::-1]
@@ -1103,9 +1109,13 @@ def _get_daily(
             _from = "SP"
         elif code.startswith("SPC") and code[3:].split(".")[0].isdigit():
             _from = "SPC"
-        elif code.startswith("ZZ") and code[4:].isdigit():  # 注意中证系列指数的代码里可能包含字母！
+        elif (
+            code.startswith("ZZ") and code[4:].isdigit()
+        ):  # 注意中证系列指数的代码里可能包含字母！
             _from = "ZZ"
-        elif code.startswith("GZ") and code[-3:].isdigit():  # 注意国证系列指数的代码里可能包含多个字母！
+        elif (
+            code.startswith("GZ") and code[-3:].isdigit()
+        ):  # 注意国证系列指数的代码里可能包含多个字母！
             _from = "GZ"
         elif code.startswith("HZ") and code[2:].isdigit():
             _from = "HZ"
@@ -2056,7 +2066,9 @@ def cachedio(**ioconf):
                             else:  # 单日多行的表默认最后一日是准确的，不再刷新了
                                 kws["start"] = nextday_str
                             kws["end"] = end_str
-                            if has_weekday(nextday_str, kws["end"]):  # 新更新的日期里有工作日
+                            if has_weekday(
+                                nextday_str, kws["end"]
+                            ):  # 新更新的日期里有工作日
                                 df2 = f(*args, **kws)
                                 if df2 is not None and len(df2) > 0:
                                     df2 = df2[df2["date"] >= kws["start"]]
@@ -2328,7 +2340,8 @@ def get_fund_peb(code, date, threhold=0.3):
                 pbl.append(fdf["pb"])
         except (KeyError, TypeError, IndexError) as e:
             logger.warning(
-                "%s: 获取历史估值出现问题: %s, 可能由于网站故障或股票代码非中美市场" % (r["scode"], e.args[0])
+                "%s: 获取历史估值出现问题: %s, 可能由于网站故障或股票代码非中美市场"
+                % (r["scode"], e.args[0])
             )
             pel.append(None)
             pbl.append(None)

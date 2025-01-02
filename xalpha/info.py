@@ -67,13 +67,17 @@ def _nfloat(string):
             result = float(string)
         except ValueError:
             if re.match(r'"分红\D*(\d*(?:\.\d*)?)\D*"', string):
-                result = float(re.match(r'"分红\D*(\d*(?:\.\d*)?)\D*"', string).group(1))
+                result = float(
+                    re.match(r'"分红\D*(\d*(?:\.\d*)?)\D*"', string).group(1)
+                )
             elif re.match(r".*现金(\d*(?:\.\d*)?)\D*", string):
                 result = float(re.match(r".*现金(\d*(?:\.\d*)?)\D*", string).group(1))
             elif re.match(r".*折算(\d*(?:\.\d*)?)\D*", string):
                 result = -float(re.match(r".*折算(\d*(?:\.\d*)?)\D*", string).group(1))
             elif re.match(r'"拆分\D*(\d*(?:\.\d*)?)\D*"', string):
-                result = -float(re.match(r'"拆分\D*(\d*(?:\.\d*)?)\D*"', string).group(1))
+                result = -float(
+                    re.match(r'"拆分\D*(\d*(?:\.\d*)?)\D*"', string).group(1)
+                )
             elif re.match(r"\D*分拆(\d*(?:\.\d*)?)\D*", string):
                 result = -float(re.match(r"\D*分拆(\d*(?:\.\d*)?)\D*", string).group(1))
             else:
@@ -582,7 +586,9 @@ class fundinfo(basicinfo):
         l = re.match(
             r"[\s\S]*Data_netWorthTrend = ([^;]*);[\s\S]*", self._page.text
         ).groups()[0]
-        l = l.replace("null", "None")  # 暂未发现基金净值有 null 的基金，若有，其他地方也很可能出问题！
+        l = l.replace(
+            "null", "None"
+        )  # 暂未发现基金净值有 null 的基金，若有，其他地方也很可能出问题！
         l = eval(l)
         ltot = re.match(
             r"[\s\S]*Data_ACWorthTrend = ([^;]*);[\s\S]*", self._page.text
@@ -604,7 +610,9 @@ class fundinfo(basicinfo):
             "comment": [_nfloat(d["unitMoney"]) for d in l],
         }
 
-        if len(l) == len(ltot):  # 防止总值和净值数据量不匹配，已知有该问题的基金：502010
+        if len(l) == len(
+            ltot
+        ):  # 防止总值和净值数据量不匹配，已知有该问题的基金：502010
             infodict["totvalue"] = [d[1] for d in ltot]
 
         try:
@@ -663,12 +671,18 @@ class fundinfo(basicinfo):
             somethingwrong = True
         else:
             for item in self.feeinfo:
-                if "开放期" in item or "封闭" in item or "开放日期" in item or "运作期" in item:
+                if (
+                    "开放期" in item
+                    or "封闭" in item
+                    or "开放日期" in item
+                    or "运作期" in item
+                ):
                     # 暂时没有完美维护定开基金赎回费处理的计划
                     somethingwrong = True
         if somethingwrong:
             logger.warning(
-                "%s 赎回费信息异常，多是因为定开基金，封闭基金或场内 ETF: %s" % (self.code, self.feeinfo)
+                "%s 赎回费信息异常，多是因为定开基金，封闭基金或场内 ETF: %s"
+                % (self.code, self.feeinfo)
             )
             self.feeinfo = ["小于7天", "1.50%", "大于等于7天", "0.00%"]
         # print(self.feeinfo)
