@@ -325,9 +325,11 @@ class trade:
             self.remtable = pd.DataFrame([], columns=["date", "rem"])
         else:
             self.remtable = remtable
-        self.status = status.loc[:, ["date", code]]
-        self.status = self.status[self.status[code] != 0]
-        self._arrange()
+        self.status = status
+        if status is not None:
+            self.status = status.loc[:, ["date", code]]
+            self.status = self.status[self.status[code] != 0]
+            self._arrange()
 
     def _arrange(self):
         self.recorddate_set = set(self.status.date)
@@ -709,30 +711,38 @@ class itrade(trade):
     场内交易，只包含 cftable 现金流表
     """
 
-    def __init__(self, code, status, name=None):
+    def __init__(self, code, status, cftable=None, name=None):
         """
 
         :param code: str. 代码格式与 :func:`xalpha.universal.get_daily` 要求相同
         :param status: 记账单或 irecord 类。
+        :param cftable: pd.DataFrame. 现金流表，每行为不同变更日期，三列分别为 date，cash， share，
+            标记对于某个投资标的交易记录，该变量和 `status` 需要一个提供。
         :param name: Optional[str]. 可提供标的名称。
         """
         self.code = code
-        if isinstance(status, irecord):
-            self.status = status.filter(code)
+        self.cftable = cftable
+        if status is not None:
+            if isinstance(status, irecord):
+                self.status = status.filter(code)
+            else:
+                self.status = status[status.code == code]
+            start = self.status.iloc[0]["date"].strftime("%Y-%m-%d")
         else:
-            self.status = status[status.code == code]
+            start = cftable.iloc[0]["date"].strftime("%Y-%m-%d")
         # self.cftable = pd.DataFrame([], columns=["date", "cash", "share"])
         try:
-            self.price = xu.get_daily(
-                self.code, start=self.status.iloc[0]["date"].strftime("%Y-%m-%d")
-            )
+            self.price = xu.get_daily(self.code, start=start)
             self.price["netvalue"] = self.price["close"]
         except Exception as e:
             logger.warning(
                 "%s when trade trying to get daily price of %s" % (e, self.code)
             )
             self.price = None
-        self._arrange()
+        if self.cftable is None:
+            # 这里逻辑和 trade 有所不同，trade 的 cftable 后会继续根据 status 交易，
+            # 这里有 cftable 就不再继续交易，未来可能会更新成和 trade 一致的逻辑
+            self._arrange()
         if not name:
             try:
                 self.name = get_rt(code)["name"]

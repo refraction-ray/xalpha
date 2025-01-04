@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- 增加网格的回测模板类
+
+- 通过 `cftable` 更加灵活的生成 `trade` `itrade` 类
+
 ## v0.12.2 - 2025.01.01
 
 - 固定 numpy 版本小于 2
