@@ -43,3 +43,5 @@
 *   直接基于 xalpha 的关于场内基金折溢价的最佳实践 `示例 <https://github.com/refraction-ray/xalpha/blob/master/doc/samples/qdiipred.py>`_
 
 *   可转债价格估计的研究和比较（xalpha 可转债价格计算器教学） `示例 <https://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/cbond.ipynb>`_
+
+*   指数网格交易策略的研究 `示例 <https://nbviewer.jupyter.org/github/refraction-ray/xalpha/blob/master/doc/samples/gridbacktest.ipynb>`_
