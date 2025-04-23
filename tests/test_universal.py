@@ -84,6 +84,7 @@ def test_get_sina_rt():
         "HK00700", double_check=True
     )  # 港股 sina 实时数据延迟, 代码前需加 rt_ 方可获取实时
     xa.get_rt("SH600000", double_check=True)
+    xa.get_rt("sina-fx_susdcny")
 
 
 @pytest.mark.skip(reason="cninvesting explorer check")

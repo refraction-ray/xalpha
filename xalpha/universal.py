@@ -1422,12 +1422,16 @@ def get_cninvesting_rt(suburl, app=False):
 
 
 def get_rt_from_sina(code):
+    if code.startswith("sina-"):
+        code = code[5:]
     if (
         code.startswith("SH") or code.startswith("SZ") or code.startswith("HK")
     ) and code[2:].isdigit():
         tinycode = code[:2].lower() + code[2:]
         if code.startswith("HK"):  # 港股额外要求实时
             tinycode = "rt_" + tinycode
+    elif code.startswith("fx_s"):
+        tinycode = code
     else:  # 美股
         tinycode = "gb_"
         if code.startswith("."):
@@ -1465,7 +1469,14 @@ def get_rt_from_sina(code):
             for i in range(20, 29)[::2]:
                 d["sell" + str(int((i - 18) / 2))] = (l[i + 1], l[i])
             d["current_ext"] = None
-
+    elif code.startswith("fx_s"):  # 外汇
+        # 'var hq_str_fx_sinrcny="12:43:37,0.085000,0.086000,0.085400,4,0.085400,0.085400,0.085000,0.085000,
+        # 印度卢比兑人民币即期汇率,-0.470000,-0.000400,0.004684,OTC Data Services Editorial Team Calculated Cross Rates.
+        # New York,0.081300,0.081300,*-****+*,2025-04-23";\n'
+        # TODO: column meaning check
+        d["time"] = l[0]
+        d["current"] = float(l[1])
+        d["name"] = l[9]
     else:
         d["currency"] = "USD"
         d["current"] = float(l[1])

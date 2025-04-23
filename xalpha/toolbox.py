@@ -1156,6 +1156,12 @@ def daily_increment(code, date, lastday=None, _check=False, warning_threhold=Non
             tds = xu.get_daily(code=code, end=date, prev=30, refresh=True)
             # 对于可能出现的拆合股情况，刷新该标的全局缓存
             tds = tds[tds["date"] <= date]
+            rough_ratio = tds.iloc[-1]["close"] / tds.iloc[-2]["close"]
+            if rough_ratio > 9.9 or rough_ratio < 0.11:
+                # 标的倍数异常，如 currencies/inr-cny
+                # 保护性策略
+                return 1
+
     if _check:
         date = date.replace("-", "").replace("/", "")
         date_obj = dt.datetime.strptime(date, "%Y%m%d")
@@ -1756,7 +1762,9 @@ class QDIIPredict:
                 c = w / 100 * r["current"] / basev
             currency_code = get_currency_code(k)
             if currency_code:
-                c = c * daily_increment(currency_code, today_str)
+                c = c * daily_increment(
+                    currency_code, today_str, warning_threhold=(1.8, 0.15)
+                )
                 # TODO: 中间价未更新，但实时数据不检查问题也不大
             n += c
         n += (100 - t) / 100

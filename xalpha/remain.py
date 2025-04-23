@@ -5,7 +5,7 @@ such datastructure is useful when first-in-first-out mechanism considered in sel
 and it is also useful when converting the shares of funds.
 
 as the nested list structure is very fragile and tend to induce unpredicatble behaviors,
-we strongly recommended anytime when rem data serves as function paramters, 
+we strongly recommended anytime when rem data serves as function paramters,
 only utilize functions from this module
 """
 from xalpha.cons import convert_date, myround
