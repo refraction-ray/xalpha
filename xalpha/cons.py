@@ -306,8 +306,8 @@ def reconnect(tries=5, timeout=12):
 
             if getattr(xp, "proxy", None):
                 kws["proxies"] = {"http": xp.proxy, "https": xp.proxy}
-                kws["timeout"] = timeout
                 logger.debug("Using proxy %s" % xp.proxy)
+            kws["timeout"] = timeout
             if args:
                 url = args[0]
             else:
