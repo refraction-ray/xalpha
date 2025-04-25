@@ -28,6 +28,7 @@ from xalpha.cons import (
     rget,
     rget_json,
     _float,
+    last_onday,
 )
 from xalpha.exceptions import FundTypeError, TradeBehaviorError, ParserFailure
 from xalpha.indicator import indicator
@@ -639,7 +640,7 @@ class fundinfo(basicinfo):
         df = df.reset_index(drop=True)
         if len(df) == 0:
             raise ParserFailure("no price table found for this fund %s" % self.code)
-        self.price = df[df["date"] <= yesterdaydash()]
+        self.price = df[df["date"] <= last_onday(today_obj())]
         # deal with the redemption fee attrs finally
         if not self.priceonly:
             self._feepreprocess()
@@ -920,7 +921,7 @@ class fundinfo(basicinfo):
         # 暂时不确定增量更新逻辑无 bug，需时间验证
         # 注意增量更新时分红的同步更新
         lastdate = self.price.iloc[-1].date
-        diffdays = (yesterdayobj() - lastdate).days
+        diffdays = (last_onday(today_obj()) - lastdate).days
         if diffdays == 0:
             return None
         import xalpha.universal as xu
@@ -928,7 +929,7 @@ class fundinfo(basicinfo):
         df = xu.get_daily("F" + self.code, start=lastdate.strftime("%Y%m%d"))
         df = df[df["date"].isin(opendate)]
         df = df.reset_index(drop=True)
-        df = df[df["date"] <= yesterdayobj()]
+        df = df[df["date"] <= last_onday(today_obj())]
         df = df[df["date"] > lastdate]
 
         if len(df) != 0:
@@ -949,7 +950,7 @@ class fundinfo(basicinfo):
         if self.code.startswith("96"):
             return self._hk_update()
         lastdate = self.price.iloc[-1].date
-        diffdays = (yesterdayobj() - lastdate).days
+        diffdays = (last_onday(today_obj()) - lastdate).days
         if (
             diffdays == 0
         ):  ## for some QDII, this value is 1, anyways, trying update is compatible (d+2 update)
@@ -1018,7 +1019,7 @@ class fundinfo(basicinfo):
         df = df.iloc[::-1]  ## reverse the time order
         df = df[df["date"].isin(opendate)]
         df = df.reset_index(drop=True)
-        df = df[df["date"] <= yesterdayobj()]
+        df = df[df["date"] <= last_onday(today_obj())]
         if len(df) != 0:
             self.price = self.price.append(df, ignore_index=True, sort=True)
             return df
@@ -1382,7 +1383,7 @@ class cashinfo(basicinfo):
         self.name = "货币基金"
         self.rate = 0
         datel = list(
-            pd.date_range(dt.datetime.strftime(self.start, "%Y-%m-%d"), yesterdaydash())
+            pd.date_range(dt.datetime.strftime(self.start, "%Y-%m-%d"), last_onday(today_obj()).strftime("%Y-%m-%d"))
         )
         valuel = []
         for i, date in enumerate(datel):
@@ -1471,7 +1472,7 @@ class mfundinfo(basicinfo):
         if len(df) == 0:
             raise ParserFailure("no price table for %s" % self.code)
         df = df.reset_index(drop=True)
-        self.price = df[df["date"] <= yesterdaydash()]
+        self.price = df[df["date"] <= last_onday(today_obj())]
 
     def _save_csv(self, path):
         """
@@ -1547,7 +1548,7 @@ class mfundinfo(basicinfo):
         """
         lastdate = self.price.iloc[-1].date
         startvalue = self.price.iloc[-1].totvalue
-        diffdays = (yesterdayobj() - lastdate).days
+        diffdays = (last_onday(today_obj()) - lastdate).days
         if diffdays == 0:
             return None
         self._updateurl = (
@@ -1618,7 +1619,7 @@ class mfundinfo(basicinfo):
         )
         df = df[df["date"].isin(opendate)]
         df = df.reset_index(drop=True)
-        df = df[df["date"] <= yesterdayobj()]
+        df = df[df["date"] <= last_onday(today_obj())]
         if len(df) != 0:
             self.price = self.price.append(df, ignore_index=True, sort=True)
             return df
