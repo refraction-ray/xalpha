@@ -76,7 +76,7 @@ def calendar_selfcheck():
     # 国内链接 githubusercontent.com 大概率存在问题，因此设计成联网自动更新日历大概率无用。
     # 也许之后考虑一些较稳定的第三方资源托管服务
     current_year = dt.datetime.now().year
-    if str(current_year) != opendate[-1][:4]:
+    if int(opendate[-1][:4]) < current_year:
         logger.warning(
             "Please update xalpha via `pip install -U xalpha` to keep the trade calendar up-to-date"
         )
