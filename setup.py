@@ -36,7 +36,7 @@ setuptools.setup(
         "pyecharts==1.7.1;python_version<='3.9'",  # broken api between 0.x and 1.x
         "pyecharts==1.9.1;python_version>'3.9'",
         "beautifulsoup4>=4.9.0",
-        "sqlalchemy<2.0",
+        "sqlalchemy",
         "pysocks",  # sock5 proxy support
     ],
     tests_require=["pytest"],

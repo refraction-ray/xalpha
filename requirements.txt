@@ -1,10 +1,10 @@
 lxml
-pandas<2.0
+pandas
 xlrd>=1.0.0
-numpy<2.0
+numpy
 scipy
 matplotlib
 requests
 pyecharts==1.7.1
 beautifulsoup4>=4.9.0
-sqlalchemy<2.0
+sqlalchemy
