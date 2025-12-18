@@ -123,24 +123,29 @@ def vtradevolume(cftable, freq="D", rendered=True):
             if row["cash"] < 0
         ]
     elif freq == "W":
-        cfmerge = cftable.groupby([cftable["date"].dt.year, cftable["date"].dt.week])[
-            "cash"
-        ].sum()
+        if pd.__version__[0] == "1":
+            cfmerge = cftable.groupby(
+                [cftable["date"].dt.year, cftable["date"].dt.week]
+            )["cash"].sum()
+        else:
+            cfmerge = cftable.groupby(
+                [cftable["date"].dt.year, cftable["date"].dt.isocalendar().week]
+            )["cash"].sum()
         # datedata = [
         #     dt.datetime.strptime(str(a) + "4", "(%Y, %W)%w")
-        #     for a, _ in cfmerge.iteritems()
+        #     for a, _ in cfmerge.items()
         # ]
         datedata = pd.date_range(
             startdate, yesterdayobj() + pd.Timedelta(days=7), freq="W-THU"
         )
         selldata = [
             [dt.datetime.strptime(str(a) + "4", "(%G, %V)%w"), b]
-            for a, b in cfmerge.iteritems()
+            for a, b in cfmerge.items()
             if b > 0
         ]
         buydata = [
             [dt.datetime.strptime(str(a) + "4", "(%G, %V)%w"), b]
-            for a, b in cfmerge.iteritems()
+            for a, b in cfmerge.items()
             if b < 0
         ]
         # %V pandas gives iso weeknumber which is different from python original %W or %U,
@@ -153,19 +158,19 @@ def vtradevolume(cftable, freq="D", rendered=True):
         ].sum()
         # datedata = [
         #     dt.datetime.strptime(str(a) + "15", "(%Y, %m)%d")
-        #     for a, _ in cfmerge.iteritems()
+        #     for a, _ in cfmerge.items()
         # ]
         datedata = pd.date_range(
             startdate, yesterdayobj() + pd.Timedelta(days=31), freq="MS"
         )
         selldata = [
             [dt.datetime.strptime(str(a) + "1", "(%Y, %m)%d"), b]
-            for a, b in cfmerge.iteritems()
+            for a, b in cfmerge.items()
             if b > 0
         ]
         buydata = [
             [dt.datetime.strptime(str(a) + "1", "(%Y, %m)%d"), b]
-            for a, b in cfmerge.iteritems()
+            for a, b in cfmerge.items()
             if b < 0
         ]
     else:
@@ -524,12 +529,16 @@ class trade:
                 else:
                     raise ParserFailure("comments not recognized")
 
-        self.cftable = self.cftable.append(
-            pd.DataFrame([[rdate, cash, share]], columns=["date", "cash", "share"]),
+        self.cftable = pd.concat(
+            [
+                self.cftable,
+                pd.DataFrame([[rdate, cash, share]], columns=["date", "cash", "share"]),
+            ],
             ignore_index=True,
         )
-        self.remtable = self.remtable.append(
-            pd.DataFrame([[rdate, rem]], columns=["date", "rem"]), ignore_index=True
+        self.remtable = pd.concat(
+            [self.remtable, pd.DataFrame([[rdate, rem]], columns=["date", "rem"])],
+            ignore_index=True,
         )
 
     def xirrrate(self, date=yesterdayobj(), startdate=None, guess=0.01):

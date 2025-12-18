@@ -27,7 +27,7 @@ setuptools.setup(
     include_package_data=True,
     install_requires=[
         "lxml",
-        "pandas<2.0",
+        "pandas",
         "xlrd>=1.0.0",  #  read excel support
         "numpy<2.0",
         "scipy",

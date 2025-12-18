@@ -168,8 +168,8 @@ class mul:
         ]
         summarydf = pd.DataFrame([], columns=columns)
         for fund in self.fundtradeobj:
-            summarydf = summarydf.append(
-                fund.dailyreport(date), ignore_index=True, sort=True
+            summarydf = pd.concat(
+                [summarydf, fund.dailyreport(date)], ignore_index=True, sort=True
             )
         tname = "总计"
         tcode = "total"
@@ -205,7 +205,7 @@ class mul:
             ],
             columns=columns,
         )
-        summarydf = summarydf.append(trow, ignore_index=True, sort=True)
+        summarydf = pd.concat([summarydf, trow], ignore_index=True, sort=True)
 
         return summarydf[columns].sort_values(by="基金现值", ascending=False)
 

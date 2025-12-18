@@ -192,7 +192,7 @@ class BTE:
                 tdf = self.infos[code].price
                 value = value * tdf[tdf["date"] == date].iloc[0].netvalue
             df2 = pd.DataFrame([[date, value]], columns=["date", self.get_code(code)])
-            df = df.append(df2)
+            df = pd.concat([df, df2])
             self.trades[code] = trade(
                 self.infos[code],
                 df,
@@ -229,7 +229,7 @@ class BTE:
         self.lastdates[code] = date
         self.lastdates[code] = date
         df2 = pd.DataFrame([[date, -share]], columns=["date", self.get_code(code)])
-        df = df.append(df2)
+        df = pd.concat([df, df2])
         if is_value:
             self.set_fund(code, value_label=1)
         self.trades[code] = trade(
@@ -470,17 +470,20 @@ class Grid(BTE):
                     print(
                         f"buy {self.inamount[self.pos]} of {self.kws.get('code')} at {date} with value {p0}"
                     )
-                self.cftable = self.cftable.append(
-                    pd.DataFrame(
-                        [
+                self.cftable = pd.concat(
+                    [
+                        self.cftable,
+                        pd.DataFrame(
                             [
-                                date,
-                                -p0 * self.inamount[self.pos],
-                                self.inamount[self.pos],
-                            ]
-                        ],
-                        columns=["date", "cash", "share"],
-                    ),
+                                [
+                                    date,
+                                    -p0 * self.inamount[self.pos],
+                                    self.inamount[self.pos],
+                                ]
+                            ],
+                            columns=["date", "cash", "share"],
+                        ),
+                    ],
                     ignore_index=True,
                 )
                 self.pos += 1
@@ -492,17 +495,20 @@ class Grid(BTE):
                     print(
                         f"sell {self.outamount[self.pos - 1]} of {self.kws.get('code')} at {date} with value {p}"
                     )
-                self.cftable = self.cftable.append(
-                    pd.DataFrame(
-                        [
+                self.cftable = pd.concat(
+                    [
+                        self.cftable,
+                        pd.DataFrame(
                             [
-                                date,
-                                p * self.outamount[self.pos - 1],
-                                -self.outamount[self.pos - 1],
-                            ]
-                        ],
-                        columns=["date", "cash", "share"],
-                    ),
+                                [
+                                    date,
+                                    p * self.outamount[self.pos - 1],
+                                    -self.outamount[self.pos - 1],
+                                ]
+                            ],
+                            columns=["date", "cash", "share"],
+                        ),
+                    ],
                     ignore_index=True,
                 )
                 self.pos -= 1

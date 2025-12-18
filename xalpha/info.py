@@ -839,7 +839,7 @@ class fundinfo(basicinfo):
         df = pd.DataFrame(
             [[s, 0, 0, 0]], columns=["date", "netvalue", "comment", "totvalue"]
         )
-        df = df.append(self.price, ignore_index=True, sort=True)
+        df = pd.concat([df, self.price], ignore_index=True, sort=True)
         df.sort_index(axis=1).to_csv(
             path + self.code + ".csv", index=False, date_format="%Y-%m-%d"
         )
@@ -854,7 +854,10 @@ class fundinfo(basicinfo):
         try:
             content = pd.read_csv(path + self.code + ".csv")
             pricetable = content.iloc[1:]
-            datel = list(pd.to_datetime(pricetable.date))
+            if pd.__version__[0] == "1":
+                datel = list(pd.to_datetime(pricetable.date))
+            else:
+                datel = list(pd.to_datetime(pricetable.date, format="mixed"))
             self.price = pricetable[["netvalue", "totvalue", "comment"]]
             self.price["date"] = datel
             saveinfo = json.loads(content.iloc[0].date)
@@ -887,7 +890,7 @@ class fundinfo(basicinfo):
             [[pd.Timestamp("1990-01-01"), 0, s, 0]],
             columns=["date", "netvalue", "comment", "totvalue"],
         )
-        df = df.append(self.price, ignore_index=True, sort=True)
+        df = pd.concat([df, self.price], ignore_index=True, sort=True)
         df.sort_index(axis=1).to_sql(
             "xa" + self.code, con=path, if_exists="replace", index=False
         )
@@ -939,7 +942,7 @@ class fundinfo(basicinfo):
             df = df[df["date"].isin(opendate)]  # ? 是否会过滤掉分红日
             for d in r:
                 df.loc[df["date"] == d["EXDDATE"], "comment"] = d["BONUS"]
-            self.price = self.price.append(df, ignore_index=True, sort=True)
+            self.price = pd.concat([self.price, df], ignore_index=True, sort=True)
             return df
 
     def update(self):
@@ -1020,7 +1023,7 @@ class fundinfo(basicinfo):
         df = df.reset_index(drop=True)
         df = df[df["date"] <= yesterdayobj()]
         if len(df) != 0:
-            self.price = self.price.append(df, ignore_index=True, sort=True)
+            self.price = pd.concat([self.price, df], ignore_index=True, sort=True)
             return df
 
     def get_holdings(self, year="", season="", month="", category="stock"):
@@ -1483,7 +1486,7 @@ class mfundinfo(basicinfo):
         df = pd.DataFrame(
             [[0, 0, self.name, 0]], columns=["date", "netvalue", "comment", "totvalue"]
         )
-        df = df.append(self.price, ignore_index=True, sort=True)
+        df = pd.concat([df, self.price], ignore_index=True, sort=True)
         df.sort_index(axis=1).to_csv(
             path + self.code + ".csv", index=False, date_format="%Y-%m-%d"
         )
@@ -1498,7 +1501,10 @@ class mfundinfo(basicinfo):
         try:
             content = pd.read_csv(path + self.code + ".csv")
             pricetable = content.iloc[1:]
-            datel = list(pd.to_datetime(pricetable.date))
+            if pd.__version__[0] == "1":
+                datel = list(pd.to_datetime(pricetable.date))
+            else:
+                datel = list(pd.to_datetime(pricetable.date, format="mixed"))
             self.price = pricetable[["netvalue", "totvalue", "comment"]]
             self.price["date"] = datel
             self.name = content.iloc[0].comment
@@ -1518,7 +1524,7 @@ class mfundinfo(basicinfo):
             [[pd.Timestamp("1990-01-01"), 0, s, 0]],
             columns=["date", "netvalue", "comment", "totvalue"],
         )
-        df = df.append(self.price, ignore_index=True, sort=True)
+        df = pd.concat([df, self.price], ignore_index=True, sort=True)
         df.sort_index(axis=1).to_sql(
             "xa" + self.code, con=path, if_exists="replace", index=False
         )
@@ -1620,7 +1626,7 @@ class mfundinfo(basicinfo):
         df = df.reset_index(drop=True)
         df = df[df["date"] <= yesterdayobj()]
         if len(df) != 0:
-            self.price = self.price.append(df, ignore_index=True, sort=True)
+            self.price = pd.concat([self.price, df], ignore_index=True, sort=True)
             return df
 
 
