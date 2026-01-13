@@ -1966,7 +1966,7 @@ def cachedio(**ioconf):
             precached = ioconf.get("precached", None)
             precached = kws.get("precached", precached)
             key = kws.get("key", code)
-            key = key.replace("/", " ")
+            key = key.replace("/", " ").replace(":", " ")
             key_func = ioconf.get("key_func", None)
             key_func = ioconf.get("keyfunc", key_func)
             if key_func is not None:
