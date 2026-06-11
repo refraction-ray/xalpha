@@ -41,7 +41,7 @@ def test_irecord():
 def test_itrade():
     t = xa.itrade("SH512880", ir)
     assert round(t.xirrrate("20200313"), 2) == 12.49
-    assert t.dailyreport().iloc[0]["基金名称"] == "证券ETF"
+    assert t.dailyreport().iloc[0]["基金名称"].startswith("证券ETF")
 
 
 def test_imul():

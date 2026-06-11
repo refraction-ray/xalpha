@@ -146,7 +146,7 @@ def test_fund_holdings():
     assert d["stock_ratio"] == 68.62
     df = f.get_bond_holdings(2020, 2)
     assert df.iloc[0]["code"] == "190307"
-    assert f.which_industry() == "宽基基金"
+    assert f.which_industry(year=2020, season=2) == "宽基基金"
 
 
 def test_evaluate():
