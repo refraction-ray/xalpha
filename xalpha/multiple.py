@@ -215,22 +215,14 @@ class mul:
         """
         merge the different cftable for different funds into one table
         """
-        dtlist = []
-        for fund in self.fundtradeobj:
-            dtlist2 = []
-            for _, row in fund.cftable.iterrows():
-                dtlist2.append((row["date"], row["cash"]))
-            dtlist.extend(dtlist2)
+        if not self.fundtradeobj:
+            return pd.DataFrame([], columns=["date", "cash"])
 
-        nndtlist = set([item[0] for item in dtlist])
-        nndtlist = sorted(list(nndtlist), key=lambda x: x)
-        reslist = []
-        for date in nndtlist:
-            reslist.append(sum([item[1] for item in dtlist if item[0] == date]))
-        df = pd.DataFrame(data={"date": nndtlist, "cash": reslist})
+        df = pd.concat([fund.cftable for fund in self.fundtradeobj], ignore_index=True)
+        df = df.groupby("date")["cash"].sum().reset_index()
         df["date"] = pd.to_datetime(df["date"])
         df = df[df["cash"] != 0]
-        df = df.reset_index(drop=True)
+        df = df.sort_values(by="date").reset_index(drop=True)
         return df
 
     def xirrrate(self, date=yesterdayobj(), startdate=None, guess=0.01):
