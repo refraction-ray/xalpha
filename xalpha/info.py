@@ -1132,19 +1132,16 @@ class fundinfo(basicinfo):
             )
             return
         d = {}
-        for _, row in df.iterrows():
-            if row["ratio"] < threhold:
-                continue
-            code = ttjjcode(row["code"])
+        df = df[df["ratio"] >= threhold]
+        for row in df.itertuples(index=False):
+            code = ttjjcode(row.code)
             industry = get_industry_fromxq(code)["industryname"]
             if not industry.strip():
                 logger.warning(
                     "%s has no industry information, cannot be classfied" % code
                 )
             else:
-                if industry not in d:
-                    d[industry] = 0
-                d[industry] += row["ratio"]
+                d[industry] = d.get(industry, 0) + row.ratio
         return d
 
     def which_industry(self, threhold=1.0, year="", season="", month=""):
