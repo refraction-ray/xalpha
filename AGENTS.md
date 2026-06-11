@@ -33,6 +33,7 @@ When generating HTML reports or dashboards (e.g., QDII prediction pages):
 
 ## 6. Code Quality & CI/CD
 - **Testing:** Ensure tests pass using `pytest`. Use `pytest.importorskip` for optional dependencies.
+- **Testing Efficiency:** Running the entire/global test suite is very heavy. Minimize running global tests, and prefer running targeted tests (e.g. `pytest tests/test_file.py::test_func`) to verify changes.
 - **Linting:** Enforce `black` formatting and strict adherence to a **10.00/10** Pylint score for the `xalpha/` directory.
 
 ## 7. Development Mindset

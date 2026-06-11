@@ -69,6 +69,7 @@ def test_rt_predict():
     p.get_t0_rate()
 
 
+@pytest.mark.local
 def test_cbcaculator():
     c = xa.CBCalculator("SH113577")
     d = c.analyse()

@@ -29,6 +29,7 @@ def test_get_xueqiu():
     assert round(df.iloc[-1]["close"], 0) == 131
 
 
+@pytest.mark.local
 def test_get_rmb():
     df = xa.get_daily(start="20180101", end="2020-03-07", code="USD/CNY")
     assert len(df) == 528
@@ -131,6 +132,7 @@ def test_get_ft_daily():
     xa.get_daily("FTE-DVN:NYQ", prev=10)
 
 
+@pytest.mark.local
 def test_cache():
     get_daily_cache = xa.universal.cached("20190101")(xa.universal._get_daily)
     l1 = get_daily_cache("EUR/CNY", start="20200101")
