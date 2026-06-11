@@ -179,24 +179,21 @@ Apply these principles to avoid common pitfalls in quantitative reporting:
 
 This is the most important step for user experience. The report must be:
 
-### Self-Contained
-- **All CSS, JS, and images are embedded.** No external CDN or file references.
-- Charts are rendered with `matplotlib` and embedded as base64 PNG:
-  `<img src="data:image/png;base64,...">`.
-- The HTML file must render perfectly when opened directly in any browser.
+### Interactive & Self-Contained
+- **All CSS, JS logic, and raw data are embedded.** The HTML file must render perfectly when opened directly in any browser.
+- **Interactive Charts**: Load high-quality interactive charting libraries (specifically Apache ECharts, or alternatively Chart.js) from highly reliable public CDNs (e.g., `cdn.jsdelivr.net` or `cdnjs.cloudflare.com`). ECharts is strongly recommended for financial data because of its native support for data zoom sliders, interactive legends, crosshairs, CJK tooltips, and high-quality styling.
+- **Data Serialization**: In the python script, serialize raw timeseries data (dates, returns, alpha curves, drawdowns) as a JSON object, and inject it inside the HTML in a `<script>` block. This allows the browser to perform calculations (such as dynamic start/end date selection and real-time return metrics calculation).
+- Do NOT use static Matplotlib PNG images unless interactive libraries are absolutely unavailable.
 
-### Visually Polished
+### Visually Polished & Responsive
 Follow the design system in [templates/report_style.css](templates/report_style.css):
 
-- **Color palette**: professional dark blue/teal primary, warm accent colors.
-  Positive values in green (`#27ae60`), negative in red (`#e74c3c`).
-- **Layout**: card-based sections with subtle shadows and rounded corners.
-- **Typography**: system font stack with CJK support. Clean hierarchy with clear
-  section headers.
-- **Tables**: zebra-striped rows, hover effects, conditional coloring for key values.
-- **Charts**: consistent color cycle, grid lines, clear labels. Use Chinese-friendly
-  fonts when available (`PingFang SC`, `Heiti SC`, `SimHei`), fall back gracefully.
-- **Responsive**: should look good at common desktop widths (900–1400px).
+- **Color palette**: Professional dark/light-themed design using CSS variables. Primary dark blue/teal, warm accent colors. Positive values in green (`#27ae60`), negative in red (`#e74c3c`).
+- **Layout**: Card-based responsive grids with subtle transitions and interactive tabs to switch between tables or groups.
+- **Typography**: System font stack with CJK support.
+- **Tables**: Zebra-striped rows, interactive hover highlights, conditional coloring for performance metrics.
+- **Dynamic Charts**: Consistent CJK label support, gridlines, responsive sizing, and interactive legend toggles.
+- **Controls**: Add clean UI selectors (tabs, buttons, sliders) to allow the user to toggle between different metrics or filter the display dynamically.
 
 ### Structured Sections
 Every report should include (adapt as needed):
@@ -241,9 +238,7 @@ After the report is generated successfully:
 - **Informative errors**: when a script fails, read the traceback, understand the
   root cause, fix the script, and re-run. Don't just report the error to the user
   without attempting a fix.
-- **Font fallback**: if matplotlib can't find CJK fonts, use
-  `matplotlib.font_manager` to search for available CJK fonts, or fall back to
-  English labels rather than showing garbled text.
+- **Interactive fallbacks**: If CDN scripts fail to load, ensure the page falls back to simple table views or provides a clear error notification rather than crashing. Ensure local JSON data is still fully accessible.
 - **Framework Patching**: If you encounter a bug in a 3rd-party library (like the `TypeError` in `xalpha.multiple` or `ZeroDivisionError` in `combsummary`), document the patch you applied in the **Methodology Note** of the report.
 
 ## Additional Resources

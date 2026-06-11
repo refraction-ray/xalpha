@@ -1,7 +1,6 @@
-# Sample Report HTML Structure
+# Sample Interactive Report HTML Structure
 
-This document shows the expected HTML skeleton for a generated report. The agent
-should adapt sections, charts, and tables to match the specific question.
+This document shows the expected HTML skeleton for a generated dynamic and interactive report. The agent should adapt sections, charts, tables, and serialized JSON data to match the specific question.
 
 ```html
 <!DOCTYPE html>
@@ -10,6 +9,8 @@ should adapt sections, charts, and tables to match the specific question.
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{Report Title}</title>
+  <!-- Load Apache ECharts from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <style>
     /* Paste contents of templates/report_style.css here */
   </style>
@@ -23,53 +24,90 @@ should adapt sections, charts, and tables to match the specific question.
     <h1>{Report Title}</h1>
     <div class="subtitle">{One-line description of the analysis}</div>
     <div class="meta">
-      分析区间: {start_date} — {end_date} &nbsp;|&nbsp;
+      分析区间: <span id="meta-start-date">{start_date}</span> 至 <span id="meta-end-date">{end_date}</span> &nbsp;|&nbsp;
       生成时间: {generation_timestamp}
     </div>
   </div>
 
-  <!-- ====== Executive Summary ====== -->
+  <!-- ====== Executive Summary & Dynamic KPIs ====== -->
   <div class="card">
     <h2>核心发现</h2>
     <ul class="summary-list">
-      <li>{Key finding 1 — the single most important insight}</li>
-      <li>{Key finding 2}</li>
-      <li>{Key finding 3}</li>
+      <li><strong>主要结论</strong>：在选定区间内，增强基金普遍实现了相对基准的超额收益。</li>
+      <li><strong>动态计算提示</strong>：拖动下方图表的缩放条，上方的区间收益率指标将<strong>自动重新计算</strong>。</li>
     </ul>
+
+    <!-- Dynamic KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span id="kpi-period-return" class="kpi-val">0.00%</span>
+        <span class="kpi-label">所选区间组合收益</span>
+      </div>
+      <div class="kpi-card">
+        <span id="kpi-period-excess" class="kpi-val positive">0.00%</span>
+        <span class="kpi-label">所选区间超额收益</span>
+      </div>
+      <div class="kpi-card">
+        <span id="kpi-max-drawdown" class="kpi-val negative">0.00%</span>
+        <span class="kpi-label">历史最大回撤</span>
+      </div>
+    </div>
   </div>
 
-  <!-- ====== Analysis Section (repeat as needed) ====== -->
-  <div class="card">
-    <h2>{Section Title, e.g. "沪深300增强基金对比"}</h2>
-
-    <div class="chart-container">
-      <img src="data:image/png;base64,{base64_chart}" alt="{chart description}">
+  <!-- ====== Interactive Chart & Tabbed Tables ====== -->
+  <div class="tab-container">
+    <div class="tab-buttons">
+      <button class="tab-button active" data-target="group-a-tab">沪深300增强组</button>
+      <button class="tab-button" data-target="group-b-tab">中证500增强组</button>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Column A</th>
-          <th>Column B</th>
-          <th>Column C</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Value</td>
-          <td class="positive">+12.3%</td>
-          <td class="negative">-2.1%</td>
-        </tr>
-        <!-- more rows -->
-      </tbody>
-    </table>
+    <!-- Group A Content -->
+    <div id="group-a-tab" class="tab-content active">
+      <div class="card">
+        <h2>沪深300增强绩效分析</h2>
+        <!-- Chart Canvas Container -->
+        <div id="group-a-chart" class="chart-box"></div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>基金代码</th>
+              <th>基金名称</th>
+              <th>总累计收益</th>
+              <th>超额收益</th>
+              <th>最大回撤</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>000311</td>
+              <td>景顺长城 300 增强</td>
+              <td class="positive">+52.30%</td>
+              <td class="positive">+12.45%</td>
+              <td class="negative">-14.20%</td>
+            </tr>
+            <!-- More rows -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Group B Content -->
+    <div id="group-b-tab" class="tab-content">
+      <div class="card">
+        <h2>中证500增强绩效分析</h2>
+        <div id="group-b-chart" class="chart-box"></div>
+        <!-- Group B Table... -->
+      </div>
+    </div>
   </div>
 
   <!-- ====== Methodology ====== -->
   <div class="card">
-    <h2>数据来源与方法说明</h2>
+    <h2>数据来源与计算方法说明</h2>
     <p class="text-small">
-      {Brief note on data sources, any caveats, computation methodology}
+      1. 数据源来自东方财富网累计净值与中证指数日线，由 `xalpha` 提供抓取与数据清洗。<br>
+      2. 累计超额收益 (Alpha) 采用简算法，即基金归一化净值减去基准指数归一化净值。
     </p>
   </div>
 
@@ -80,16 +118,160 @@ should adapt sections, charts, and tables to match the specific question.
 
 </div>
 
+<!-- ====== Javascript Interactive Logic ====== -->
+<script>
+  // 1. Interactive Tabs Switching Logic
+  document.querySelectorAll('.tab-button').forEach(button => {
+    button.addEventListener('click', () => {
+      const container = button.closest('.tab-container');
+      container.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      container.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      button.classList.add('active');
+      const targetId = button.getAttribute('data-target');
+      document.getElementById(targetId).classList.add('active');
+      
+      // Resize ECharts to fit the newly visible container
+      const activeChart = document.querySelector('#' + targetId + ' .chart-box');
+      if (activeChart) {
+        const instance = echarts.getInstanceByDom(activeChart);
+        if (instance) {
+          instance.resize();
+        }
+      }
+    });
+  });
+
+  // 2. Serialized Raw Data Injection
+  const reportData = {
+    dates: ["2023-01-03", "2023-01-04", "2023-01-05", "2023-01-06"], // Array of dates
+    benchmark: [1.0000, 1.0050, 0.9980, 1.0110], // Normalized benchmark values
+    funds: {
+      "000311": [1.0000, 1.0062, 1.0001, 1.0152] // Normalized fund values
+    }
+  };
+
+  // 3. ECharts Plot Setup
+  const chartDom = document.getElementById('group-a-chart');
+  const myChart = echarts.init(chartDom);
+  
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'cross' },
+      formatter: function(params) {
+        let html = params[0].name + '<br/>';
+        params.forEach(p => {
+          const val = (p.value * 100).toFixed(2) + '%';
+          html += p.marker + p.seriesName + ': <b>' + val + '</b><br/>';
+        });
+        return html;
+      }
+    },
+    legend: {
+      data: ['基准指数', '景顺长城 300 增强'],
+      bottom: 0
+    },
+    grid: {
+      left: '3%', right: '4%', bottom: '15%', top: '8%', containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: reportData.dates,
+      boundaryGap: false
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        formatter: function(value) {
+          return (value * 100).toFixed(0) + '%';
+        }
+      }
+    },
+    dataZoom: [
+      { type: 'inside', start: 0, end: 100 },
+      { type: 'slider', start: 0, end: 100, bottom: 25 }
+    ],
+    series: [
+      {
+        name: '基准指数',
+        type: 'line',
+        data: reportData.benchmark.map(v => v - 1.0),
+        smooth: true,
+        showSymbol: false,
+        lineStyle: { width: 1.5, color: '#7f8c8d' }
+      },
+      {
+        name: '景顺长城 300 增强',
+        type: 'line',
+        data: reportData.funds["000311"].map(v => v - 1.0),
+        smooth: true,
+        showSymbol: false,
+        lineStyle: { width: 2, color: '#3182ce' }
+      }
+    ]
+  };
+
+  myChart.setOption(option);
+
+  // 4. Dynamic Recalculation based on zoom
+  function recalculateMetrics() {
+    const opt = myChart.getOption();
+    const startPercent = opt.dataZoom[0].start;
+    const endPercent = opt.dataZoom[0].end;
+    
+    const totalCount = reportData.dates.length;
+    const startIndex = Math.max(0, Math.floor((startPercent / 100) * totalCount));
+    const endIndex = Math.min(totalCount - 1, Math.ceil((endPercent / 100) * totalCount));
+    
+    if (startIndex >= endIndex) return;
+
+    // Get prices at start & end of range
+    const startBench = reportData.benchmark[startIndex];
+    const endBench = reportData.benchmark[endIndex];
+    const startFund = reportData.funds["000311"][startIndex];
+    const endFund = reportData.funds["000311"][endIndex];
+    
+    // Calculate returns over this range
+    const benchRangeReturn = (endBench / startBench) - 1.0;
+    const fundRangeReturn = (endFund / startFund) - 1.0;
+    const excessReturn = fundRangeReturn - benchRangeReturn;
+
+    // Update UI elements
+    document.getElementById('kpi-period-return').innerText = (fundRangeReturn * 100).toFixed(2) + '%';
+    
+    const excessEl = document.getElementById('kpi-period-excess');
+    excessEl.innerText = (excessReturn * 100).toFixed(2) + '%';
+    excessEl.className = excessReturn >= 0 ? 'kpi-val positive' : 'kpi-val negative';
+    
+    document.getElementById('meta-start-date').innerText = reportData.dates[startIndex];
+    document.getElementById('meta-end-date').innerText = reportData.dates[endIndex];
+  }
+
+  // Bind to zoom events (throttled)
+  let timer = null;
+  myChart.on('datazoom', function() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(recalculateMetrics, 100);
+  });
+
+  // Run initial calculation
+  recalculateMetrics();
+
+  // Resize listener
+  window.addEventListener('resize', () => {
+    myChart.resize();
+  });
+</script>
+
 </body>
 </html>
 ```
 
 ## Key Points
 
-1. **Self-contained**: The CSS is inlined. Charts are base64 PNGs. No external deps.
-2. **Sections are flexible**: Add or remove `.card` blocks based on the analysis.
-3. **Conditional colors**: Use `class="positive"` / `class="negative"` on `<td>` or
-   `<span>` elements where the value's sign matters.
-4. **Language**: Use Chinese for headers and labels when the user communicates in
-   Chinese. The CSS font stack includes CJK fonts.
-5. **Charts**: Generate with matplotlib, convert to base64, embed via `<img>` tag.
+1. **CDN Library Usage**: Load standard libraries like Apache ECharts from reliable CDNs.
+2. **Data-Driven**: Keep raw dates and time series serialized inside the HTML, allowing dynamic zoom and mouse tooltips.
+3. **Tabbed Content**: Use tabbed interfaces (`.tab-buttons` & `.tab-content`) to switch between multiple asset tables/groups to prevent layout clutter.
+4. **Resizing**: Always listen to the window `resize` event and invoke `chart.resize()` to keep the charts mobile/desktop responsive.
+5. **Interactive Recalculation**: Bind events to ECharts' `datazoom` to update stats/KPI cards dynamically, showing the user stats corresponding strictly to their selected date-range view.
