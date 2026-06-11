@@ -228,15 +228,30 @@ class indicator:
         :returns: three elements tuple, the first two are the date obj of
             start and end of the time window, the third one is the drawdown amplitude in unit 1.
         """
-        li = [
-            (row["date"], row["netvalue"])
-            for i, row in self.price[self.price["date"] <= date].iterrows()
-        ]
-        res = []
-        for i, _ in enumerate(li):
-            for j in range(i + 1, len(li)):
-                res.append((li[i][0], li[j][0], (li[j][1] - li[i][1]) / li[i][1]))
-        return min(res, key=lambda x: x[2])
+        part_price = self.price[self.price["date"] <= date]
+        if len(part_price) < 2:
+            return min([], key=lambda x: x[2])
+
+        it = part_price.itertuples(index=False)
+        first_row = next(it)
+        max_so_far_val = first_row.netvalue
+        max_so_far_date = first_row.date
+
+        best_drawdown = None
+
+        for row in it:
+            current_val = row.netvalue
+            current_date = row.date
+
+            drawdown = (current_val - max_so_far_val) / max_so_far_val
+            if best_drawdown is None or drawdown < best_drawdown[2]:
+                best_drawdown = (max_so_far_date, current_date, drawdown)
+
+            if current_val > max_so_far_val:
+                max_so_far_val = current_val
+                max_so_far_date = current_date
+
+        return best_drawdown
 
     ## 以上基本为聚宽提供的整体量化指标，以下是其他短线技术面指标
 
