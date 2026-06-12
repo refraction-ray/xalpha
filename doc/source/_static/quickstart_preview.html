@@ -1,0 +1,21 @@
+<div class="code-preview-section">
+    <div class="terminal-header">
+        <div class="terminal-dots">
+            <div class="terminal-dot dot-red"></div>
+            <div class="terminal-dot dot-yellow"></div>
+            <div class="terminal-dot dot-green"></div>
+        </div>
+        <div class="terminal-title">quickstart.py</div>
+    </div>
+    <pre>import xalpha as xa
+
+# 1. 获取基金与指数基本数据
+zzyl = xa.fundinfo('000968') # 广发养老指数A
+print(zzyl.info())
+
+# 2. 精确计算历史交易 XIRR
+# 提供交易账单 csv 自动计算特定日期下的内部收益率
+statb = xa.record("my_transactions.csv").status
+trade_flow = xa.trade(zzyl, statb)
+print(f"XIRR 收益率: {trade_flow.xirrrate('2026-06-12'):.2%}")</pre>
+</div>

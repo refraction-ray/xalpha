@@ -86,20 +86,11 @@ pygments_style = "sphinx"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "alabaster"
+html_theme = "furo"
 
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#
-# html_theme_options = {}
 html_theme_options = {
-    "github_user": "refraction-ray",
-    "github_repo": "xalpha",
-    "github_button": "true",
-    "github_type": "star",
-    "github_banner": "true",
-    "show_powered_by": "false",
+    "sidebar_hide_name": False,
+    "navigation_with_keys": True,
 }
 
 
@@ -107,6 +98,10 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+html_css_files = [
+    "custom.css",
+]
 
 # Include marketing landing pages in the build output
 html_extra_path = ["../marketing"]

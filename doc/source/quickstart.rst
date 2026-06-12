@@ -118,6 +118,14 @@ xalpha 可以用来对场外基金和指数进行方便的追踪和研究，
 	>>> st = xa.policy.buyandhold(yyws,'2016-01-01') # buy and hold from 2016-01-01, 且始终分红再投入
 	>>> st2 = xa.policy.scheduled(yyws, totmoney = 1000, times=pd.date_range('2016-01-01','2018-06-01',freq='W-THU')) # 定投 status 的生成：从2016-01-01 到 2018-06-01 每周四进行定额定投 1000 元。
 
+.. note::
+
+    💡 **Pandas 频度（freq）跨版本兼容提示**：
+    在旧版 Pandas 中，按月和按季频度分别表示为 ``"M"`` 和 ``"Q"``，而在 Pandas 2.x 和 3.x 中已被正式更改为 ``"ME"`` 和 ``"QE"``。为了使脚本在不同 Pandas 版本下都能稳定运行，推荐使用 xalpha 提供的版本适配工具：
+    
+    >>> pd.date_range('2016-01-01', '2018-06-01', freq=xa.cons.pd_valid_freq('ME'))
+
+
 交易策略的监视和定时提醒
 --------------------------
 使用 :class:`xalpha.realtime.review` 可以实现策略的监测和邮件的发送，具体使用可以查看 `示例 <https://github.com/refraction-ray/xalpha/blob/master/doc/samples/notification.py>`_

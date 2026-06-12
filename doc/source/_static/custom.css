@@ -1,0 +1,347 @@
+/* Custom CSS overrides for Sphinx Furo Theme */
+
+:root {
+    --brand-gradient: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    --bg-gradient-light: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    --card-shadow-light: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    --card-shadow-hover-light: 0 20px 25px -5px rgba(79, 70, 229, 0.1), 0 10px 10px -6px rgba(6, 182, 212, 0.1);
+}
+
+/* Custom homepage landing container */
+.landing-container {
+    max-width: 1050px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Hero Section */
+.hero-section {
+    position: relative;
+    padding: 4.5rem 3rem;
+    background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+    border-radius: 24px;
+    color: #ffffff;
+    overflow: hidden;
+    margin-bottom: 3rem;
+    box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.3);
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(129, 140, 248, 0.4);
+    color: #a5b4fc;
+    padding: 0.35rem 0.9rem;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.05em;
+    backdrop-filter: blur(4px);
+}
+
+.hero-title {
+    font-size: 3.2rem;
+    font-weight: 800;
+    line-height: 1.15;
+    margin: 0 0 1rem 0;
+    background: linear-gradient(to right, #ffffff, #cbd5e1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+}
+
+.hero-title span {
+    background: linear-gradient(to right, #818cf8, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    color: #94a3b8;
+    line-height: 1.6;
+    max-width: 700px;
+    margin: 0 0 2.5rem 0;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn-primary {
+    background: var(--brand-gradient);
+    color: #ffffff !important;
+    font-weight: 600;
+    padding: 0.8rem 1.8rem;
+    border-radius: 12px;
+    text-decoration: none !important;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff !important;
+    font-weight: 600;
+    padding: 0.8rem 1.8rem;
+    border-radius: 12px;
+    text-decoration: none !important;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Agent Native Callout Box */
+.agent-callout {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);
+    border: 1px solid rgba(79, 70, 229, 0.15);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.agent-callout-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.agent-callout-text h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.15rem;
+    color: var(--color-brand-primary, #4f46e5);
+}
+
+.agent-callout-text p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--color-foreground-muted, #4a5568);
+    line-height: 1.5;
+}
+
+/* Section Titles */
+.section-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-top: 3.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    position: relative;
+    border: none !important;
+}
+
+.section-title::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: var(--brand-gradient);
+    border-radius: 2px;
+    margin: 0.5rem auto 0 auto;
+}
+
+/* Feature Grid */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3.5rem;
+}
+
+.feature-card {
+    background: var(--color-background-secondary, #ffffff);
+    border: 1px solid var(--color-background-border, rgba(0, 0, 0, 0.06));
+    border-radius: 16px;
+    padding: 1.8rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--card-shadow-hover-light);
+    border-color: rgba(79, 70, 229, 0.3);
+}
+
+.feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+    color: #4f46e5;
+    border-radius: 12px;
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.feature-card h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem 0;
+    color: var(--color-headings, #1e293b);
+}
+
+.feature-card p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--color-foreground-muted, #64748b);
+    margin: 0;
+}
+
+/* Quick Navigation Grid */
+.nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 4rem;
+}
+
+.nav-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-background-secondary, #ffffff);
+    border: 1px solid var(--color-background-border, rgba(0, 0, 0, 0.06));
+    border-radius: 14px;
+    padding: 1.5rem;
+    text-decoration: none !important;
+    color: inherit !important;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.nav-card:hover {
+    transform: translateY(-2px);
+    border-color: #4f46e5;
+    box-shadow: 0 10px 20px rgba(79, 70, 229, 0.08);
+}
+
+.nav-card-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: #4f46e5;
+}
+
+.nav-card-arrow {
+    font-size: 1.1rem;
+    transition: transform 0.2s ease;
+}
+
+.nav-card:hover .nav-card-arrow {
+    transform: translateX(4px);
+}
+
+.nav-card-desc {
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: var(--color-foreground-muted, #64748b);
+    margin: 0;
+}
+
+/* Terminal Preview Section */
+.code-preview-section {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 3.5rem;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
+
+.terminal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+}
+
+.terminal-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.terminal-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.dot-red { background-color: #ef4444; }
+.dot-yellow { background-color: #eab308; }
+.dot-green { background-color: #22c55e; }
+
+.terminal-title {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+.code-preview-section pre {
+    margin: 0 !important;
+    background: transparent !important;
+    font-family: 'Fira Code', 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    color: #e2e8f0;
+}
+
+/* Enhancements for Furo default styling */
+.sidebar-brand-text {
+    font-weight: 800 !important;
+    background: var(--brand-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.01em;
+}
+
+/* Dark mode adjustments using Furo custom properties */
+body[data-theme="dark"] {
+    --card-shadow-hover-light: 0 20px 25px -5px rgba(129, 140, 248, 0.15), 0 10px 10px -6px rgba(52, 211, 153, 0.15);
+}
+
+body[data-theme="dark"] .feature-card:hover {
+    border-color: rgba(129, 140, 248, 0.4);
+}
+
+body[data-theme="dark"] .nav-card:hover {
+    border-color: #818cf8;
+}
+
+body[data-theme="dark"] .nav-card-title {
+    color: #818cf8;
+}

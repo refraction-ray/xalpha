@@ -1,1 +1,2 @@
-sphinx==2.4.3
+sphinx>=7.0.0
+furo
