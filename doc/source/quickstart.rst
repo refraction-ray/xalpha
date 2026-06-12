@@ -18,20 +18,20 @@ xalpha 可以用来对场外基金和指数进行方便的追踪和研究，
 代码示例::
 
 	>>> import xalpha as xa
-	>>> zzyl = xa.fundinfo('000968') 
-	>>> zzyl
+	>>> gfyl = xa.fundinfo('000968') 
+	>>> gfyl
 	广发养老指数A
-	>>> zzyl.info()
+	>>> gfyl.info()
 	fund name: 广发养老指数A
 	fund code: 000968
 	fund purchase fee: 0.12%
 	fund redemption fee info: ['小于7天', '1.50%', '大于等于7天，小于1年', '0.50%', '大于等于1年，小于2年', '0.30%', '大于等于2年', '0.00%']
-	>>> zzyl.price[zzyl.price['date']<='2015-02-27']
+	>>> gfyl.price[gfyl.price['date']<='2015-02-27']
 	comment	date	netvalue	totvalue
 	0	0	2015-02-13	1.0000	1.0000
 	1	0	2015-02-17	1.0000	1.0000
 	2	0	2015-02-27	1.0123	1.0123
-	>>> zzyl.get_stock_holdings(2019, 4)
+	>>> gfyl.get_stock_holdings(2019, 4)
     code  name  ratio   share    value
     0   300773   拉卡拉   1.48   32.31  2535.37
     1   600053  九鼎投资   1.44   97.15  2470.51
@@ -44,7 +44,7 @@ xalpha 可以用来对场外基金和指数进行方便的追踪和研究，
     89  002972   科安达   0.00    0.11     2.15
     90  603109  神驰机电   0.00    0.07     1.81
     91  002973  侨银环保   0.00    0.11     0.66
-    >>> zzyl.get_bond_holdings(2019, 4) # None returned
+    >>> gfyl.get_bond_holdings(2019, 4) # None returned
 
 使用 :class:`xalpha.info.indexinfo` 来获取相应指数的每日净值情况。
 
@@ -53,10 +53,10 @@ xalpha 可以用来对场外基金和指数进行方便的追踪和研究，
 
 代码示例::
 
-	>>> zzyli = xa.indexinfo('SZ399812')
-	>>> zzyli
+	>>> yli = xa.indexinfo('SZ399812')
+	>>> yli
 	养老产业
-	>>> zzyli.price[zzyli.price['date']=='2018-08-01']
+	>>> yli.price[yli.price['date']=='2018-08-01']
 		comment	date	netvalue	totvalue
 	1	0	2018-08-01	7.603842	7524.4807
 
