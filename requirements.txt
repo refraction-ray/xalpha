@@ -8,3 +8,5 @@ requests
 pyecharts==1.7.1
 beautifulsoup4>=4.9.0
 sqlalchemy
+sphinx
+furo
