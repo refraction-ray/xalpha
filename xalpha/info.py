@@ -85,13 +85,15 @@ def _nfloat(string):
     return result
 
 
-def _lsjz_url(code, page=1, per=1):
+def _lsjz_url(code, page=1, per=1, start="", end=""):
     """
     历史净值 API 的 url，替代已下线的 f10/F10DataApi.aspx 页面
 
     :param code: string, 六位基金代码
     :param page: int, 页码
     :param per: int, 每页条数，服务端上限为 20
+    :param start: string, %Y-%m-%d, 可选的起始日期
+    :param end: string, %Y-%m-%d, 可选的结束日期
     :returns: string
     """
     return (
@@ -101,6 +103,10 @@ def _lsjz_url(code, page=1, per=1):
         + str(page)
         + "&pageSize="
         + str(per)
+        + "&startDate="
+        + start
+        + "&endDate="
+        + end
     )
 
 
@@ -116,6 +122,35 @@ def _lsjz_rows(url):
     """
     r = rget_json(url, headers={"Referer": "https://fundf10.eastmoney.com/"})
     return r["Data"]["LSJZList"]
+
+
+def _lsjz_comment(item):
+    """
+    历史净值 API 单行的分红送配转为 comment 列数值，与 :func:`_nfloat` 约定一致
+
+    FHFCBZ 为 0 表示分红，FHFCZ 为每份派现金额；FHFCBZ 为 106 表示拆分折算，FHFCZ 为折算比例。
+    注意 FHSP 文本为每 10 份派现金额，不能直接用 :func:`_nfloat` 解析
+
+    :param item: dict, :func:`_lsjz_rows` 返回的单行
+    :returns: float, 正数为分红，负数为拆分；未识别类型回退为 :func:`_nfloat` 解析 FHSP
+    """
+    if item["FHFCZ"] and item["FHFCBZ"] == "0":
+        return float(item["FHFCZ"])
+    if item["FHFCZ"] and item["FHFCBZ"] == "106":
+        return -float(item["FHFCZ"])
+    return _nfloat(item["FHSP"])
+
+
+def _lsjz_event_comment(code, date):
+    """
+    按日查询历史净值 API，获取该日分红送配的 comment 数值
+
+    :param code: string, 六位基金代码
+    :param date: datetime.datetime, 分红或拆分日
+    :returns: float
+    """
+    s = date.strftime("%Y-%m-%d")
+    return _lsjz_comment(_lsjz_rows(_lsjz_url(code, per=1, start=s, end=s))[0])
 
 
 class FundReport:
@@ -643,15 +678,18 @@ class fundinfo(basicinfo):
         ltot = eval(ltot)
         ## timestamp transform tzinfo must be taken into consideration
         tz_bj = dt.timezone(dt.timedelta(hours=8))
+        dates = [
+            dt.datetime.fromtimestamp(int(d["x"]) / 1e3, tz=tz_bj).replace(tzinfo=None)
+            for d in l
+        ]
         infodict = {
-            "date": [
-                dt.datetime.fromtimestamp(int(d["x"]) / 1e3, tz=tz_bj).replace(
-                    tzinfo=None
-                )
-                for d in l
-            ],
+            "date": dates,
             "netvalue": [float(d["y"]) for d in l],
-            "comment": [_nfloat(d["unitMoney"]) for d in l],
+            # unitMoney 已不含具体数值（如 "分红：每10份派现金元"），仅用于标记分红拆分日
+            "comment": [
+                _lsjz_event_comment(self.code, t) if d["unitMoney"] else 0
+                for t, d in zip(dates, l)
+            ],
         }
 
         if len(l) == len(
@@ -1053,7 +1091,7 @@ class fundinfo(basicinfo):
                 date.append(ts)
                 netvalue.append(_float(item["DWJZ"]))
                 totvalue.append(_float(item["LJJZ"]))
-                comment.append(_nfloat(item["FHSP"]))
+                comment.append(_lsjz_comment(item))
             else:
                 break
         df = pd.DataFrame(

@@ -4,6 +4,12 @@
 
 - 修复天天基金 `f10/F10DataApi.aspx` 页面下线导致 `fundinfo` 和 `mfundinfo` 增量更新失败的问题，改用 `api.fund.eastmoney.com/f10/lsjz` 接口
 
+- 修复天天基金 `pingzhongdata` 的 `unitMoney` 不再包含分红拆分数值导致 `fundinfo` 初始化失败的问题，改由 lsjz 接口按日查询分红拆分数值
+
+- 修复 `fundinfo` 增量更新时分红数值被解析为每 10 份派现金额（放大 10 倍）的问题
+
+- 更新 2027 A 股交易日历
+
 ## v0.12.4 - 2026.07.07
 
 - 移除 numpy 版本上限以兼容 Python 3.12 下的现代科学计算环境
