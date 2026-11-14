@@ -180,14 +180,12 @@ class FundReport:
         :param id_: id 可由 :meth:`show_report_list` 中条目的对应 ID 得到
         :return:
         """
-        if id_:
+        if not id_:
+            id_ = self.report_list[no]["ID"]
+
+        if not self.report_detail.get(id_):
             report_url = "https://np-cnotice-fund.eastmoney.com/api/content/ann?client_source=web_fund&show_all=1&art_code={id_}".format(
                 id_=id_
-            )
-
-        if not self.report_detail.get(no):
-            report_url = "https://np-cnotice-fund.eastmoney.com/api/content/ann?client_source=web_fund&show_all=1&art_code={id_}".format(
-                id_=self.report_list[no]["ID"]
             )
 
             # report_url = "http://fund.eastmoney.com/gonggao/{code},{id_}.html".format(
@@ -197,13 +195,13 @@ class FundReport:
             # b = BeautifulSoup(r.text, "lxml")
             # seasonr = b.find("pre")
             # sr = [s.string.strip() for s in seasonr.findAll("p") if s.string]
-        r = rget_json(report_url)
+            r = rget_json(report_url)
 
-        sr = r["data"]["notice_content"]
-        sr = [s.strip() for s in sr.split("\n") if s.strip()]
-        self.report_detail[no] = sr
+            sr = r["data"]["notice_content"]
+            sr = [s.strip() for s in sr.split("\n") if s.strip()]
+            self.report_detail[id_] = sr
 
-        return sr
+        return self.report_detail[id_]
 
     def show_report_list(self, type_=3):
         """
