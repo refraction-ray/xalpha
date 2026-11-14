@@ -40,3 +40,24 @@ When generating HTML reports or dashboards (e.g., QDII prediction pages):
 1. **Atomic & Precise Changes:** When fixing bugs in the library itself, make the smallest possible change. Avoid unnecessary refactoring of legacy code.
 2. **Data-Driven:** When asked to analyze, write the code, run it, and let the data speak. 
 3. **Self-Healing & Fail-Fast:** If you encounter a `KeyError` or `NoneType` during data fetching, investigate the upstream response and patch the parsers or input normalizers autonomously. **Avoid over-protective code** (e.g., blanket try-except or returning empty DataFrames) that swallows original errors. Let it fail naturally so the root cause is visible, then fix it at the source.
+
+## 8. Annual Trading Calendar Update
+Two bundled data files must be refreshed every year (historically done in mid/late December; see commits like `update 2026 calendar`):
+- `xalpha/holiday.json`: non-weekend market holidays per region (`CN`, `HK`, `US`, `JP`, `UK`, `DE`, ...), loaded as `xa.cons.holidays`. Source: TDX (`https://www.tdx.com.cn/url/holiday/`) via `xa.misc.get_tdx_holidays`; region names are mapped through `cons.region_trans`.
+- `xalpha/caldate.csv`: A-share calendar (`cal_date,is_open`), loaded as `xa.cons.opendate`. Generated from `holidays["CN"]` plus weekends by `xa.misc.update_caldate`.
+
+Procedure (run each step as a separate process, since `cons.holidays` is read at import time):
+1. Merge TDX data into the existing JSON (incremental; safe to rerun whenever TDX publishes more):
+   ```python
+   h = json.load(open("xalpha/holiday.json"))
+   h = xa.misc.get_tdx_holidays(h)
+   h = {rg: sorted(set(h[rg])) for rg in sorted(h)}
+   json.dump(h, open("xalpha/holiday.json", "w"))  # keep single-line format
+   ```
+2. Append the new A-share year: `xa.misc.update_caldate("xalpha/caldate.csv", "2028")` (raises if the year already exists).
+3. Verify: the new year in `caldate.csv` has 365/366 rows, the weekday closures match `holidays["CN"]` for that year (including 除夕 if the exchanges close that day), and `git diff --stat` touches only these two files.
+
+Notes:
+- TDX usually publishes the next-year CN schedule first (around November); overseas markets often appear only by mid/late December. If overseas data is incomplete, update CN now and rerun step 1 later.
+- Cross-check CN dates against the official State Council holiday notice / SSE & SZSE closure announcements; patch `caldate.csv` by hand if the exchanges change plans (e.g. commit `update caldate to close chuxi`).
+- `cons.calendar_selfcheck()` warns users when `caldate.csv` does not cover the current year, so ship a release after updating.
